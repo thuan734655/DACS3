@@ -9,7 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.navigation.compose.rememberNavController
-import com.example.dacs3.ui.auth.AuthNavGraph
+import com.example.dacs3.ui.nav.AuthNavGraph
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

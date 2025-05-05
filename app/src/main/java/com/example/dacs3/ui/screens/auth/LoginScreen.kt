@@ -1,5 +1,6 @@
-package com.example.dacs3.ui.auth
+package com.example.dacs3.ui.screens.auth
 
+import android.util.Patterns
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +20,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,28 +42,46 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.dacs3.R
+import com.example.dacs3.models.LoginRequest
+import com.example.dacs3.models.LoginResponse
 import com.example.dacs3.ui.common.CustomTextField
 import com.example.dacs3.ui.theme.AppColors
 import com.example.dacs3.viewmodel.AuthViewModel
 import com.example.dacs3.viewmodel.UiState
 
+private fun isEmail(input: String): Boolean {
+    return Patterns.EMAIL_ADDRESS.matcher(input).matches()
+}
+
+private fun isPhoneNumber(input: String): Boolean {
+    return input.matches(Regex("^\\d{9,11}$"))
+}
+
+private fun determineInputType(input: String): String {
+    return when {
+        isEmail(input) -> "E"
+        isPhoneNumber(input) -> "S"
+        else -> "E"
+    }
+}
+
 @Composable
-fun OtpScreen(
-    email: String,
+fun LoginScreen(
     vm: AuthViewModel = hiltViewModel(),
-    onVerified: () -> Unit
+    onLoginSuccess: (String) -> Unit,
+    onNavigateRegister: () -> Unit
 ) {
-    val verifyState by vm.verifyState.collectAsState()
-    val resendState by vm.resendState.collectAsState()
-    var otp by remember { mutableStateOf("") }
+    val state by vm.loginState.collectAsState()
+    var accountName by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val scrollState = rememberScrollState()
     val focusManager = LocalFocusManager.current
@@ -108,12 +129,14 @@ fun OtpScreen(
         ) {
             Spacer(modifier = Modifier.height(80.dp))
 
-            OtpLogoPlaceholder()
+            // Logo
+            LoginLogoPlaceholder()
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Header
             Text(
-                text = "Xác Thực OTP",
+                text = "Đăng Nhập",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = AppColors.OnBackgroundColor
@@ -122,7 +145,7 @@ fun OtpScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Vui lòng nhập mã OTP đã được gửi đến $email",
+                text = "Nhập thông tin để đăng nhập vào tài khoản",
                 fontSize = 14.sp,
                 color = AppColors.OnSurfaceColor.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center
@@ -146,36 +169,86 @@ fun OtpScreen(
                         .padding(horizontal = 16.dp, vertical = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    OtpTextField(
-                        value = otp,
-                        onValueChange = { otp = it },
-                        label = "Mã OTP"
+                    LoginTextField(
+                        value = accountName,
+                        onValueChange = { accountName = it },
+                        label = "Email hoặc Số điện thoại",
+                        icon = Icons.Default.Person
                     )
+
+                    LoginTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = "Mật khẩu",
+                        icon = Icons.Default.Lock,
+                        isPassword = true
+                    )
+
+                    errorMessage?.let {
+                        Text(
+                            text = it,
+                            color = AppColors.ErrorColor,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Confirm OTP button
-            OtpButton(
-                text = "Xác Nhận OTP",
-                onClick = { vm.verifyOtp(email, otp) },
+            // Login button
+            LoginButton(
+                text = "Đăng Nhập",
+                onClick = {
+                    if (accountName.isBlank() || password.isBlank()) {
+                        errorMessage = "Vui lòng nhập đầy đủ thông tin"
+                    } else {
+                        errorMessage = null
+                        val inputType = determineInputType(accountName)
+                        vm.login(LoginRequest(accountName, password, inputType))
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
             )
 
-            // State handling
-            when (verifyState) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Register link
+            Row(
+                modifier = Modifier.padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Chưa có tài khoản? ",
+                    fontSize = 14.sp,
+                    color = AppColors.OnSurfaceColor.copy(alpha = 0.9f)
+                )
+                Text(
+                    text = "Đăng ký",
+                    fontSize = 14.sp,
+                    color = AppColors.PrimaryColor,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { onNavigateRegister() }
+                )
+            }
+
+            // Loading state
+            when (state) {
                 is UiState.Loading -> {
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     CircularProgressIndicator(
                         color = AppColors.PrimaryColor,
                         modifier = Modifier.size(32.dp)
                     )
                 }
                 is UiState.Success -> {
-                    LaunchedEffect(Unit) { onVerified() }
+                    val token = (state as UiState.Success<LoginResponse>).data.token
+                    LaunchedEffect(token) {
+                        onLoginSuccess(token)
+                    }
                 }
                 is UiState.Error -> {
                     Spacer(modifier = Modifier.height(16.dp))
@@ -187,47 +260,15 @@ fun OtpScreen(
                         )
                     ) {
                         Text(
-                            text = (verifyState as UiState.Error).message,
+                            text = (state as UiState.Error).message,
                             color = AppColors.ErrorColor,
                             fontSize = 14.sp,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp)
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Resend OTP button
-                    OtpButton(
-                        text = "Gửi Lại OTP",
-                        onClick = { vm.resendOtp(email) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        isSecondary = true
-                    )
                 }
                 else -> {}
-            }
-
-            // Resend success message
-            if (resendState is UiState.Success) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = AppColors.PrimaryColor.copy(alpha = 0.2f)
-                    )
-                ) {
-                    Text(
-                        text = "OTP đã được gửi lại đến $email",
-                        color = AppColors.PrimaryColor,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp)
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(50.dp))
@@ -236,10 +277,12 @@ fun OtpScreen(
 }
 
 @Composable
-fun OtpTextField(
+fun LoginTextField(
     value: String,
     onValueChange: (String) -> Unit,
-    label: String
+    label: String,
+    icon: ImageVector,
+    isPassword: Boolean = false
 ) {
     Surface(
         modifier = Modifier
@@ -263,7 +306,7 @@ fun OtpTextField(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.baseline_key_24),
+                    imageVector = icon,
                     contentDescription = label,
                     tint = AppColors.PrimaryColor,
                     modifier = Modifier.size(20.dp)
@@ -273,7 +316,8 @@ fun OtpTextField(
             CustomTextField(
                 value = value,
                 onValueChange = onValueChange,
-                label = label,
+                label = if (label == "Email hoặc Số điện thoại") "Email/SĐT" else label,
+                isPassword = isPassword,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -281,7 +325,7 @@ fun OtpTextField(
 }
 
 @Composable
-fun OtpLogoPlaceholder() {
+fun LoginLogoPlaceholder() {
     Box(
         modifier = Modifier
             .size(100.dp)
@@ -293,7 +337,7 @@ fun OtpLogoPlaceholder() {
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Tạo logo mẫu bằng Canvas
+        // Tạo logo
         Canvas(modifier = Modifier.size(60.dp)) {
             val center = Offset(size.width / 2, size.height / 2)
             val radius = size.width / 3
@@ -327,53 +371,23 @@ fun OtpLogoPlaceholder() {
 }
 
 @Composable
-fun OtpButton(
+fun LoginButton(
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    isSecondary: Boolean = false
+    modifier: Modifier = Modifier
 ) {
-    val backgroundBrush = if (isSecondary) {
-        Brush.horizontalGradient(
-            colors = listOf(
-                AppColors.SurfaceColor,
-                AppColors.SurfaceColor
-            )
-        )
-    } else {
-        Brush.horizontalGradient(colors = AppColors.PrimaryGradient)
-    }
-
-    val textColor = if (isSecondary) AppColors.PrimaryColor else Color.White
-    val borderModifier = if (isSecondary) {
-        Modifier
+    Box(
+        modifier = modifier
             .clip(RoundedCornerShape(28.dp))
-            .background(Color.Transparent)
-            .padding(2.dp)
-            .clip(RoundedCornerShape(26.dp))
             .background(
                 brush = Brush.horizontalGradient(colors = AppColors.PrimaryGradient)
             )
-            .padding(1.dp)
-            .clip(RoundedCornerShape(25.dp))
-            .background(AppColors.SurfaceColor)
-    } else {
-        Modifier
-            .clip(RoundedCornerShape(28.dp))
-            .background(
-                brush = backgroundBrush
-            )
-    }
-
-    Box(
-        modifier = modifier
-            .then(borderModifier)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            color = textColor,
+            color = Color.White,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(vertical = 14.dp)

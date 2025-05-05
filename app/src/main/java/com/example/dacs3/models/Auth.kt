@@ -1,4 +1,4 @@
-package com.example.dacs3.network
+package com.example.dacs3.models
 
 data class RegisterRequest(
     val username: String,
@@ -22,15 +22,4 @@ data class AccountInfo(
     val username: String,
     val email: String,
     val contactNumber: String
-)
-
-data class ResendOtpRequest(val email: String)
-data class ResendOtpResponse(val message: String, val action: String, val data: Map<String,String>)
-
-data class VerifyOtpRequest(val email: String, val otp: String)
-data class VerifyOtpResponse(
-    val message: String? = null,
-    val error: String? = null,
-    val action: String,
-    val data: Map<String,String>? = null
 )

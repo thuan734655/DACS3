@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.auth
+package com.example.dacs3.ui.screens.auth
 
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.Canvas
@@ -50,7 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.dacs3.network.RegisterRequest
+import com.example.dacs3.models.RegisterRequest
 import com.example.dacs3.ui.common.CustomTextField
 import com.example.dacs3.viewmodel.AuthViewModel
 import com.example.dacs3.viewmodel.UiState

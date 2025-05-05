@@ -1,14 +1,14 @@
 package com.example.dacs3.repository
 
 import com.example.dacs3.network.AuthApi
-import com.example.dacs3.network.LoginRequest
-import com.example.dacs3.network.LoginResponse
-import com.example.dacs3.network.RegisterRequest
-import com.example.dacs3.network.RegisterResponse
-import com.example.dacs3.network.ResendOtpRequest
-import com.example.dacs3.network.ResendOtpResponse
-import com.example.dacs3.network.VerifyOtpRequest
-import com.example.dacs3.network.VerifyOtpResponse
+import com.example.dacs3.models.LoginRequest
+import com.example.dacs3.models.LoginResponse
+import com.example.dacs3.models.RegisterRequest
+import com.example.dacs3.models.RegisterResponse
+import com.example.dacs3.models.ResendOtpRequest
+import com.example.dacs3.models.ResendOtpResponse
+import com.example.dacs3.models.VerifyOtpRequest
+import com.example.dacs3.models.VerifyOtpResponse
 import javax.inject.Inject
 
 class AuthRepository @Inject constructor(

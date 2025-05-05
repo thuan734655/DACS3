@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.auth
+package com.example.dacs3.ui.nav
 
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -8,6 +8,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.dacs3.ui.screens.auth.LoginScreen
+import com.example.dacs3.ui.screens.auth.OtpScreen
+import com.example.dacs3.ui.screens.auth.RegisterScreen
 import com.example.dacs3.viewmodel.AuthViewModel
 
 @Composable
