@@ -31,7 +31,6 @@ fun AuthNavGraph(
                     navController.navigate("login")
                 }
             )
-
         }
         composable(
             "otp/{email}",
@@ -43,7 +42,6 @@ fun AuthNavGraph(
                 email = email,
                 vm = vm,
                 onVerified = {
-                    // Khi OTP đúng, chuyển tiếp sang login
                     navController.navigate("login") {
                         popUpTo("register") { inclusive = true }
                     }

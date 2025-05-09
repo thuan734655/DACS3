@@ -36,7 +36,6 @@ class HomeViewModel @Inject constructor(private val repo: AuthRepository): ViewM
         }
     }
 
-    // Tạm thời trả về token rỗng để bạn chỉnh lại sau theo cách lấy từ SharedPreferences
     private fun getTokenFromPrefs(): String {
         return "" // TODO: Lấy token từ SharedPreferences hoặc DataStore
     }

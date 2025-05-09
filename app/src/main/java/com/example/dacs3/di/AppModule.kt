@@ -23,7 +23,6 @@ object AppModule {
         }
         return OkHttpClient.Builder()
             .addInterceptor(logging)
-            // Tăng thời gian chờ kết nối, đọc và ghi lên 30 giây
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout   (30, TimeUnit.SECONDS)
             .writeTimeout  (30, TimeUnit.SECONDS)
@@ -33,7 +32,7 @@ object AppModule {
     @Provides @Singleton
     fun provideRetrofit(client: OkHttpClient): Retrofit =
         Retrofit.Builder()
-            .baseUrl("https://192.168.2.6:3000/")
+            .baseUrl("http://10.0.2.2:3000/")
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

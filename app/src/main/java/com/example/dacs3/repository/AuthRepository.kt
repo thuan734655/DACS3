@@ -16,11 +16,14 @@ import javax.inject.Inject
 class AuthRepository @Inject constructor(
     private val api: AuthApi
 ) {
-    suspend fun register(req: RegisterRequest): Result<RegisterResponse> =
-        runCatching { api.register(req) }
 
-    suspend fun login(req: LoginRequest): Result<LoginResponse> =
-        runCatching { api.login(req) }
+    suspend fun register(request: RegisterRequest): RegisterResponse {
+        return api.register(request)
+    }
+
+    suspend fun login(request: LoginRequest): LoginResponse {
+        return api.login(request)
+    }
 
     suspend fun getHomeData(token: String): Response<HomeResponse> =
         api.getHomeData(token)
