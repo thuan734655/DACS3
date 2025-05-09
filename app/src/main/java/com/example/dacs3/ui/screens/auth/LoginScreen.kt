@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.dacs3.models.LoginRequest
 import com.example.dacs3.models.LoginResponse
 import com.example.dacs3.ui.common.AuthButton
@@ -40,6 +41,7 @@ private fun determineType(input: String) = if (isPhone(input)) "S" else "E"
 
 @Composable
 fun LoginScreen(
+    nav: NavHostController,
     vm: AuthViewModel = hiltViewModel(),
     onLoginSuccess: (String) -> Unit,
     onNavigateRegister: () -> Unit
@@ -195,7 +197,7 @@ fun LoginScreen(
                 }
             }
             is UiState.Success -> LaunchedEffect((state as UiState.Success<LoginResponse>).data.token) {
-                onLoginSuccess((state as UiState.Success<LoginResponse>).data.token)
+                nav.navigate("home")
             }
             else -> Unit
         }

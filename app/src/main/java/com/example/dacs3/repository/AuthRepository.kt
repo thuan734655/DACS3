@@ -22,9 +22,6 @@ class AuthRepository @Inject constructor(
     suspend fun login(req: LoginRequest): Result<LoginResponse> =
         runCatching { api.login(req) }
 
-    suspend fun getHomeData(token: String): Response<HomeResponse> =
-        api.getHomeData(token)
-
     suspend fun resendOtp(email: String): Result<ResendOtpResponse> =
         runCatching { api.resendOtp(ResendOtpRequest(email)) }
 

@@ -58,6 +58,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
     implementation("androidx.compose.material3:material3:1.2.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation ("io.coil-kt:coil-compose:2.4.0")
+
+    implementation ("androidx.compose.material:material-icons-extended:1.5.4")
 
 
     implementation(libs.androidx.core.ktx)

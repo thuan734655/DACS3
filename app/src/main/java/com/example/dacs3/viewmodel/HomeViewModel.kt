@@ -2,42 +2,49 @@ package com.example.dacs3.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dacs3.data.MockData
 import com.example.dacs3.models.HomeResponse
-import com.example.dacs3.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import retrofit2.Response
 import javax.inject.Inject
 
+data class HomeState(
+    val homeResponse: HomeResponse? = null,
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
+
 @HiltViewModel
-class HomeViewModel @Inject constructor(private val repo: AuthRepository): ViewModel() {
-    private val _homeState = MutableStateFlow<UiState<HomeResponse>>(UiState.Idle)
-    val homeState: StateFlow<UiState<HomeResponse>> = _homeState
+class HomeViewModel @Inject constructor() : ViewModel() {
+    private val _homeState = MutableStateFlow(HomeState())
+    val homeState: StateFlow<HomeState> = _homeState.asStateFlow()
 
-    init { fetchHome() }
+    init {
+        loadHomeData()
+    }
 
-    fun fetchHome() = viewModelScope.launch {
-        _homeState.value = UiState.Loading
-        try {
-            val response: Response<HomeResponse> = repo.getHomeData("Bearer ${getTokenFromPrefs()}")
-            if (response.isSuccessful) {
-                response.body()?.let {
-                    _homeState.value = UiState.Success(it)
-                } ?: run {
-                    _homeState.value = UiState.Error("Response body is null")
-                }
-            } else {
-                _homeState.value = UiState.Error("Error ${response.code()} - ${response.message()}")
+    private fun loadHomeData() {
+        viewModelScope.launch {
+            _homeState.value = _homeState.value.copy(isLoading = true)
+            try {
+                // In a real app, this would be an API call
+                _homeState.value = HomeState(homeResponse = MockData.mockHomeResponse)
+            } catch (e: Exception) {
+                _homeState.value = _homeState.value.copy(error = e.message)
+            } finally {
+                _homeState.value = _homeState.value.copy(isLoading = false)
             }
-        } catch (e: Exception) {
-            _homeState.value = UiState.Error(e.localizedMessage ?: "Unknown error")
         }
     }
 
-    // Tạm thời trả về token rỗng để bạn chỉnh lại sau theo cách lấy từ SharedPreferences
-    private fun getTokenFromPrefs(): String {
-        return "" // TODO: Lấy token từ SharedPreferences hoặc DataStore
+    fun selectChannel(channelId: String) {
+        // TODO: Implement channel selection logic
+    }
+
+    fun sendMessage(content: String) {
+        // TODO: Implement message sending logic
     }
 }
