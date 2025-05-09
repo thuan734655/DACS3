@@ -37,10 +37,12 @@ class AuthViewModel @Inject constructor(
     fun login(req: LoginRequest) = viewModelScope.launch {
         _loginState.value = UiState.Loading
         repo.login(req).fold(
-            onSuccess = { _loginState.value = UiState.Success(it) },
-            onFailure = { _loginState.value = UiState.Error(it.message ?: "Lỗi đăng nhập") }
+            onSuccess = {
+                _loginState.value = UiState.Success(it)
+            },
+            onFailure = {
+                _loginState.value = UiState.Error(it.message ?: "Lỗi đăng nhập")
+            }
         )
     }
-
 }
-

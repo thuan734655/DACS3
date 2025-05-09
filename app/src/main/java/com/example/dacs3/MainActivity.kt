@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.navigation.compose.rememberNavController
 import com.example.dacs3.ui.nav.AuthNavGraph
+import com.example.dacs3.ui.screens.home.HomeScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -28,8 +29,14 @@ class MainActivity : ComponentActivity() {
                     isLoggedIn = true
                 }
             } else {
-                // TODO: Hiển thị HomeScreen
-                Text("Welcome to Home! Token: $token")
+                if (!isLoggedIn) {
+                    AuthNavGraph(navController) { receivedToken ->
+                        token = receivedToken
+                        isLoggedIn = true
+                    }
+                } else {
+                    HomeScreen()
+                }
             }
         }
     }

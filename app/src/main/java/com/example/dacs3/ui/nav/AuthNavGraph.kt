@@ -12,6 +12,7 @@ import com.example.dacs3.ui.screens.auth.LoginScreen
 import com.example.dacs3.ui.screens.auth.OtpScreen
 import com.example.dacs3.ui.screens.auth.RegisterScreen
 import com.example.dacs3.viewmodel.AuthViewModel
+import com.example.dacs3.viewmodel.OtpViewModel
 
 @Composable
 fun AuthNavGraph(
@@ -37,7 +38,7 @@ fun AuthNavGraph(
             arguments = listOf(navArgument("email") { type = NavType.StringType })
         ) { backStackEntry ->
             val email = requireNotNull(backStackEntry.arguments?.getString("email"))
-            val vm: AuthViewModel = hiltViewModel(backStackEntry)
+            val vm: OtpViewModel = hiltViewModel(backStackEntry)
             OtpScreen(
                 email = email,
                 vm = vm,
