@@ -1,11 +1,17 @@
 package com.example.dacs3.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.dacs3.ui.auth.AuthViewModel
+import com.example.dacs3.ui.auth.LoginScreen
+import com.example.dacs3.ui.auth.RegisterScreen
 import com.example.dacs3.ui.bugs.BugDetailScreen
 import com.example.dacs3.ui.bugs.BugListScreen
 import com.example.dacs3.ui.bugs.CreateBugScreen
@@ -18,31 +24,53 @@ import com.example.dacs3.ui.epic.EpicDetailScreen
 import com.example.dacs3.ui.epic.EpicListScreen
 import com.example.dacs3.ui.home.HomeScreen
 import com.example.dacs3.ui.kanban.KanbanScreen
+import com.example.dacs3.ui.notification.NotificationScreen
 import com.example.dacs3.ui.profile.ProfileScreen
 import com.example.dacs3.ui.tasks.CreateTaskScreen
 import com.example.dacs3.ui.tasks.TaskDetailScreen
 import com.example.dacs3.ui.tasks.TaskListScreen
+import com.example.dacs3.ui.welcome.WelcomeScreen
 import com.example.dacs3.ui.workspace.CreateWorkspaceScreen
 import com.example.dacs3.ui.workspace.WorkspaceDetailScreen
 import com.example.dacs3.ui.workspace.WorkspaceListScreen
 
 @Composable
-fun AppNavigation(navController: NavHostController, startDestination: String = "home") {
-    // Mock userId - in a real app this would come from authentication
-    val userId = "user1"
+fun AppNavigation(
+    navController: NavHostController, 
+    startDestination: String = "welcome",
+    authViewModel: AuthViewModel = hiltViewModel()
+) {
+    // Always start with welcome or login, never directly to home
+    // Remove automatic home navigation based on session
+    
+    // Get current user ID from AuthViewModel instead of hardcoding
+    val currentUserId by authViewModel.currentUserId.collectAsState()
     
     NavHost(navController = navController, startDestination = startDestination) {
         // Home screen
         composable("home") {
             HomeScreen(
-                userId = userId,
+                userId = currentUserId,
                 onNavigateToWorkspaces = { navController.navigate("workspaces") },
                 onNavigateToDirectMessage = { targetUserId -> navController.navigate("direct_message/$targetUserId") },
                 onNavigateToChannel = { channelId -> navController.navigate("channel/$channelId") },
                 onNavigateToTask = { taskId -> navController.navigate("task/$taskId") },
                 onNavigateToKanban = { navController.navigate("kanban") },
-                onNavigateToProfile = { navController.navigate("profile") }
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToNotifications = { navController.navigate("notifications") }
             )
+        }
+        
+        composable("welcome") {
+            WelcomeScreen(navController)
+        }
+        
+        composable("login") {
+            LoginScreen(navController)
+        }
+        
+        composable("register") {
+            RegisterScreen(navController)
         }
         
         // Workspace related screens
@@ -114,7 +142,7 @@ fun AppNavigation(navController: NavHostController, startDestination: String = "
             )
         }
         
-        // Direct messaging
+        // Direct messaging with actual current user
         composable(
             route = "direct_message/{userId}",
             arguments = listOf(navArgument("userId") { type = NavType.StringType })
@@ -122,7 +150,7 @@ fun AppNavigation(navController: NavHostController, startDestination: String = "
             val targetUserId = backStackEntry.arguments?.getString("userId") ?: ""
             DirectMessageScreen(
                 userId = targetUserId,
-                currentUserId = userId,
+                currentUserId = currentUserId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -262,9 +290,24 @@ fun AppNavigation(navController: NavHostController, startDestination: String = "
             )
         }
         
-        // Profile screen
+        // Profile screen with actual user ID
         composable("profile") {
             ProfileScreen(
+                userId = currentUserId,
+                onNavigateBack = { navController.popBackStack() },
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate("login") {
+                        popUpTo("welcome") { inclusive = true }
+                    }
+                }
+            )
+        }
+        
+        // Notification screen
+        composable("notifications") {
+            NotificationScreen(
+                userId = currentUserId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

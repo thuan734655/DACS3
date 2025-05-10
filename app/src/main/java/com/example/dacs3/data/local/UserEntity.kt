@@ -8,6 +8,8 @@ import java.util.Date
 data class UserEntity(
     @PrimaryKey val userId: String,
     val username: String,
+    val email: String,
+    val password: String,
     val avatarUrl: String?,
     val createdAt: Long = System.currentTimeMillis(),
     val isOnline: Boolean = false

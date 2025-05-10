@@ -67,9 +67,16 @@ fun RegisterScreen(
 
     LaunchedEffect(authState) {
         when (authState) {
-            is AuthState.Success -> {
+            is AuthState.RegisterSuccess -> {
+                // Show success message and navigate to login
                 navController.navigate("login") {
                     popUpTo("register") { inclusive = true }
+                }
+            }
+            is AuthState.Success -> {
+                // This should not happen in Register flow, but just in case
+                navController.navigate("login") {
+                    popUpTo("welcome") { inclusive = true }
                 }
             }
             is AuthState.Error -> {
@@ -81,14 +88,16 @@ fun RegisterScreen(
     }
 
     fun validate(): Boolean {
-        Log.d("check email",email)
+        Log.d("check email", email)
         var valid = true
         usernameError = ValidationUtils.validateUsername(username).let { if (it is com.example.dacs3.util.ValidationResult.Error) it.message else null }
-//        emailError = ValidationUtils.validateEmail(email).let { if (it is com.example.dacs3.util.ValidationResult.Error) it.message else null }
+        emailError = ValidationUtils.validateEmail(email).let { if (it is com.example.dacs3.util.ValidationResult.Error) it.message else null }
         contactNumberError = ValidationUtils.validatePhone(contactNumber).let { if (it is com.example.dacs3.util.ValidationResult.Error) it.message else null }
-//        passwordError = ValidationUtils.validatePassword(password).let { if (it is com.example.dacs3.util.ValidationResult.Error) it.message else null }
+        passwordError = ValidationUtils.validatePassword(password).let { if (it is com.example.dacs3.util.ValidationResult.Error) it.message else null }
         confirmPasswordError = if (confirmPassword != password) "Passwords do not match" else null
-        if (usernameError != null  || contactNumberError != null || passwordError != null || confirmPasswordError != null) valid = false
+        
+        if (usernameError != null || emailError != null || contactNumberError != null || passwordError != null || confirmPasswordError != null) 
+            valid = false
         return valid
     }
 
@@ -245,7 +254,7 @@ fun RegisterScreen(
             Button(
                 onClick = {
                     if (validate()) {
-                        viewModel.register(username)
+                        viewModel.register(username, email, password)
                     }
                 },
                 modifier = Modifier

@@ -16,12 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.dacs3.navigation.AppNavigation
+import com.example.dacs3.ui.auth.AuthViewModel
 import com.example.dacs3.ui.theme.DACS3Theme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -40,10 +42,16 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainAppScaffold() {
+fun MainAppScaffold(
+    authViewModel: AuthViewModel = hiltViewModel()
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    
+    // Check if user is logged in to determine start destination
+    val isLoggedIn = authViewModel.checkLoggedInStatus()
+    val startDestination = if (isLoggedIn) "home" else "welcome"
     
     // Define screens that should show bottom navigation
     val showBottomBar by remember(currentDestination) {
@@ -183,7 +191,10 @@ fun MainAppScaffold() {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            AppNavigation(navController = navController)
+            AppNavigation(
+                navController = navController,
+                startDestination = startDestination
+            )
         }
     }
 }

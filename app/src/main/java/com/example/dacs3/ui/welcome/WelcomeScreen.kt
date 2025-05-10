@@ -48,7 +48,7 @@ fun WelcomeScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "Welcome to DACS3",
+            text = "Welcome  ",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.scale(scale)

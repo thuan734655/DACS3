@@ -2,6 +2,7 @@ package com.example.dacs3.di
 
 import android.content.Context
 import com.example.dacs3.data.local.*
+import com.example.dacs3.data.session.SessionManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,6 +18,12 @@ object DatabaseModule {
     @Provides
     fun provideWorkspaceDatabase(@ApplicationContext context: Context): WorkspaceDatabase {
         return WorkspaceDatabase.getDatabase(context)
+    }
+    
+    @Singleton
+    @Provides
+    fun provideSessionManager(@ApplicationContext context: Context): SessionManager {
+        return SessionManager(context)
     }
     
     @Provides

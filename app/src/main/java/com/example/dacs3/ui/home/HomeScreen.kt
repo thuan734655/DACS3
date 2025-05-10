@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -39,11 +40,14 @@ fun HomeScreen(
     onNavigateToTask: (String) -> Unit = {},
     onNavigateToKanban: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     userId: String? = null // This would be from login/auth flow
 ) {
     val currentUser by viewModel.currentUser.collectAsState()
     val workspaces by viewModel.userWorkspaces.collectAsState(initial = emptyList())
+    val selectedWorkspace by viewModel.selectedWorkspace.collectAsState()
     val channels by viewModel.channels.collectAsState(initial = emptyList())
+    val workspaceChannels by viewModel.workspaceChannels.collectAsState(initial = emptyList())
     val directMessageContacts by viewModel.directMessageContacts.collectAsState()
     val unreadCount by viewModel.unreadMessageCount.collectAsState()
     val tasks by viewModel.userTasks.collectAsState(initial = emptyList())
@@ -55,6 +59,7 @@ fun HomeScreen(
     var showCreateChannelDialog by remember { mutableStateOf(false) }
     var showCreateTaskDialog by remember { mutableStateOf(false) }
     var showCreateEpicDialog by remember { mutableStateOf(false) }
+    var showWorkspaceSelectorDialog by remember { mutableStateOf(false) }
     var selectedWorkspaceForChannel by remember { mutableStateOf<WorkspaceEntity?>(null) }
 
     // Set user ID for fetching data
@@ -73,6 +78,23 @@ fun HomeScreen(
         }
     }
 
+    // Workspace selector dialog
+    if (showWorkspaceSelectorDialog) {
+        WorkspaceSelectorDialog(
+            workspaces = workspaces,
+            selectedWorkspaceId = viewModel.selectedWorkspaceId.collectAsState().value,
+            onDismiss = { showWorkspaceSelectorDialog = false },
+            onWorkspaceSelected = { workspaceId ->
+                viewModel.selectWorkspace(workspaceId)
+                showWorkspaceSelectorDialog = false
+            },
+            onCreateWorkspace = { 
+                showWorkspaceSelectorDialog = false
+                showCreateWorkspaceDialog = true 
+            }
+        )
+    }
+    
     // Create workspace dialog
     if (showCreateWorkspaceDialog) {
         CreateWorkspaceDialog(
@@ -136,14 +158,6 @@ fun HomeScreen(
             .fillMaxSize()
             .background(Color(0xFFF8F8FC))
     ) {
-        // Loading indicator
-        if (isLoading) {
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color(0xFF6B4EFF)
-            )
-        }
-        
         // Main content in a white card
         Card(
             modifier = Modifier
@@ -157,18 +171,18 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 8.dp, vertical = 8.dp)
-            ) {
-                // Header
-                WorkspaceHeader(
-                    userName = currentUser?.username ?: "User",
-                    onProfileClick = onNavigateToProfile
+    ) {
+        // Header
+        WorkspaceHeader(
+                    workspace = selectedWorkspace,
+                    onWorkspaceClick = { showWorkspaceSelectorDialog = true },
+                    onNotificationClick = onNavigateToNotifications
                 )
                 
                 when (selectedTab) {
                     HomeTab.HOME -> HomeContent(
                         tasks = tasks,
-                        unreadChannels = channels.filter { it.unreadCount > 0 },
-                        channels = channels,
+                        channels = workspaceChannels,
                         directMessageContacts = directMessageContacts,
                         onTaskClick = onNavigateToTask,
                         onChannelClick = onNavigateToChannel,
@@ -178,7 +192,7 @@ fun HomeScreen(
                         onCreateEpic = { showCreateEpicDialog = true }
                     )
                     HomeTab.CHAT -> ChatContent(
-                        channels = channels,
+                        channels = workspaceChannels,
                         directMessageContacts = directMessageContacts,
                         workspaces = workspaces,
                         onChannelClick = onNavigateToChannel,
@@ -219,7 +233,6 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     tasks: List<TaskEntity>,
-    unreadChannels: List<ChannelEntity>,
     channels: List<ChannelEntity>,
     directMessageContacts: List<UserEntity>,
     onTaskClick: (String) -> Unit,
@@ -261,14 +274,6 @@ private fun HomeContent(
             )
         }
                 
-        // Unreads section
-        item {
-            UnreadsSection(
-                unreadChannels = unreadChannels,
-                onChannelClick = onChannelClick
-            )
-        }
-        
         // Channels section 
         item {
             ChannelsSection(
@@ -1050,17 +1055,19 @@ private fun ActionButton(
 
 @Composable
 private fun WorkspaceHeader(
-    userName: String,
+    workspace: WorkspaceEntity?,
     modifier: Modifier = Modifier,
-    onProfileClick: () -> Unit = {}
+    onWorkspaceClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {}
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .clickable(onClick = onWorkspaceClick)
             .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // User avatar
+        // Workspace icon
         Box(
             modifier = Modifier
                 .size(44.dp)
@@ -1068,32 +1075,23 @@ private fun WorkspaceHeader(
                 .background(
                     brush = Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF9E8CFF),
-                            Color(0xFF7B6AF9)
+                            Color(0xFF6B4EFF),
+                            Color(0xFF9E8CFF)
                         )
                     )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (workspace != null) {
+                Text(
+                    text = workspace.name.take(1).uppercase(),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
                 )
-                .padding(2.dp)
-                .clip(CircleShape)
-                .background(Color.White),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFF9E8CFF),
-                                Color(0xFF7B6AF9)
-                            )
-                        )
-                    ),
-            contentAlignment = Alignment.Center
-        ) {
+            } else {
             Icon(
-                imageVector = Icons.Default.Person,
+                    imageVector = Icons.Default.Business,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(22.dp)
@@ -1101,39 +1099,172 @@ private fun WorkspaceHeader(
             }
         }
         
-        // Username and workspace info
+        // Workspace info
         Column(
             modifier = Modifier
                 .padding(start = 12.dp)
                 .weight(1f)
         ) {
             Text(
-                text = "Hello $userName",
+                text = workspace?.name ?: "Select Workspace",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                text = "Your Workspace",
+                text = workspace?.description ?: "Tap to choose a workspace",
                 fontSize = 14.sp,
-                color = Color.Gray
+                color = Color.Gray,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
         
-        // Profile/settings icon
+        // Dropdown indicator
+        Icon(
+            imageVector = Icons.Default.KeyboardArrowDown,
+            contentDescription = "Select workspace",
+            tint = Color(0xFF6B4EFF),
+            modifier = Modifier.padding(end = 12.dp)
+        )
+        
+        // Notification icon
         Box(
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
                 .background(Color(0xFF6B4EFF))
-                .clickable(onClick = onProfileClick)
+                .clickable(onClick = onNotificationClick)
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Profile",
+                imageVector = Icons.Default.Notifications,
+                contentDescription = "Notifications",
                 tint = Color.White,
                 modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun WorkspaceSelectorDialog(
+    workspaces: List<WorkspaceEntity>,
+    selectedWorkspaceId: String?,
+    onDismiss: () -> Unit,
+    onWorkspaceSelected: (String) -> Unit,
+    onCreateWorkspace: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Workspace") },
+        text = {
+    Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+            ) {
+                if (workspaces.isEmpty()) {
+                    Text(
+                        text = "No workspaces available. Create a new one to get started.",
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                } else {
+                    LazyColumn {
+                        items(workspaces) { workspace ->
+                            WorkspaceSelectionItem(
+                                workspace = workspace,
+                                isSelected = workspace.workspaceId == selectedWorkspaceId,
+                                onClick = { onWorkspaceSelected(workspace.workspaceId) }
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Button(
+                    onClick = onCreateWorkspace,
+        modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Create New Workspace")
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun WorkspaceSelectionItem(
+    workspace: WorkspaceEntity,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Workspace icon
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF6B4EFF),
+                            Color(0xFF9E8CFF)
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = workspace.name.take(1).uppercase(),
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        
+        Spacer(modifier = Modifier.width(16.dp))
+        
+        // Workspace info
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = workspace.name,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = workspace.description,
+                color = Color.Gray,
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        
+        // Selected indicator
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = "Selected",
+                tint = Color(0xFF6B4EFF)
             )
         }
     }
@@ -1308,27 +1439,18 @@ private fun ChannelsSection(
             isExpanded = true
         )
         
-        if (channels.isNotEmpty()) {
-            channels.take(3).forEach { channel ->
+        if (channels.isEmpty()) {
+            Text(
+                text = "No channels in this workspace yet",
+                fontSize = 14.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+            )
+        } else {
+        channels.forEach { channel ->
                 ChannelItem(
                     channel = channel,
                     onClick = { onChannelClick(channel.channelId) }
-                )
-            }
-        } else {
-            // Show placeholder channels to match design
-            repeat(3) { i ->
-                ChannelItem(
-                    channel = ChannelEntity(
-                        channelId = "placeholder$i",
-                        name = "abc-xyz",
-                        description = "Placeholder",
-                        workspaceId = "workspace1",
-                        createdBy = "user1",
-                        isPrivate = false,
-                        unreadCount = 0
-                    ),
-                    onClick = {}
                 )
             }
         }
@@ -1375,19 +1497,21 @@ private fun DirectMessagesSection(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
         )
         
-        // Show Ali Sarraf 4 times to match the design
-        repeat(4) {
-            val aliSarraf = users.find { it.username == "Ali Sarraf" } ?: UserEntity(
-                userId = "user2",
-                username = "Ali Sarraf",
-                avatarUrl = null,
-                isOnline = true
+        // Display actual users instead of mock data
+        if (users.isEmpty()) {
+        Text(
+                text = "No direct messages yet",
+            fontSize = 14.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
             )
-            
-            DirectMessageItem(
-                user = aliSarraf,
-                onClick = { onUserClick(aliSarraf.userId) }
-            )
+        } else {
+            users.forEach { user ->
+                DirectMessageItem(
+                    user = user,
+                    onClick = { onUserClick(user.userId) }
+                )
+            }
         }
     }
 }
@@ -1543,9 +1667,9 @@ private fun BottomNavigationBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
             // Home icon
             BottomNavItem(
                 icon = Icons.Default.Home,
@@ -1917,6 +2041,7 @@ private fun CreateEpicDialog(
     viewModel: WorkspaceViewModel = hiltViewModel()
 ) {
     val selectedWorkspaceId by viewModel.selectedWorkspaceId.collectAsState()
+    val currentUser by viewModel.currentUser.collectAsState()
     
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -1925,10 +2050,17 @@ private fun CreateEpicDialog(
     
     var selectedWorkspace by remember { mutableStateOf<WorkspaceEntity?>(null) }
     
+    // Filter workspaces where current user is a leader
+    val leaderWorkspaces = remember(workspaces, currentUser) {
+        workspaces.filter { workspace ->
+            workspace.createdBy == currentUser?.userId
+        }
+    }
+    
     // Update values when selection changes in ViewModel
     LaunchedEffect(selectedWorkspaceId) {
         selectedWorkspaceId?.let { wsId ->
-            selectedWorkspace = workspaces.find { it.workspaceId == wsId }
+            selectedWorkspace = leaderWorkspaces.find { it.workspaceId == wsId }
         }
     }
     
@@ -1963,15 +2095,22 @@ private fun CreateEpicDialog(
                             onDismissRequest = { expandedWorkspace = false },
                             modifier = Modifier.fillMaxWidth(0.9f)
                         ) {
-                            workspaces.forEach { workspace ->
+                            if (leaderWorkspaces.isEmpty()) {
                                 DropdownMenuItem(
-                                    text = { Text(workspace.name) },
-                                    onClick = {
-                                        viewModel.selectWorkspace(workspace.workspaceId)
-                                        selectedWorkspace = workspace
-                                        expandedWorkspace = false
-                                    }
+                                    text = { Text("No workspaces found where you are leader") },
+                                    onClick = { expandedWorkspace = false }
                                 )
+                            } else {
+                                leaderWorkspaces.forEach { workspace ->
+                                    DropdownMenuItem(
+                                        text = { Text(workspace.name) },
+                                        onClick = {
+                                            viewModel.selectWorkspace(workspace.workspaceId)
+                                            selectedWorkspace = workspace
+                                            expandedWorkspace = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

@@ -29,6 +29,8 @@ class WorkspaceRepository @Inject constructor(
     
     suspend fun insertUser(user: UserEntity) = userDao.insertUser(user)
     
+    suspend fun updateUser(user: UserEntity) = userDao.updateUser(user)
+    
     suspend fun insertUsers(users: List<UserEntity>) = userDao.insertUsers(users)
     
     // Account related
@@ -51,6 +53,9 @@ class WorkspaceRepository @Inject constructor(
     
     // Channel related
     fun getAllChannels(): Flow<List<ChannelEntity>> = channelDao.getAllChannels()
+    
+    fun getChannelsByWorkspace(workspaceId: String): Flow<List<ChannelEntity>> = 
+        channelDao.getChannelsByWorkspaceId(workspaceId)
     
     suspend fun getChannelById(channelId: String): ChannelEntity? = channelDao.getChannelById(channelId)
     
@@ -106,6 +111,15 @@ class WorkspaceRepository @Inject constructor(
     suspend fun insertNotification(notification: NotificationEntity) = 
         notificationDao.insertNotification(notification)
     
+    suspend fun markNotificationAsRead(notificationId: String) =
+        notificationDao.markNotificationAsRead(notificationId)
+    
+    suspend fun markAllNotificationsAsRead(userId: String) =
+        notificationDao.markAllNotificationsAsRead(userId)
+    
+    suspend fun deleteNotification(notification: NotificationEntity) =
+        notificationDao.deleteNotification(notification)
+    
     // Invitation related
     fun getInvitationsForUser(userId: String): Flow<List<InvitationEntity>> = 
         invitationDao.getInvitationsForUser(userId)
@@ -129,7 +143,102 @@ class WorkspaceRepository @Inject constructor(
     
     // Helper methods for seeding data
     suspend fun seedInitialData() {
-        // No longer pre-populating data as per requirement
-        // Data will be created through user interactions
+        // Completely empty implementation - no data will be seeded at all
+    }
+    
+    // Helper method to safely insert workspace with proper transaction
+    suspend fun safeInsertWorkspace(workspace: WorkspaceEntity, userId: String) {
+        // First ensure the user exists
+        val user = getUserById(userId) ?: throw IllegalStateException("User $userId does not exist")
+        
+        // Insert the workspace in a transaction
+        workspaceDao.insertWorkspace(workspace)
+        
+        // Add membership in the same transaction
+        workspaceUserMembershipDao.insertMembership(
+            WorkspaceUserMembership(
+                userId = userId,
+                workspaceId = workspace.workspaceId,
+                role = "admin"
+            )
+        )
+    }
+    
+    // Helper method to safely insert channel with proper relationships
+    suspend fun safeInsertChannel(channel: ChannelEntity, userId: String) {
+        // First ensure user and workspace exist
+        val user = getUserById(userId) ?: throw IllegalStateException("User $userId does not exist")
+        val workspace = getWorkspaceById(channel.workspaceId) 
+            ?: throw IllegalStateException("Workspace ${channel.workspaceId} does not exist")
+        
+        // Insert the channel
+        channelDao.insertChannel(channel)
+        
+        // Add the creator as a member
+        userChannelMembershipDao.insertMembership(
+            UserChannelMembership(
+                userId = userId,
+                channelId = channel.channelId,
+                joinedAt = System.currentTimeMillis(),
+                role = "admin"
+            )
+        )
+    }
+    
+    // Helper method to safely insert message with proper relationships
+    suspend fun safeInsertMessage(message: MessageEntity) {
+        // Validate sender exists
+        getUserById(message.senderId) ?: throw IllegalStateException("Sender ${message.senderId} does not exist")
+        
+        // If it's a direct message, validate receiver
+        message.receiverId?.let { receiverId ->
+            getUserById(receiverId) ?: throw IllegalStateException("Receiver $receiverId does not exist")
+        }
+        
+        // If it's a channel message, validate channel
+        message.channelId?.let { channelId ->
+            getChannelById(channelId) ?: throw IllegalStateException("Channel $channelId does not exist")
+        }
+        
+        // Insert the message
+        messageDao.insertMessage(message)
+    }
+    
+    // Helper method to handle workspace and membership creation in a single transaction
+    suspend fun createWorkspaceWithMembership(workspace: WorkspaceEntity, userId: String) {
+        try {
+            // First check if user exists
+            val user = getUserById(userId) ?: throw IllegalStateException("User $userId does not exist")
+            
+            // Log for debugging
+            android.util.Log.d("WorkspaceRepository", "Creating workspace with ID: ${workspace.workspaceId} for user ID: ${user.userId}")
+            
+            // Insert the workspace
+            insertWorkspace(workspace)
+            
+            // Small delay to ensure the workspace is created
+            kotlinx.coroutines.delay(300)
+            
+            // Verify workspace was inserted
+            val createdWorkspace = getWorkspaceById(workspace.workspaceId)
+            if (createdWorkspace == null) {
+                throw IllegalStateException("Failed to create workspace with ID: ${workspace.workspaceId}")
+            }
+            
+            // Insert membership
+            val membership = WorkspaceUserMembership(
+                userId = userId,
+                workspaceId = workspace.workspaceId,
+                role = "admin"
+            )
+            
+            insertWorkspaceUserMembership(membership)
+            
+            // Log success
+            android.util.Log.d("WorkspaceRepository", "Successfully created workspace and membership")
+        } catch (e: Exception) {
+            android.util.Log.e("WorkspaceRepository", "Error in createWorkspaceWithMembership: ${e.message}")
+            throw e
+        }
     }
 } 

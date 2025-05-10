@@ -22,7 +22,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         UserChannelMembership::class,
         WorkspaceUserMembership::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = false
 )
 abstract class WorkspaceDatabase : RoomDatabase() {
@@ -97,14 +97,19 @@ abstract class WorkspaceDatabase : RoomDatabase() {
         
         fun getDatabase(context: Context): WorkspaceDatabase {
             return INSTANCE ?: synchronized(this) {
+                // Instead of deleting database on each run, let's use proper migration
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     WorkspaceDatabase::class.java,
                     "workspace_database"
                 )
-                    .fallbackToDestructiveMigration() // This will be used if migration fails
-                    .addMigrations(MIGRATION_2_3)    // Try migration first
+                    .fallbackToDestructiveMigration() // Only use if migration fails
+                    .allowMainThreadQueries() // Only for immediate init purposes
                     .build()
+                
+                // Set foreign key constraints
+                instance.query("PRAGMA foreign_keys = ON", null)
+                
                 INSTANCE = instance
                 instance
             }
