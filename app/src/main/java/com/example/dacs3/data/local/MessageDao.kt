@@ -28,4 +28,10 @@ interface MessageDao {
     
     @Query("UPDATE messages SET isRead = 1 WHERE receiverId = :userId")
     suspend fun markAllMessagesAsRead(userId: String)
+    
+    @Query("SELECT COUNT(*) FROM messages WHERE channelId = :channelId")
+    suspend fun getMessageCountByChannelId(channelId: String): Int
+    
+    @Query("SELECT COUNT(*) FROM messages WHERE (senderId = :userId1 AND receiverId = :userId2) OR (senderId = :userId2 AND receiverId = :userId1)")
+    suspend fun getDirectMessageCount(userId1: String, userId2: String): Int
 } 

@@ -22,4 +22,13 @@ interface ChannelDao {
     
     @Query("DELETE FROM channels WHERE channelId = :channelId")
     suspend fun deleteChannel(channelId: String)
+    
+    @Query("SELECT * FROM channels WHERE workspaceId = :workspaceId")
+    fun getChannelsByWorkspaceId(workspaceId: String): Flow<List<ChannelEntity>>
+    
+    @Query("SELECT COUNT(*) FROM channels WHERE workspaceId = :workspaceId")
+    suspend fun getChannelCountByWorkspaceId(workspaceId: String): Int
+    
+    @Query("SELECT COUNT(*) FROM channels")
+    suspend fun getChannelCount(): Int
 } 

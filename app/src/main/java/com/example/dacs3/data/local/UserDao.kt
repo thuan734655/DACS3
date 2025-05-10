@@ -8,6 +8,9 @@ interface UserDao {
     @Query("SELECT * FROM users")
     fun getAllUsers(): Flow<List<UserEntity>>
     
+    @Query("SELECT * FROM users")
+    suspend fun getAllUsersSync(): List<UserEntity>
+    
     @Query("SELECT * FROM users WHERE userId = :userId")
     suspend fun getUserById(userId: String): UserEntity?
     

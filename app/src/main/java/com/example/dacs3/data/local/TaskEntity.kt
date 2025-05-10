@@ -13,9 +13,18 @@ import androidx.room.PrimaryKey
             parentColumns = ["userId"],
             childColumns = ["createdBy"],
             onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = EpicEntity::class,
+            parentColumns = ["epicId"],
+            childColumns = ["epicId"],
+            onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("createdBy")]
+    indices = [
+        Index("createdBy"),
+        Index("epicId")
+    ]
 )
 data class TaskEntity(
     @PrimaryKey val taskId: String,
@@ -28,5 +37,5 @@ data class TaskEntity(
     val status: Status = Status.TO_DO,
     val progress: Int = 0, // 0-100
     val assignedToUserId: String? = null,
-    val epicId: String? = null
+    val epicId: String
 ) 
