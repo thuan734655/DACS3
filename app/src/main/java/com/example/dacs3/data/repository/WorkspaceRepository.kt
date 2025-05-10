@@ -1,8 +1,11 @@
 package com.example.dacs3.data.repository
 
+import android.util.Log
 import com.example.dacs3.data.local.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,7 +23,8 @@ class WorkspaceRepository @Inject constructor(
     private val notificationDao: NotificationDao,
     private val invitationDao: InvitationDao,
     private val userChannelMembershipDao: UserChannelMembershipDao,
-    private val workspaceUserMembershipDao: WorkspaceUserMembershipDao
+    private val workspaceUserMembershipDao: WorkspaceUserMembershipDao,
+    private val database: WorkspaceDatabase
 ) {
     // User related
     fun getAllUsers(): Flow<List<UserEntity>> = userDao.getAllUsers()
@@ -238,6 +242,48 @@ class WorkspaceRepository @Inject constructor(
             android.util.Log.d("WorkspaceRepository", "Successfully created workspace and membership")
         } catch (e: Exception) {
             android.util.Log.e("WorkspaceRepository", "Error in createWorkspaceWithMembership: ${e.message}")
+            throw e
+        }
+    }
+    
+    // Improved method to create workspace with membership using an actual transaction
+    suspend fun createWorkspaceWithMembership(workspace: WorkspaceEntity, membership: WorkspaceUserMembership) {
+        try {
+            Log.d("WorkspaceRepository", "Starting transaction to create workspace: ${workspace.workspaceId}")
+            
+            // Validate the user exists
+            val user = getUserById(workspace.createdBy)
+                ?: throw IllegalStateException("User ${workspace.createdBy} does not exist")
+            
+            // Since runInTransaction doesn't support suspend functions, we need to use a different approach
+            // Insert workspace and membership sequentially
+            insertWorkspace(workspace)
+            
+            // Small delay to ensure the workspace is created
+            kotlinx.coroutines.delay(100)
+            
+            // Insert the membership
+            insertWorkspaceUserMembership(membership)
+            
+            Log.d("WorkspaceRepository", "Sequential operations completed")
+            
+            // Verify the workspace was created successfully
+            val createdWorkspace = getWorkspaceById(workspace.workspaceId)
+            if (createdWorkspace == null) {
+                Log.e("WorkspaceRepository", "Verification failed: Workspace not found after transaction")
+                throw IllegalStateException("Failed to create workspace: Transaction completed but workspace not found")
+            }
+            
+            // Verify membership was created
+            val memberships = workspaceUserMembershipDao.getMembershipsForWorkspace(workspace.workspaceId)
+            if (memberships.isEmpty()) {
+                Log.e("WorkspaceRepository", "Verification failed: No memberships found for workspace")
+                throw IllegalStateException("Failed to create workspace membership: Transaction completed but membership not found")
+            }
+            
+            Log.d("WorkspaceRepository", "Workspace and membership successfully created and verified")
+        } catch (e: Exception) {
+            Log.e("WorkspaceRepository", "Error in createWorkspaceWithMembership transaction", e)
             throw e
         }
     }

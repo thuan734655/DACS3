@@ -1,9 +1,12 @@
 package com.example.dacs3.ui.workspace
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.local.WorkspaceDao
 import com.example.dacs3.data.local.WorkspaceEntity
+import com.example.dacs3.data.local.WorkspaceUserMembership
+import com.example.dacs3.data.repository.WorkspaceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class WorkspaceListViewModel @Inject constructor(
-    private val workspaceDao: WorkspaceDao
+    private val workspaceDao: WorkspaceDao,
+    private val repository: WorkspaceRepository
 ) : ViewModel() {
     
     val workspaces = workspaceDao.getAllWorkspaces()
@@ -24,58 +28,50 @@ class WorkspaceListViewModel @Inject constructor(
     
     init {
         viewModelScope.launch {
-            // Create sample workspaces if none exist
-            val workspaceCount = workspaceDao.getWorkspaceCount()
-            if (workspaceCount == 0) {
-                createSampleWorkspaces()
-            }
+            // We no longer need to create sample workspaces
+            // Each user should create their own workspaces
         }
-    }
-    
-    private suspend fun createSampleWorkspaces() {
-        _isLoading.value = true
-        
-        val sampleWorkspaces = listOf(
-            WorkspaceEntity(
-                workspaceId = "workspace1",
-                name = "Development Team",
-                description = "Main workspace for the software development team",
-                createdBy = "user1",
-                leaderId = "user1"
-            ),
-            WorkspaceEntity(
-                workspaceId = "workspace2",
-                name = "Design Team",
-                description = "Workspace for the UI/UX design team",
-                createdBy = "user2",
-                leaderId = "user2"
-            ),
-            WorkspaceEntity(
-                workspaceId = "workspace3",
-                name = "Marketing",
-                description = "Workspace for the marketing and sales team",
-                createdBy = "user1",
-                leaderId = "user3"
-            )
-        )
-        
-        workspaceDao.insertWorkspaces(sampleWorkspaces)
-        _isLoading.value = false
     }
     
     fun createWorkspace(name: String, description: String, currentUserId: String): String {
         val workspaceId = UUID.randomUUID().toString()
         
         viewModelScope.launch {
-            val newWorkspace = WorkspaceEntity(
-                workspaceId = workspaceId,
-                name = name,
-                description = description,
-                createdBy = currentUserId,
-                leaderId = currentUserId
-            )
-            
-            workspaceDao.insertWorkspace(newWorkspace)
+            try {
+                Log.d("Workspace", "Creating workspace with ID: $workspaceId, created by: $currentUserId")
+                
+                // Verify user exists
+                val user = repository.getUserById(currentUserId)
+                if (user == null) {
+                    Log.e("Workspace", "User with ID $currentUserId not found")
+                    throw IllegalStateException("User not found")
+                }
+                
+                // Create workspace entity
+                val newWorkspace = WorkspaceEntity(
+                    workspaceId = workspaceId,
+                    name = name,
+                    description = description,
+                    createdBy = currentUserId,
+                    leaderId = currentUserId
+                )
+                
+                // Create workspace membership (the creator becomes a member automatically)
+                val membership = WorkspaceUserMembership(
+                    userId = currentUserId,
+                    workspaceId = workspaceId,
+                    role = "ADMIN", // Creator is admin by default
+                    joinedAt = System.currentTimeMillis()
+                )
+                
+                // Use transaction to ensure data consistency
+                repository.createWorkspaceWithMembership(newWorkspace, membership)
+                
+                Log.d("Workspace", "Workspace created successfully")
+            } catch (e: Exception) {
+                Log.e("Workspace", "Error creating workspace", e)
+                throw e
+            }
         }
         
         return workspaceId

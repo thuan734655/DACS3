@@ -34,4 +34,7 @@ interface WorkspaceUserMembershipDao {
     
     @Query("SELECT COUNT(*) FROM workspace_user_memberships WHERE workspaceId = :workspaceId")
     suspend fun getMemberCountByWorkspaceId(workspaceId: String): Int
+    
+    @Query("SELECT * FROM workspace_user_memberships WHERE workspaceId = :workspaceId")
+    suspend fun getMembershipsForWorkspace(workspaceId: String): List<WorkspaceUserMembership>
 } 

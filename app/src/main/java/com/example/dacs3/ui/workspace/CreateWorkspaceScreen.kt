@@ -16,19 +16,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.dacs3.ui.auth.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateWorkspaceScreen(
     viewModel: WorkspaceListViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
     onWorkspaceCreated: (String) -> Unit = {},
     onNavigateBack: () -> Unit = {}
 ) {
     var workspaceName by remember { mutableStateOf("") }
     var workspaceDescription by remember { mutableStateOf("") }
     var isCreating by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     
-    val isFormValid = workspaceName.isNotBlank() && workspaceDescription.isNotBlank()
+    val currentUserId by authViewModel.currentUserId.collectAsState()
+    val isFormValid = workspaceName.isNotBlank() && workspaceDescription.isNotBlank() && currentUserId != null
     
     Column(
         modifier = Modifier
@@ -120,6 +124,15 @@ fun CreateWorkspaceScreen(
                 }
             }
             
+            // Show error message if any
+            errorMessage?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+            
             Spacer(modifier = Modifier.height(24.dp))
             
             // Create button
@@ -127,13 +140,26 @@ fun CreateWorkspaceScreen(
                 onClick = {
                     if (isFormValid && !isCreating) {
                         isCreating = true
-                        // Use a hardcoded user ID for now
-                        val workspaceId = viewModel.createWorkspace(
-                            name = workspaceName.trim(),
-                            description = workspaceDescription.trim(),
-                            currentUserId = "user1"
-                        )
-                        onWorkspaceCreated(workspaceId)
+                        errorMessage = null
+                        
+                        try {
+                            // Use current user ID instead of hardcoded value
+                            val userId = currentUserId ?: run {
+                                errorMessage = "You must be logged in to create a workspace"
+                                isCreating = false
+                                return@Button
+                            }
+                            
+                            val workspaceId = viewModel.createWorkspace(
+                                name = workspaceName.trim(),
+                                description = workspaceDescription.trim(),
+                                currentUserId = userId
+                            )
+                            onWorkspaceCreated(workspaceId)
+                        } catch (e: Exception) {
+                            errorMessage = "Error creating workspace: ${e.message}"
+                            isCreating = false
+                        }
                     }
                 },
                 enabled = isFormValid && !isCreating,

@@ -175,7 +175,6 @@ fun AppNavigation(
         ) { backStackEntry ->
             val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
             CreateEpicScreen(
-                workspaceId = workspaceId,
                 onEpicCreated = { epicId ->
                     navController.navigate("epic/$epicId") {
                         popUpTo("epics/$workspaceId")

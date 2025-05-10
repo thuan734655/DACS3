@@ -22,4 +22,7 @@ interface UserChannelMembershipDao {
     
     @Query("SELECT COUNT(*) FROM user_channel_memberships WHERE channelId = :channelId")
     suspend fun getChannelMemberCount(channelId: String): Int
+    
+    @Query("SELECT COUNT(*) > 0 FROM user_channel_memberships WHERE userId = :userId AND channelId = :channelId")
+    suspend fun isUserMemberOfChannel(userId: String, channelId: String): Boolean
 } 

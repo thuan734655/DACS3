@@ -14,19 +14,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.dacs3.ui.auth.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateChannelScreen(
     workspaceId: String,
     viewModel: CreateChannelViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
     onChannelCreated: (String) -> Unit = {},
     onNavigateBack: () -> Unit = {}
 ) {
     var channelName by remember { mutableStateOf("") }
     var channelDescription by remember { mutableStateOf("") }
     var isPrivate by remember { mutableStateOf(false) }
-    var isCreating by remember { mutableStateOf(false) }
+    
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
     
     // Set the workspace ID when the screen is created
     LaunchedEffect(workspaceId) {
@@ -170,14 +174,21 @@ fun CreateChannelScreen(
                 }
             }
             
+            // Show error message if any
+            error?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+            
             Spacer(modifier = Modifier.height(24.dp))
             
             // Create button
             Button(
                 onClick = {
-                    if (isFormValid && !isCreating) {
-                        isCreating = true
-                        
+                    if (isFormValid && !isLoading) {
                         viewModel.createChannel(
                             name = channelName.trim(),
                             description = channelDescription.trim(),
@@ -187,7 +198,7 @@ fun CreateChannelScreen(
                         }
                     }
                 },
-                enabled = isFormValid && !isCreating,
+                enabled = isFormValid && !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -197,7 +208,7 @@ fun CreateChannelScreen(
                     disabledContainerColor = Color(0xFF6B4EFF).copy(alpha = 0.5f)
                 )
             ) {
-                if (isCreating) {
+                if (isLoading) {
                     CircularProgressIndicator(
                         color = Color.White,
                         modifier = Modifier.size(24.dp),

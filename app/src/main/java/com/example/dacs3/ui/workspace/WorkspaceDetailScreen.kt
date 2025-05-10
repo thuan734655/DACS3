@@ -37,6 +37,7 @@ fun WorkspaceDetailScreen(
     val workspace by viewModel.workspace.collectAsState(initial = null)
     val channels by viewModel.channels.collectAsState(initial = emptyList())
     val members by viewModel.members.collectAsState(initial = emptyList())
+    val taskCount by viewModel.taskCount.collectAsState()
     
     // Set the workspace ID when the screen is created
     LaunchedEffect(workspaceId) {
@@ -88,7 +89,12 @@ fun WorkspaceDetailScreen(
             ) {
                 // Workspace info section
                 item {
-                    WorkspaceInfoCard(workspace = ws)
+                    WorkspaceInfoCard(
+                        workspace = ws,
+                        memberCount = members.size,
+                        channelCount = channels.size,
+                        taskCount = taskCount
+                    )
                 }
                 
                 // Quick actions
@@ -170,7 +176,12 @@ fun WorkspaceDetailScreen(
 }
 
 @Composable
-private fun WorkspaceInfoCard(workspace: WorkspaceEntity) {
+private fun WorkspaceInfoCard(
+    workspace: WorkspaceEntity,
+    memberCount: Int,
+    channelCount: Int,
+    taskCount: Int
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -206,19 +217,19 @@ private fun WorkspaceInfoCard(workspace: WorkspaceEntity) {
                 InfoItem(
                     icon = Icons.Default.Group,
                     label = "Members",
-                    value = "12" // This would be dynamic in a real implementation
+                    value = memberCount.toString()
                 )
                 
                 InfoItem(
                     icon = Icons.Default.Tag,
                     label = "Channels",
-                    value = "5" // This would be dynamic in a real implementation
+                    value = channelCount.toString()
                 )
                 
                 InfoItem(
                     icon = Icons.Default.Task,
                     label = "Tasks",
-                    value = "24" // This would be dynamic in a real implementation
+                    value = taskCount.toString()
                 )
             }
         }

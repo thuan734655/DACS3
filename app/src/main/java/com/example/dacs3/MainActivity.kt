@@ -134,11 +134,11 @@ fun MainAppScaffold(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Dashboard,
-                                    contentDescription = "Projects"
+                                    contentDescription = "Workspaces"
                                 )
                             }
                         },
-                        label = { Text("Projects") },
+                        label = { Text("Workspaces") },
                         selected = currentDestination?.hierarchy?.any { 
                             it.route == "workspaces" || 
                             it.route?.startsWith("workspace") == true || 
