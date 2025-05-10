@@ -10,10 +10,12 @@ import com.example.dacs3.data.local.TaskDao
 import com.example.dacs3.data.local.TaskEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -50,7 +52,14 @@ class EpicDetailViewModel @Inject constructor(
     private val _editPriority = MutableStateFlow(3)
     val editPriority: StateFlow<Int> = _editPriority.asStateFlow()
     
+    private var taskLoadingJob: Job? = null
+    
     fun setEpicId(id: String) {
+        if (_epicId.value == id && _epic.value != null) {
+            // Already loaded this epic, don't reload
+            return
+        }
+        
         _epicId.value = id
         loadEpic(id)
         loadTasks(id)
@@ -59,6 +68,7 @@ class EpicDetailViewModel @Inject constructor(
     private fun loadEpic(epicId: String) {
         viewModelScope.launch {
             _isLoading.value = true
+            _error.value = null
             try {
                 val epic = epicDao.getEpicById(epicId)
                 _epic.value = epic
@@ -70,7 +80,6 @@ class EpicDetailViewModel @Inject constructor(
                     _editPriority.value = it.priority
                 }
                 
-                _error.value = null
             } catch (e: Exception) {
                 if (e is CancellationException) {
                     // Job cancellation is expected during view lifecycle changes, no need to show error
@@ -86,8 +95,18 @@ class EpicDetailViewModel @Inject constructor(
     }
     
     private fun loadTasks(epicId: String) {
-        viewModelScope.launch {
+        // Cancel previous job if active
+        taskLoadingJob?.cancel()
+        
+        taskLoadingJob = viewModelScope.launch {
             try {
+                // First try to get data directly for immediate display
+                val initialTasks = taskDao.getTasksByEpicSync(epicId)
+                if (initialTasks.isNotEmpty()) {
+                    _tasks.value = initialTasks
+                }
+                
+                // Then start observing for changes
                 taskDao.getTasksByEpic(epicId)
                     .catch { e ->
                         if (e is CancellationException) {
@@ -98,7 +117,7 @@ class EpicDetailViewModel @Inject constructor(
                             _error.value = "Failed to load tasks: ${e.message}"
                         }
                     }
-                    .collect { taskList ->
+                    .collectLatest { taskList ->
                         _tasks.value = taskList
                     }
             } catch (e: Exception) {
@@ -195,5 +214,10 @@ class EpicDetailViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+    
+    override fun onCleared() {
+        taskLoadingJob?.cancel()
+        super.onCleared()
     }
 } 

@@ -14,6 +14,9 @@ interface EpicDao {
     @Query("SELECT * FROM epics WHERE workspaceId = :workspaceId")
     fun getEpicsByWorkspace(workspaceId: String): Flow<List<EpicEntity>>
     
+    @Query("SELECT * FROM epics WHERE workspaceId = :workspaceId")
+    suspend fun getEpicsByWorkspaceSync(workspaceId: String): List<EpicEntity>
+    
     @Query("SELECT * FROM epics WHERE createdBy = :userId")
     fun getEpicsCreatedByUser(userId: String): Flow<List<EpicEntity>>
     

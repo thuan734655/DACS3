@@ -9,10 +9,12 @@ import com.example.dacs3.data.local.TaskDao
 import com.example.dacs3.data.local.TaskEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,7 +38,14 @@ class TaskListViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
     
+    private var taskLoadingJob: Job? = null
+    
     fun setEpicId(id: String) {
+        if (_epicId.value == id && _tasks.value.isNotEmpty()) {
+            // Already loaded data for this epic and have data, don't reload
+            return
+        }
+        
         _epicId.value = id
         loadEpic(id)
         loadTasks(id)
@@ -59,9 +68,21 @@ class TaskListViewModel @Inject constructor(
     }
     
     private fun loadTasks(epicId: String) {
-        viewModelScope.launch {
+        // Cancel previous job if active
+        taskLoadingJob?.cancel()
+        
+        taskLoadingJob = viewModelScope.launch {
             _isLoading.value = true
+            _error.value = null
+            
             try {
+                // First try to get data directly for immediate display
+                val initialTasks = taskDao.getTasksByEpicSync(epicId)
+                if (initialTasks.isNotEmpty()) {
+                    _tasks.value = initialTasks
+                }
+                
+                // Then start observing for changes
                 taskDao.getTasksByEpic(epicId)
                     .catch { e ->
                         if (e is CancellationException) {
@@ -72,9 +93,10 @@ class TaskListViewModel @Inject constructor(
                             _error.value = "Failed to load tasks: ${e.message}"
                         }
                     }
-                    .collect { taskList ->
+                    .collectLatest { taskList ->
                         _tasks.value = taskList
                         _error.value = null
+                        _isLoading.value = false
                     }
             } catch (e: Exception) {
                 if (e is CancellationException) {
@@ -83,10 +105,14 @@ class TaskListViewModel @Inject constructor(
                 } else {
                     Log.e("TaskListViewModel", "Error collecting tasks: ${e.message}")
                     _error.value = "Failed to load tasks: ${e.message}"
+                    _isLoading.value = false
                 }
-            } finally {
-                _isLoading.value = false
             }
         }
+    }
+    
+    override fun onCleared() {
+        taskLoadingJob?.cancel()
+        super.onCleared()
     }
 } 

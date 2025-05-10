@@ -17,6 +17,9 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE epicId = :epicId")
     fun getTasksByEpic(epicId: String): Flow<List<TaskEntity>>
     
+    @Query("SELECT * FROM tasks WHERE epicId = :epicId")
+    suspend fun getTasksByEpicSync(epicId: String): List<TaskEntity>
+    
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTask(task: TaskEntity)
     
