@@ -61,7 +61,7 @@ fun HomeScreen(
     var showCreateEpicDialog by remember { mutableStateOf(false) }
     var showWorkspaceSelectorDialog by remember { mutableStateOf(false) }
     var selectedWorkspaceForChannel by remember { mutableStateOf<WorkspaceEntity?>(null) }
-
+    
     // Set user ID for fetching data
     LaunchedEffect(userId) {
         userId?.let {
@@ -171,9 +171,9 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 8.dp, vertical = 8.dp)
-    ) {
-        // Header
-        WorkspaceHeader(
+            ) {
+                // Header
+                WorkspaceHeader(
                     workspace = selectedWorkspace,
                     onWorkspaceClick = { showWorkspaceSelectorDialog = true },
                     onNotificationClick = onNavigateToNotifications

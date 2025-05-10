@@ -14,6 +14,9 @@ interface BugDao {
     @Query("SELECT * FROM bugs WHERE taskId = :taskId")
     fun getBugsByTaskId(taskId: String): Flow<List<BugEntity>>
     
+    @Query("SELECT * FROM bugs WHERE taskId = :taskId")
+    suspend fun getBugsByTaskIdSync(taskId: String): List<BugEntity>
+    
     @Query("SELECT * FROM bugs WHERE createdBy = :userId")
     fun getBugsCreatedByUser(userId: String): Flow<List<BugEntity>>
     

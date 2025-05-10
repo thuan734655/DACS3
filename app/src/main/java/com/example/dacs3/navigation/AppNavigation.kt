@@ -261,10 +261,8 @@ fun AppNavigation(
             val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
             CreateBugScreen(
                 taskId = taskId,
-                onBugCreated = { bugId ->
-                    navController.navigate("bug/$bugId") {
-                        popUpTo("bugs/$taskId")
-                    }
+                onBugCreated = {
+                    navController.popBackStack()
                 },
                 onNavigateBack = { navController.popBackStack() }
             )
