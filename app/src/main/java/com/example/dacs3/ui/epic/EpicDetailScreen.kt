@@ -4,14 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,6 +30,16 @@ fun EpicDetailScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val tasks by viewModel.tasks.collectAsState()
+    val isEditMode by viewModel.isEditMode.collectAsState()
+    
+    // Edit fields
+    val editName by viewModel.editName.collectAsState()
+    val editDescription by viewModel.editDescription.collectAsState()
+    val editPriority by viewModel.editPriority.collectAsState()
+    
+    // Status selection
+    var statusExpanded by remember { mutableStateOf(false) }
+    val statusOptions = Status.values()
     
     // Load epic data when screen is created
     LaunchedEffect(epicId) {
@@ -58,17 +63,41 @@ fun EpicDetailScreen(
                 }
             },
             actions = {
-                IconButton(onClick = onNavigateToTasks) {
-                    Icon(
-                        imageVector = Icons.Default.List,
-                        contentDescription = "View Tasks"
-                    )
-                }
-                IconButton(onClick = onCreateTask) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Task"
-                    )
+                if (isEditMode) {
+                    // Save button
+                    IconButton(onClick = { viewModel.saveChanges() }) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = "Save Changes"
+                        )
+                    }
+                    // Cancel button
+                    IconButton(onClick = { viewModel.cancelEdit() }) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Cancel Editing"
+                        )
+                    }
+                } else {
+                    // Edit button
+                    IconButton(onClick = { viewModel.enterEditMode() }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Epic"
+                        )
+                    }
+                    IconButton(onClick = onNavigateToTasks) {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = "View Tasks"
+                        )
+                    }
+                    IconButton(onClick = onCreateTask) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Task"
+                        )
+                    }
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
@@ -115,28 +144,125 @@ fun EpicDetailScreen(
                             .padding(16.dp)
                     ) {
                         epicData?.let { epic ->
-                            Text(
-                                text = epic.name,
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            Text(
-                                text = epic.description,
-                                fontSize = 16.sp,
-                                color = Color.Gray
-                            )
-                            
-                            Spacer(modifier = Modifier.height(16.dp))
-                            
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                InfoItem(label = "Priority", value = getPriorityText(epic.priority))
-                                InfoItem(label = "Status", value = epic.status.name)
+                            if (isEditMode) {
+                                // Edit mode UI
+                                OutlinedTextField(
+                                    value = editName,
+                                    onValueChange = { viewModel.updateName(it) },
+                                    label = { Text("Epic Name") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
+                                )
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                OutlinedTextField(
+                                    value = editDescription,
+                                    onValueChange = { viewModel.updateDescription(it) },
+                                    label = { Text("Description") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    minLines = 3,
+                                    maxLines = 5
+                                )
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                Text(
+                                    text = "Priority: ${getPriorityText(editPriority)}",
+                                    fontWeight = FontWeight.Medium
+                                )
+                                
+                                Slider(
+                                    value = editPriority.toFloat(),
+                                    onValueChange = { viewModel.updatePriority(it.toInt()) },
+                                    valueRange = 1f..5f,
+                                    steps = 3,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color(0xFF6B4EFF),
+                                        activeTrackColor = Color(0xFF6B4EFF),
+                                        activeTickColor = Color(0xFF6B4EFF)
+                                    ),
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Low", fontSize = 12.sp, color = Color.Gray)
+                                    Text("Medium", fontSize = 12.sp, color = Color.Gray)
+                                    Text("High", fontSize = 12.sp, color = Color.Gray)
+                                }
+                            } else {
+                                // View mode UI
+                                Text(
+                                    text = epic.name,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+                                
+                                Text(
+                                    text = epic.description,
+                                    fontSize = 16.sp,
+                                    color = Color.Gray
+                                )
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    // Status with dropdown
+                                    Column {
+                                        Text(
+                                            text = "Status",
+                                            fontSize = 12.sp,
+                                            color = Color.Gray
+                                        )
+                                        
+                                        Box {
+                                            TextButton(
+                                                onClick = { statusExpanded = true },
+                                                contentPadding = PaddingValues(0.dp)
+                                            ) {
+                                                Text(
+                                                    text = epic.status.name,
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = when (epic.status) {
+                                                        Status.TO_DO -> Color(0xFFE57373)
+                                                        Status.IN_PROGRESS -> Color(0xFF64B5F6)
+                                                        Status.DONE -> Color(0xFF81C784)
+                                                    }
+                                                )
+                                                Icon(
+                                                    Icons.Default.ArrowDropDown,
+                                                    contentDescription = "Change status"
+                                                )
+                                            }
+                                            
+                                            DropdownMenu(
+                                                expanded = statusExpanded,
+                                                onDismissRequest = { statusExpanded = false }
+                                            ) {
+                                                statusOptions.forEach { status ->
+                                                    DropdownMenuItem(
+                                                        text = { Text(status.name) },
+                                                        onClick = {
+                                                            viewModel.updateEpicStatus(status)
+                                                            statusExpanded = false
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    InfoItem(label = "Priority", value = getPriorityText(epic.priority))
+                                }
                             }
                         }
                     }
@@ -192,14 +318,34 @@ fun EpicDetailScreen(
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        Button(
-                            onClick = onNavigateToTasks,
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF6B4EFF)
-                            )
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("View All Tasks")
+                            Button(
+                                onClick = onNavigateToTasks,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF6B4EFF)
+                                )
+                            ) {
+                                Text("View All Tasks")
+                            }
+                            
+                            Button(
+                                onClick = onCreateTask,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF6B4EFF)
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Add Task")
+                            }
                         }
                     }
                 }
