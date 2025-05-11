@@ -91,9 +91,9 @@ fun RegisterScreen(
         Log.d("check email", email)
         var valid = true
         usernameError = ValidationUtils.validateUsername(username).let { if (it is com.example.dacs3.util.ValidationResult.Error) it.message else null }
-        emailError = ValidationUtils.validateEmail(email).let { if (it is com.example.dacs3.util.ValidationResult.Error) it.message else null }
+//        emailError = ValidationUtils.validateEmail(email).let { if (it is com.example.dacs3.util.ValidationResult.Error) it.message else null }
         contactNumberError = ValidationUtils.validatePhone(contactNumber).let { if (it is com.example.dacs3.util.ValidationResult.Error) it.message else null }
-        passwordError = ValidationUtils.validatePassword(password).let { if (it is com.example.dacs3.util.ValidationResult.Error) it.message else null }
+//        passwordError = ValidationUtils.validatePassword(password).let { if (it is com.example.dacs3.util.ValidationResult.Error) it.message else null }
         confirmPasswordError = if (confirmPassword != password) "Passwords do not match" else null
         
         if (usernameError != null || emailError != null || contactNumberError != null || passwordError != null || confirmPasswordError != null) 
