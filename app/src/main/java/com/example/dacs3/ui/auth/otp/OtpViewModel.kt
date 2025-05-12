@@ -159,7 +159,12 @@ class OtpViewModel @Inject constructor(
             return
         }
         
-        if (!_otpState.value.canResend) {
+        // Allow resending immediately for 2FA, regardless of timer
+        val is2fa = _otpState.value.action == "2fa"
+        
+        // Kiểm tra nếu không phải 2FA và chưa đủ thời gian để resend
+        if (!is2fa && !_otpState.value.canResend) {
+            // Không hiển thị lỗi khi chưa đủ thời gian resend
             return
         }
         
@@ -167,7 +172,7 @@ class OtpViewModel @Inject constructor(
             _otpState.update { 
                 it.copy(
                     isLoading = true, 
-                    isError = false,
+                    isError = false, // Luôn reset lỗi khi resend
                     errorMessage = "",
                     remainingSeconds = 60,
                     canResend = false
@@ -192,6 +197,7 @@ class OtpViewModel @Inject constructor(
                         _otpState.update { 
                             it.copy(
                                 isLoading = false,
+                                // Không đặt isError = true để không hiển thị lỗi màu đỏ
                                 errorMessage = authResponse?.message ?: "Failed to resend OTP",
                                 canResend = true
                             )
@@ -201,6 +207,7 @@ class OtpViewModel @Inject constructor(
                     _otpState.update { 
                         it.copy(
                             isLoading = false,
+                            // Không đặt isError = true để không hiển thị lỗi màu đỏ
                             errorMessage = "Failed to resend OTP: ${response.message()}",
                             canResend = true
                         )
@@ -210,6 +217,7 @@ class OtpViewModel @Inject constructor(
                 _otpState.update { 
                     it.copy(
                         isLoading = false,
+                        // Không đặt isError = true để không hiển thị lỗi màu đỏ
                         errorMessage = "Error: ${e.message}",
                         canResend = true
                     )

@@ -64,6 +64,15 @@ fun OtpScreen(
     // Set email and action when screen loads
     LaunchedEffect(email, action) {
         viewModel.setEmail(email, action)
+        
+        // Nếu là 2FA, tự động request OTP khi màn hình hiển thị
+        if (action == "2fa") {
+            Log.d("OtpScreen", "Auto requesting OTP for 2FA authentication")
+            viewModel.resendOtp()
+            // Hiển thị dialog thông báo đã gửi OTP
+            resendMessage = "2FA verification code has been sent to your email. Please check your inbox."
+            showResendDialog = true
+        }
     }
     
     // Check for verification success or 2FA requirement
