@@ -4,7 +4,7 @@ import android.util.Log
 import android.util.Patterns
 
 object ValidationUtils {
-    private val USERNAME_REGEX = Regex("^[a-zA-Z]{3,10}$")
+    private val USERNAME_REGEX = Regex("^[a-zA-Z]{3,50}$")
     private val PHONE_REGEX = Regex("^\\d{10}$")
     private val PASSWORD_REGEX = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#\$%^&+=!]).{8,}")
 

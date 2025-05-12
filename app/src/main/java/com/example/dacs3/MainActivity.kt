@@ -50,18 +50,21 @@ fun MainAppScaffold(
     val currentDestination = navBackStackEntry?.destination
     
     // Check if user is logged in to determine start destination
-    val isLoggedIn = authViewModel.checkLoggedInStatus()
+    val isLoggedIn = remember { authViewModel.checkLoggedInStatus() }
     val startDestination = if (isLoggedIn) "home" else "welcome"
     
     // Define screens that should show bottom navigation
     val showBottomBar by remember(currentDestination) {
         val hideBottomBarScreens = listOf(
-            "login", "register", "welcome"
+            "login", "register", "welcome", "otp_verification"
         )
         mutableStateOf(currentDestination?.route?.let { route ->
             !hideBottomBarScreens.any { screen -> route.startsWith(screen) }
         } ?: true)
     }
+    
+    // Define all available routes for validation in bottom navigation
+    val availableRoutes = listOf("home", "channels", "workspaces", "profile")
     
     Scaffold(
         bottomBar = {

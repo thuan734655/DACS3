@@ -1,5 +1,7 @@
 package com.example.dacs3.ui.auth
 
+import android.provider.Settings
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -27,6 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.dacs3.util.addFocusCleaner
+import com.example.dacs3.util.DeviceUtils
+import com.example.dacs3.ui.auth.otp.navigateToOtpVerification
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,32 +46,47 @@ fun LoginScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
 
-    val authState by viewModel.authState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val isLoading = uiState.isLoading
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
-    LaunchedEffect(authState) {
-        when (authState) {
-            is AuthState.Loading -> isLoading = true
-            is AuthState.Success -> {
-                isLoading = false
+    LaunchedEffect(uiState) {
+        when {
+            uiState.isSuccess -> {
                 navController.navigate("home") {
                     popUpTo(0) { inclusive = true }
                 }
             }
-            is AuthState.Error -> {
-                isLoading = false
-                showError = true
-                errorMessage = (authState as AuthState.Error).message
+            uiState.action == "2fa" -> {
+                // Navigate to OTP verification when 2FA is required
+                Log.d("LoginScreen", "2FA required, navigating to OTP screen with email: ${uiState.email}")
+                uiState.email?.let { email ->
+                    navController.navigateToOtpVerification(email, "2fa")
+                }
             }
-            else -> isLoading = false
+            uiState.isError -> {
+                showError = true
+                // Extract meaningful error message from server response if possible
+                val errorMsg = uiState.errorMessage
+                errorMessage = when {
+                    errorMsg.contains("Invalid credentials") -> 
+                        "Invalid email or password. Please try again."
+                    errorMsg.contains("User not found") -> 
+                        "Account not found. Please check your email or create an account."
+                    else -> errorMsg
+                }
+                Log.d("LoginScreen", "Error message: $errorMessage")
+            }
         }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F7F7)),
+            .background(Color(0xFFF7F7F7))
+            .addFocusCleaner(focusManager, keyboardController),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -94,7 +116,10 @@ fun LoginScreen(
             // Email field
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { 
+                    email = it 
+                    if (showError) showError = false
+                },
                 label = { Text("Email") },
                 singleLine = true,
                 modifier = Modifier
@@ -121,7 +146,10 @@ fun LoginScreen(
             // Password field
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { 
+                    password = it 
+                    if (showError) showError = false
+                },
                 label = { Text("Password") },
                 singleLine = true,
                 modifier = Modifier
@@ -170,10 +198,46 @@ fun LoginScreen(
                 )
             }
             
+            AnimatedVisibility(visible = showError) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE7E7)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = errorMessage,
+                            color = Color(0xFFE53935),
+                            fontSize = 14.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+            
             Button(
                 onClick = {
                     if (email.isNotBlank() && password.isNotBlank()) {
-                        viewModel.login(email, password)
+                        // Dismiss keyboard when login button is clicked
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                        
+                        // Determine if input is email or phone
+                        val isEmail = email.contains("@")
+                        // Get a device ID directly from settings
+                        val deviceId = Settings.Secure.getString(
+                            navController.context.contentResolver,
+                            Settings.Secure.ANDROID_ID
+                        )
+                        // Log the device ID for debugging
+                        Log.d("LoginScreen", "Using direct Android ID for login: $deviceId")
+                        
+                        viewModel.login(email, password, isEmail, deviceId)
                     } else {
                         showError = true
                         errorMessage = "Please enter email and password"
@@ -190,19 +254,51 @@ fun LoginScreen(
                 if (isLoading) {
                     CircularProgressIndicator(
                         color = Color.White,
+                        strokeWidth = 2.dp,
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
                     Text("Sign in", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
             }
-            
-            AnimatedVisibility(visible = showError) {
-                Text(
-                    text = errorMessage,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+        }
+        
+        // Loading overlay
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+                    .clickable(enabled = false) { /* Prevent clicks through overlay */ },
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    modifier = Modifier.size(120.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = Color(0xFF1A4AC2),
+                            strokeWidth = 4.dp,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Signing in...",
+                            color = Color(0xFF333333),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
         }
         

@@ -6,6 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,16 +20,20 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.dacs3.ui.auth.otp.navigateToOtpVerification
 import com.example.dacs3.util.ValidationUtils
+import com.example.dacs3.util.addFocusCleaner
 import kotlinx.coroutines.android.awaitFrame
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +47,10 @@ fun RegisterScreen(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
+    // Biến trạng thái cho việc hiển thị/ẩn mật khẩu
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
+
     var usernameError by remember { mutableStateOf<String?>(null) }
     var emailError by remember { mutableStateOf<String?>(null) }
     var contactNumberError by remember { mutableStateOf<String?>(null) }
@@ -48,8 +59,12 @@ fun RegisterScreen(
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-    val authState by viewModel.authState.collectAsState()
-    val isLoading = authState is AuthState.Loading
+    val uiState by viewModel.uiState.collectAsState()
+    val isLoading = uiState.isLoading
+    
+    // Focus and keyboard management
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     // Focus management
     val usernameFocusRequester = remember { FocusRequester() }
@@ -65,25 +80,32 @@ fun RegisterScreen(
         usernameFocusRequester.requestFocus()
     }
 
-    LaunchedEffect(authState) {
-        when (authState) {
-            is AuthState.RegisterSuccess -> {
-                // Show success message and navigate to login
-                navController.navigate("login") {
-                    popUpTo("register") { inclusive = true }
-                }
+    LaunchedEffect(uiState) {
+        when {
+            uiState.isSuccess && uiState.action == "verify_email" -> {
+                // Navigate to OTP verification screen with the registered email
+                val registeredEmail = uiState.email ?: email
+                navController.navigateToOtpVerification(registeredEmail)
             }
-            is AuthState.Success -> {
+            uiState.isSuccess -> {
                 // This should not happen in Register flow, but just in case
                 navController.navigate("login") {
                     popUpTo("welcome") { inclusive = true }
                 }
             }
-            is AuthState.Error -> {
+            uiState.isError -> {
                 showError = true
-                errorMessage = (authState as AuthState.Error).message
+                // Extract meaningful error message from server response if possible
+                val errorMsg = uiState.errorMessage
+                errorMessage = when {
+                    errorMsg.contains("duplicate key error") && errorMsg.contains("username") -> 
+                        "Username already exists. Please choose another username."
+                    errorMsg.contains("duplicate key error") && errorMsg.contains("email") -> 
+                        "Email already registered. Please use another email."
+                    else -> errorMsg
+                }
+                Log.d("RegisterScreen", "Error message: $errorMessage")
             }
-            else -> {}
         }
     }
 
@@ -104,7 +126,8 @@ fun RegisterScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F7F7)),
+            .background(Color(0xFFF7F7F7))
+            .addFocusCleaner(focusManager, keyboardController),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -143,6 +166,7 @@ fun RegisterScreen(
                 onValueChange = {
                     username = it
                     if (usernameError != null) usernameError = null
+                    if (showError) showError = false
                 },
                 label = { Text("Username") },
                 singleLine = true,
@@ -166,6 +190,7 @@ fun RegisterScreen(
                 onValueChange = {
                     email = it
                     if (emailError != null) emailError = null
+                    if (showError) showError = false
                 },
                 label = { Text("Email") },
                 singleLine = true,
@@ -188,6 +213,7 @@ fun RegisterScreen(
                 onValueChange = {
                     contactNumber = it
                     if (contactNumberError != null) contactNumberError = null
+                    if (showError) showError = false
                 },
                 label = { Text("Contact number") },
                 singleLine = true,
@@ -210,10 +236,11 @@ fun RegisterScreen(
                 onValueChange = {
                     password = it
                     if (passwordError != null) passwordError = null
+                    if (showError) showError = false
                 },
                 label = { Text("Password") },
                 singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 4.dp)
@@ -225,6 +252,15 @@ fun RegisterScreen(
                     unfocusedContainerColor = Color(0xFFF5F7FF),
                     focusedContainerColor = Color(0xFFF5F7FF)
                 ),
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                            tint = Color(0xFF1A4AC2)
+                        )
+                    }
+                },
                 isError = passwordError != null
             )
             if (passwordError != null) Text(passwordError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
@@ -233,10 +269,11 @@ fun RegisterScreen(
                 onValueChange = {
                     confirmPassword = it
                     if (confirmPasswordError != null) confirmPasswordError = null
+                    if (showError) showError = false
                 },
                 label = { Text("Confirm Password") },
                 singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 18.dp)
@@ -248,46 +285,138 @@ fun RegisterScreen(
                     unfocusedContainerColor = Color(0xFFF5F7FF),
                     focusedContainerColor = Color(0xFFF5F7FF)
                 ),
+                trailingIcon = {
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(
+                            imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password",
+                            tint = Color(0xFF1A4AC2)
+                        )
+                    }
+                },
                 isError = confirmPasswordError != null
             )
             if (confirmPasswordError != null) Text(confirmPasswordError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
+            
+            AnimatedVisibility(visible = showError) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE7E7)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = errorMessage,
+                            color = Color(0xFFE53935),
+                            fontSize = 14.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+            
             Button(
                 onClick = {
+                    // Hide keyboard when button is clicked
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                    
                     if (validate()) {
-                        viewModel.register(username, email, password)
+                        viewModel.register(
+                            username = username,
+                            email = email,
+                            contactNumber = contactNumber,
+                            password = password
+                        )
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
-                    .shadow(10.dp, RoundedCornerShape(14.dp)),
-                shape = RoundedCornerShape(14.dp),
+                    .height(56.dp)
+                    .padding(top = 8.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4AC2)),
                 enabled = !isLoading
             ) {
-                if (isLoading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp) else Text("Sign up", fontWeight = FontWeight.Bold, fontSize = 19.sp)
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Text(
+                        "Sign Up",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
             }
-            AnimatedVisibility(visible = showError) {
+            
+            Row(
+                modifier = Modifier.padding(top = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
                 Text(
-                    text = errorMessage,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 16.dp)
+                    text = "Already have an account? ",
+                    color = Color(0xFF666666),
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = "Sign In",
+                    color = Color(0xFF1A4AC2),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    modifier = Modifier.clickable {
+                        navController.popBackStack()
+                    }
                 )
             }
         }
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 36.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Already have an account",
-                color = Color(0xFF222222),
-                fontWeight = FontWeight.Medium,
-                fontSize = 15.sp,
-                modifier = Modifier.clickable { navController.navigate("login") }
-            )
+        
+        // Loading overlay
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+                    .clickable(enabled = false) { /* Prevent clicks through overlay */ },
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    modifier = Modifier.size(120.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = Color(0xFF1A4AC2),
+                            strokeWidth = 4.dp,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Creating account...",
+                            color = Color(0xFF333333),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
         }
     }
 } 

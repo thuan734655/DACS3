@@ -22,7 +22,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         UserChannelMembership::class,
         WorkspaceUserMembership::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class WorkspaceDatabase : RoomDatabase() {
@@ -40,6 +40,34 @@ abstract class WorkspaceDatabase : RoomDatabase() {
     abstract fun workspaceUserMembershipDao(): WorkspaceUserMembershipDao
     
     companion object {
+        // Migration from version 5 to 6
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Add isDeviceVerified column to accounts table with default value of false
+                database.execSQL("ALTER TABLE accounts ADD COLUMN isDeviceVerified INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+        
+        // Migration from version 4 to 5
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // If you don't know the exact changes in version 5, you can create an empty migration
+                // that just updates the version number
+                // In a real production app, you should document each schema change
+                database.execSQL("SELECT 1") // Dummy query to satisfy the migration interface
+            }
+        }
+        
+        // Migration from version 3 to 4
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // If you don't know the exact changes in version 4, you can create an empty migration
+                // that just updates the version number
+                // In a real production app, you should document each schema change
+                database.execSQL("SELECT 1") // Dummy query to satisfy the migration interface
+            }
+        }
+        
         // Migration from version 2 to 3
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
@@ -103,6 +131,7 @@ abstract class WorkspaceDatabase : RoomDatabase() {
                     WorkspaceDatabase::class.java,
                     "workspace_database"
                 )
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6) // Add all migrations
                     .fallbackToDestructiveMigration() // Only use if migration fails
                     .allowMainThreadQueries() // Only for immediate init purposes
                     .build()

@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.profile
+package com.example.dacs3.ui.workspaces
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun ProfileScreen() {
+fun WorkspacesScreen() {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -24,7 +24,7 @@ fun ProfileScreen() {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Profile Screen",
+                text = "Workspaces Screen",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(16.dp)

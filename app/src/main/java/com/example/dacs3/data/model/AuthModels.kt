@@ -20,11 +20,18 @@ data class AuthResponse(
     val token: String? = null,
     val account: Account? = null,
     val action: String? = null,
-    val email: String? = null
+    val email: String? = null,
+    val data: AuthResponseData? = null
+)
+
+data class AuthResponseData(
+    val email: String? = null,
+    val deviceID: String? = null,
+    val otherInfo: Map<String, Any>? = null
 )
 
 data class Account(
-    val username: String,
-    val email: String,
-    val contactNumber: String
+    val username: String? = null,
+    val email: String? = null,
+    val contactNumber: String? = null
 ) 

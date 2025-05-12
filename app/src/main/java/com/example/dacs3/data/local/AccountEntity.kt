@@ -26,5 +26,6 @@ data class AccountEntity(
     val otp: String? = null,
     val otpCreatedAt: Long? = null,
     val deviceId: String? = null,
+    val isDeviceVerified: Boolean = false,
     val userId: String
 ) 

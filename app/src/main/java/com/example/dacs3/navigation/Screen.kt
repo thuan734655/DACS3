@@ -9,6 +9,14 @@ sealed class Screen(val route: String) {
     object WorkspaceDetail : Screen("workspace_detail/{workspaceId}") {
         fun createRoute(workspaceId: String) = "workspace_detail/$workspaceId"
     }
+    // OTP verification
+    object OtpVerification : Screen("otp_verification/{email}") {
+        fun createRoute(email: String) = "otp_verification/$email"
+    }
+    // Two Factor Authentication
+    object TwoFactorAuth : Screen("2fa_verification/{email}") {
+        fun createRoute(email: String) = "2fa_verification/$email"
+    }
     object EpicList : Screen("epic_list/{workspaceId}") {
         fun createRoute(workspaceId: String) = "epic_list/$workspaceId"
     }
