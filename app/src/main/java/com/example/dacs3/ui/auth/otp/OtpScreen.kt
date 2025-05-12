@@ -37,6 +37,7 @@ fun OtpScreen(
     onVerificationSuccess: () -> Unit,
     onNavigateBack: () -> Unit,
     onTwoFactorAuthRequired: (String) -> Unit = {},
+    onResetPassword: (String, String) -> Unit = { _, _ -> },
     action: String? = null,
     viewModel: OtpViewModel = hiltViewModel()
 ) {
@@ -57,36 +58,34 @@ fun OtpScreen(
     
     // Set email and action when screen loads
     LaunchedEffect(email, action) {
-        viewModel.setEmail(email)
-        
-        // Set action if it's 2FA
-        if (action == "2fa") {
-            Log.d("OtpScreen", "Setting action to 2FA from parameter")
-            viewModel.setAction("2fa")
-        }
+        viewModel.setEmail(email, action)
     }
     
     // Check for verification success or 2FA requirement
-    LaunchedEffect(otpState.isSuccess, otpState.isError, otpState.requires2FA) {
+    LaunchedEffect(otpState.isSuccess, otpState.isError) {
         if (otpState.isSuccess) {
             // Ghi log để debug
             Log.d("OtpScreen", "Verification success! Action: ${otpState.action}")
             
             // Cập nhật trạng thái hiển thị thông báo thành công
             showSuccessMessage = true
-            // Hiển thị dialog thành công
-            showSuccessDialog = true
             
-            // Không tự động chuyển màn hình, chờ người dùng đóng dialog
-        } else if (otpState.requires2FA) {
-            // Handle 2FA redirect
-            Log.d("OtpScreen", "2FA required, additional data: ${otpState.additionalData}")
-            
-            // Get email from additional data or use current email
-            val emailForVerification = otpState.additionalData?.get("email") as? String ?: email
-            
-            // Navigate to 2FA screen
-            onTwoFactorAuthRequired(emailForVerification)
+            // Handle navigation based on action
+            when (otpState.action) {
+                "2fa" -> {
+                    onTwoFactorAuthRequired(email)
+                }
+                "reset_password" -> {
+                    delay(500) // Short delay for better UX
+                    // Chuyển trực tiếp đến trang đặt lại mật khẩu
+                    onResetPassword(email, otpValue)
+                    // Không hiển thị dialog thành công
+                }
+                else -> {
+                    // Hiển thị dialog thành công cho các trường hợp khác (verification email)
+                    showSuccessDialog = true
+                }
+            }
         } else if (otpState.isError) {
             Log.d("OtpScreen", "Verification error: ${otpState.errorMessage}")
             
@@ -94,13 +93,19 @@ fun OtpScreen(
             if (otpState.errorMessage.contains("success", ignoreCase = true)) {
                 Log.d("OtpScreen", "Success message detected in error response")
                 showSuccessMessage = true
-                showSuccessDialog = true
-                // Không tự động chuyển màn hình, chờ người dùng đóng dialog
+                
+                // Nếu là reset_password, chuyển đến trang đặt lại mật khẩu
+                if (otpState.action == "reset_password") {
+                    delay(500)
+                    onResetPassword(email, otpValue)
+                } else {
+                    showSuccessDialog = true
+                }
             }
         }
     }
     
-    // Hiển thị dialog thành công khi cần
+    // Success dialog for email verification
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = { 
@@ -124,7 +129,10 @@ fun OtpScreen(
             },
             text = { 
                 Text(
-                    "OTP đã được xác thực thành công. Bạn sẽ được chuyển đến trang đăng nhập.", 
+                    text = when(otpState.action) {
+                        "reset_password" -> "OTP đã được xác thực thành công. Vui lòng đặt lại mật khẩu mới."
+                        else -> "OTP đã được xác thực thành công. Bạn sẽ được chuyển đến trang đăng nhập."
+                    },
                     textAlign = TextAlign.Center
                 ) 
             },
@@ -132,14 +140,18 @@ fun OtpScreen(
                 Button(
                     onClick = { 
                         showSuccessDialog = false
-                        onVerificationSuccess()
+                        if (otpState.action == "reset_password") {
+                            onResetPassword(email, otpValue)
+                        } else {
+                            onVerificationSuccess()
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Đăng nhập")
+                    Text(if (otpState.action == "reset_password") "Đặt lại mật khẩu" else "Đăng nhập")
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface,
@@ -207,7 +219,11 @@ fun OtpScreen(
     ) {
         // Header - conditionally change the title based on the action
         Text(
-            text = if (otpState.action == "2fa") "Two-Factor Authentication" else "Email Verification",
+            text = when(otpState.action) {
+                "2fa" -> "Two-Factor Authentication"
+                "reset_password" -> "Password Reset Verification"
+                else -> "Email Verification"
+            },
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 48.dp, bottom = 16.dp)
@@ -256,12 +272,16 @@ fun OtpScreen(
                                 focusManager.moveFocus(FocusDirection.Previous)
                             }
                             
-                            // If all digits are filled, verify OTP
+                            // If all digits are filled, verify OTP or email
                             val allDigitsFilled = otpDigits.all { it.isNotEmpty() }
                             if (allDigitsFilled) {
                                 keyboardController?.hide()
                                 focusManager.clearFocus()
-                                viewModel.verifyOtp(otpDigits.joinToString(""))
+                                if (action == "verify_email" || otpState.action == "verify_email") {
+                                    viewModel.verifyEmail(email, otpDigits.joinToString(""))
+                                } else {
+                                    viewModel.verifyOtp(otpDigits.joinToString(""))
+                                }
                             }
                         }
                     },
@@ -315,7 +335,11 @@ fun OtpScreen(
                 keyboardController?.hide()
                 focusManager.clearFocus()
                 if (otpValue.length == 6) {
-                    viewModel.verifyOtp(otpValue)
+                    if (action == "verify_email" || otpState.action == "verify_email") {
+                        viewModel.verifyEmail(email, otpValue)
+                    } else {
+                        viewModel.verifyOtp(otpValue)
+                    }
                 } else {
                     // Show error if OTP is incomplete
                     viewModel.clearError()

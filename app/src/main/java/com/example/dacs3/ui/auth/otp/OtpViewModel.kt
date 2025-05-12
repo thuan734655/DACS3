@@ -6,8 +6,10 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.model.OtpState
+import com.example.dacs3.data.repository.AuthRepository
 import com.example.dacs3.data.repository.OtpRepository
 import com.example.dacs3.data.session.SessionManager
+import com.example.dacs3.util.DeviceUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +23,8 @@ import javax.inject.Inject
 @HiltViewModel
 class OtpViewModel @Inject constructor(
     private val otpRepository: OtpRepository,
+    private val authRepository: AuthRepository,
+    private val deviceUtils: DeviceUtils,
     private val sessionManager: SessionManager,
     application: Application
 ) : AndroidViewModel(application) {
@@ -43,8 +47,8 @@ class OtpViewModel @Inject constructor(
         }
         
         // Set action if provided
-        if (action == "2fa") {
-            setAction("2fa")
+        if (action == "2fa" || action == "reset_password") {
+            setAction(action)
         }
         
         startCountdown()
@@ -73,56 +77,28 @@ class OtpViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
-            _otpState.update { it.copy(isLoading = true, isError = false, errorMessage = "") }
+            _otpState.update { 
+                it.copy(
+                    isLoading = true, 
+                    isError = false, 
+                    errorMessage = ""
+                )
+            }
             
             try {
-                // Get device ID for verification using application context directly from Settings
-                val deviceId = android.provider.Settings.Secure.getString(
-                    getApplication<Application>().contentResolver,
-                    android.provider.Settings.Secure.ANDROID_ID
-                )
-                // Log the device ID for debugging
-                Log.d("OtpViewModel", "Using direct Android ID for OTP verification: $deviceId")
+                val action = _otpState.value.action
+                val deviceId = if (action == "2fa") deviceUtils.getDeviceId() else null
                 
                 val response = otpRepository.verifyOtp(email, otp, deviceId)
                 
                 if (response.isSuccessful) {
-                    val body = response.body()
-                    // Check for successful message regardless of success flag
-                    if (body?.success == true || body?.message?.contains("successfully", ignoreCase = true) == true) {
-                        countDownTimer?.cancel()
-                        Log.d("OtpViewModel", "OTP verification successful: ${body.message}")
+                    val authResponse = response.body()
+                    if (authResponse?.success == true) {
                         _otpState.update { 
                             it.copy(
                                 isLoading = false,
                                 isSuccess = true,
-                                isError = false,
-                                errorMessage = "",
-                                action = "verification_success"
-                            )
-                        }
-                    } else if (body?.action == "2fa") {
-                        // Handle 2FA requirement
-                        Log.d("OtpViewModel", "2FA required: ${body.message}")
-                        
-                        // Extract data from response
-                        val dataMap = mutableMapOf<String, Any>()
-                        body.data?.let { responseData ->
-                            // Add email if present
-                            responseData.email?.let { email ->
-                                dataMap["email"] = email
-                            }
-                            // Add any other fields that might be in the response
-                        }
-                        
-                        _otpState.update { 
-                            it.copy(
-                                isLoading = false,
-                                isError = false,
-                                requires2FA = true,
-                                errorMessage = body.message ?: "Device verification required",
-                                action = "2fa",
-                                additionalData = dataMap
+                                errorMessage = ""
                             )
                         }
                     } else {
@@ -130,8 +106,7 @@ class OtpViewModel @Inject constructor(
                             it.copy(
                                 isLoading = false,
                                 isError = true,
-                                errorMessage = body?.message ?: "Verification failed",
-                                action = body?.action
+                                errorMessage = authResponse?.message ?: "Verification failed"
                             )
                         }
                     }
@@ -140,21 +115,19 @@ class OtpViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             isError = true,
-                            errorMessage = "Error: ${response.message()}"
+                            errorMessage = "Failed to verify OTP: ${response.message()}"
                         )
                     }
                 }
             } catch (e: IOException) {
-                Log.e("OtpViewModel", "Network error during OTP verification", e)
                 _otpState.update { 
                     it.copy(
                         isLoading = false,
                         isError = true,
-                        errorMessage = "Network error. Please check your connection."
+                        errorMessage = "Network error, please check your connection"
                     )
                 }
             } catch (e: HttpException) {
-                Log.e("OtpViewModel", "HTTP error during OTP verification: ${e.code()}", e)
                 _otpState.update { 
                     it.copy(
                         isLoading = false,
@@ -163,12 +136,11 @@ class OtpViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("OtpViewModel", "Error verifying OTP", e)
                 _otpState.update { 
                     it.copy(
                         isLoading = false,
                         isError = true,
-                        errorMessage = "Verification failed: ${e.message}"
+                        errorMessage = "Error: ${e.message}"
                     )
                 }
             }
@@ -212,12 +184,12 @@ class OtpViewModel @Inject constructor(
                 val response = otpRepository.resendOtp(email)
                 
                 if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body?.success == true || body?.action == "enter_otp") {
+                    val authResponse = response.body()
+                    if (authResponse?.success == true) {
                         _otpState.update { 
                             it.copy(
                                 isLoading = false,
-                                errorMessage = "OTP has been sent to your email"
+                                errorMessage = ""
                             )
                         }
                         startCountdown()
@@ -226,7 +198,8 @@ class OtpViewModel @Inject constructor(
                             it.copy(
                                 isLoading = false,
                                 isError = true,
-                                errorMessage = body?.message ?: "Failed to resend OTP"
+                                errorMessage = authResponse?.message ?: "Failed to resend OTP",
+                                canResend = true
                             )
                         }
                     }
@@ -235,35 +208,18 @@ class OtpViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             isError = true,
-                            errorMessage = "Error: ${response.message()}"
+                            errorMessage = "Failed to resend OTP: ${response.message()}",
+                            canResend = true
                         )
                     }
                 }
-            } catch (e: IOException) {
-                Log.e("OtpViewModel", "Network error during OTP resend", e)
-                _otpState.update { 
-                    it.copy(
-                        isLoading = false,
-                        isError = true,
-                        errorMessage = "Network error. Please check your connection."
-                    )
-                }
-            } catch (e: HttpException) {
-                Log.e("OtpViewModel", "HTTP error during OTP resend: ${e.code()}", e)
-                _otpState.update { 
-                    it.copy(
-                        isLoading = false,
-                        isError = true,
-                        errorMessage = "Server error (${e.code()}): ${e.message()}"
-                    )
-                }
             } catch (e: Exception) {
-                Log.e("OtpViewModel", "Error resending OTP", e)
                 _otpState.update { 
                     it.copy(
                         isLoading = false,
                         isError = true,
-                        errorMessage = "Failed to resend OTP: ${e.message}"
+                        errorMessage = "Error: ${e.message}",
+                        canResend = true
                     )
                 }
             }
@@ -274,14 +230,11 @@ class OtpViewModel @Inject constructor(
         // Cancel any existing timer
         countDownTimer?.cancel()
         
-        countDownTimer = object : CountDownTimer(60_000, 1_000) {
+        countDownTimer = object : CountDownTimer(60000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
-                val secondsRemaining = millisUntilFinished / 1_000
+                val secondsRemaining = (millisUntilFinished / 1000).toInt()
                 _otpState.update { 
-                    it.copy(
-                        remainingSeconds = secondsRemaining.toInt(),
-                        canResend = false
-                    )
+                    it.copy(remainingSeconds = secondsRemaining)
                 }
             }
             
@@ -297,28 +250,32 @@ class OtpViewModel @Inject constructor(
     }
     
     fun clearError() {
-        _otpState.update {
+        _otpState.update { 
             it.copy(
-                isError = false,
+                isError = false, 
                 errorMessage = ""
             )
         }
     }
     
-    // Function to set the action manually
-    fun setAction(action: String?) {
-        _otpState.update {
-            it.copy(
-                action = action
-            )
+    private fun setAction(action: String) {
+        _otpState.update { 
+            it.copy(action = action)
         }
-        
-        // If setting to 2FA, update requires2FA flag as well
-        if (action == "2fa") {
-            _otpState.update {
-                it.copy(
-                    requires2FA = true
-                )
+    }
+    
+    fun verifyEmail(email: String, otp: String) {
+        viewModelScope.launch {
+            _otpState.update { it.copy(isLoading = true, isError = false, errorMessage = "") }
+            try {
+                val response = authRepository.verifyEmail(email, otp)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    _otpState.update { it.copy(isLoading = false, isSuccess = true, errorMessage = "", action = "email_verified") }
+                } else {
+                    _otpState.update { it.copy(isLoading = false, isError = true, errorMessage = response.body()?.message ?: "Verification failed") }
+                }
+            } catch (e: Exception) {
+                _otpState.update { it.copy(isLoading = false, isError = true, errorMessage = "Verification failed: ${e.message}") }
             }
         }
     }

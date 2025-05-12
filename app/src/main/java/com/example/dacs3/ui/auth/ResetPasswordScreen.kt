@@ -1,6 +1,5 @@
 package com.example.dacs3.ui.auth
 
-import android.provider.Settings
 import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -8,17 +7,21 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
@@ -35,67 +38,31 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.dacs3.ui.auth.otp.navigateToOtpVerification
 import com.example.dacs3.util.addFocusCleaner
-import com.example.dacs3.util.DeviceUtils
 import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
+fun ResetPasswordScreen(
+    email: String,
+    otp: String,
     navController: NavController,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-
+    
     val uiState by viewModel.uiState.collectAsState()
     val isLoading = uiState.isLoading
+    
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    
-    // Focus requesters for better keyboard management
-    val emailFocusRequester = remember { FocusRequester() }
     val passwordFocusRequester = remember { FocusRequester() }
     
-    // Request focus on the email field when screen loads
-    LaunchedEffect(Unit) {
-        emailFocusRequester.requestFocus()
-    }
-
-    LaunchedEffect(uiState) {
-        when {
-            uiState.isSuccess -> {
-                navController.navigate("home") {
-                    popUpTo(0) { inclusive = true }
-                }
-            }
-            uiState.action == "2fa" -> {
-                // Navigate to OTP verification when 2FA is required
-                Log.d("LoginScreen", "2FA required, navigating to OTP screen with email: ${uiState.email}")
-                uiState.email?.let { email ->
-                    navController.navigateToOtpVerification(email, "2fa")
-                }
-            }
-            uiState.isError -> {
-                showError = true
-                // Extract meaningful error message from server response if possible
-                val errorMsg = uiState.errorMessage
-                errorMessage = when {
-                    errorMsg.contains("Invalid credentials") -> 
-                        "Invalid email or password. Please try again."
-                    errorMsg.contains("User not found") -> 
-                        "Account not found. Please check your email or create an account."
-                    else -> errorMsg
-                }
-                Log.d("LoginScreen", "Error message: $errorMessage")
-            }
-        }
-    }
-
     // Shimmer animation for loading state
     val shimmerColors = listOf(
         Color(0xFFE6E8F0),
@@ -103,15 +70,6 @@ fun LoginScreen(
         Color(0xFFE6E8F0)
     )
     
-    val shimmerBrush = remember {
-        Brush.linearGradient(
-            colors = shimmerColors,
-            start = androidx.compose.ui.geometry.Offset(0f, 0f),
-            end = androidx.compose.ui.geometry.Offset(900f, 900f)
-        )
-    }
-    
-    // Update shimmer animation
     var shimmerTranslation by remember { mutableStateOf(0f) }
     LaunchedEffect(isLoading) {
         if (isLoading) {
@@ -121,7 +79,46 @@ fun LoginScreen(
             }
         }
     }
-
+    
+    // Function to validate inputs
+    fun validateInputs(): Boolean {
+        if (password.length < 6) {
+            showError = true
+            errorMessage = "Password must be at least 6 characters"
+            return false
+        }
+        
+        if (password != confirmPassword) {
+            showError = true
+            errorMessage = "Passwords do not match"
+            return false
+        }
+        
+        return true
+    }
+    
+    // Handle UI state changes
+    LaunchedEffect(uiState) {
+        when {
+            uiState.isSuccess && uiState.action == "password_reset_success" -> {
+                // Navigate back to login screen after successful password reset
+                delay(500) // Short delay for better UX
+                navController.navigate("login") {
+                    popUpTo("login") { inclusive = true }
+                }
+            }
+            uiState.isError -> {
+                showError = true
+                errorMessage = uiState.errorMessage
+            }
+        }
+    }
+    
+    // Request focus on password field when screen loads
+    LaunchedEffect(Unit) {
+        passwordFocusRequester.requestFocus()
+    }
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -129,122 +126,148 @@ fun LoginScreen(
             .addFocusCleaner(focusManager, keyboardController),
         contentAlignment = Alignment.Center
     ) {
+        // Back button at the top left
+        IconButton(
+            onClick = { 
+                keyboardController?.hide()
+                focusManager.clearFocus()
+                navController.popBackStack() 
+            },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Back"
+            )
+        }
+        
         Column(
             modifier = Modifier
-                .width(320.dp)
-                .shadow(8.dp, RoundedCornerShape(28.dp))
-                .background(Color.White, RoundedCornerShape(28.dp))
-                .padding(horizontal = 24.dp, vertical = 32.dp),
+                .width(340.dp)
+                .shadow(16.dp, RoundedCornerShape(32.dp))
+                .clip(RoundedCornerShape(32.dp))
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.98f),
+                            Color(0xFFF5F7FF)
+                        )
+                    )
+                )
+                .padding(horizontal = 28.dp, vertical = 36.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Login",
-                color = Color(0xFF1A4AC2),
-                fontWeight = FontWeight.Bold,
+                text = "Reset Your Password",
                 fontSize = 24.sp,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Text(
-                text = "Welcome back you've\nbeen missed!",
-                color = Color.Black,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1A4AC2),
                 modifier = Modifier.padding(bottom = 24.dp)
             )
             
-            // Email field
-            OutlinedTextField(
-                value = email,
-                onValueChange = { 
-                    email = it 
-                    if (showError) showError = false
-                },
-                label = { Text("Email") },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-                    .focusRequester(emailFocusRequester),
-                shape = RoundedCornerShape(10.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF1A4AC2),
-                    unfocusedBorderColor = Color(0xFF1A4AC2)
-                ),
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Email,
-                        contentDescription = "Email Icon",
-                        tint = Color(0xFF1A4AC2)
-                    )
-                },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                )
+            Text(
+                text = "Create a new password for your account",
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                color = Color(0xFF5E5E5E),
+                modifier = Modifier.padding(bottom = 32.dp)
             )
             
-            // Password field
-            OutlinedTextField(
+            // New password field
+            TextField(
                 value = password,
-                onValueChange = { 
-                    password = it 
-                    if (showError) showError = false
-                },
-                label = { Text("Password") },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-                    .focusRequester(passwordFocusRequester),
-                shape = RoundedCornerShape(10.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF1A4AC2),
-                    unfocusedBorderColor = Color(0xFF1A4AC2)
-                ),
+                onValueChange = { password = it; showError = false },
+                placeholder = { Text("New password") },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Lock,
-                        contentDescription = "Password Icon",
-                        tint = Color(0xFF1A4AC2)
+                        contentDescription = "Password",
+                        tint = Color(0xFF6B4EFF)
                     )
                 },
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = "Toggle password visibility",
-                            tint = Color(0xFF1A4AC2)
+                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                            tint = Color(0xFF6B4EFF)
                         )
                     }
                 },
+                colors = TextFieldDefaults.textFieldColors(
+                    containerColor = Color(0xFFF0F1F5),
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(passwordFocusRequester)
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Confirm password field
+            TextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it; showError = false },
+                placeholder = { Text("Confirm password") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Confirm Password",
+                        tint = Color(0xFF6B4EFF)
+                    )
+                },
+                trailingIcon = {
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(
+                            imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password",
+                            tint = Color(0xFF6B4EFF)
+                        )
+                    }
+                },
+                colors = TextFieldDefaults.textFieldColors(
+                    containerColor = Color(0xFFF0F1F5),
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
-                )
-            )
-            
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Text(
-                    text = "Forgot password?",
-                    color = Color(0xFF1A4AC2),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.clickable { 
-                        // Hide keyboard when clicking on forgot password
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
                         keyboardController?.hide()
                         focusManager.clearFocus()
-                        navController.navigate("forgot_password") 
+                        if (validateInputs()) {
+                            viewModel.resetPassword(email, password, otp)
+                        }
                     }
-                )
-            }
+                ),
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
             
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Error message
             AnimatedVisibility(
                 visible = showError,
                 enter = fadeIn() + expandVertically(),
@@ -271,36 +294,25 @@ fun LoginScreen(
                 }
             }
             
+            // Reset password button
             Button(
                 onClick = {
-                    if (email.isNotBlank() && password.isNotBlank()) {
-                        // Dismiss keyboard when login button is clicked
-                        keyboardController?.hide()
-                        focusManager.clearFocus()
-                        
-                        // Determine if input is email or phone
-                        val isEmail = email.contains("@")
-                        // Get a device ID directly from settings
-                        val deviceId = Settings.Secure.getString(
-                            navController.context.contentResolver,
-                            Settings.Secure.ANDROID_ID
-                        )
-                        // Log the device ID for debugging
-                        Log.d("LoginScreen", "Using direct Android ID for login: $deviceId")
-                        
-                        viewModel.login(email, password, isEmail, deviceId)
-                    } else {
-                        showError = true
-                        errorMessage = "Please enter email and password"
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                    if (validateInputs()) {
+                        viewModel.resetPassword(email, password, otp)
                     }
                 },
+                enabled = !isLoading && password.isNotBlank() && confirmPassword.isNotBlank(),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF6B4EFF),
+                    contentColor = Color.White
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp)
-                    .shadow(6.dp, RoundedCornerShape(10.dp)),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4AC2)),
-                enabled = !isLoading
+                    .height(54.dp)
+                    .padding(top = 12.dp)
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -309,7 +321,7 @@ fun LoginScreen(
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
-                    Text("Sign in", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text("Reset Password")
                 }
             }
         }
@@ -338,7 +350,7 @@ fun LoginScreen(
                     ) {
                         Box {
                             CircularProgressIndicator(
-                                color = Color(0xFF1A4AC2),
+                                color = Color(0xFF6B4EFF),
                                 strokeWidth = 4.dp,
                                 modifier = Modifier.size(48.dp)
                             )
@@ -367,7 +379,7 @@ fun LoginScreen(
                         
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "Signing in...",
+                            text = "Resetting password...",
                             color = Color(0xFF333333),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
@@ -375,26 +387,6 @@ fun LoginScreen(
                     }
                 }
             }
-        }
-        
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 32.dp)
-                .clickable {
-                    // Hide keyboard when clicking on register
-                    keyboardController?.hide()
-                    focusManager.clearFocus()
-                    navController.navigate("register")
-                },
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Create new account",
-                color = Color(0xFF222222),
-                fontWeight = FontWeight.Medium,
-                fontSize = 15.sp
-            )
         }
     }
 } 

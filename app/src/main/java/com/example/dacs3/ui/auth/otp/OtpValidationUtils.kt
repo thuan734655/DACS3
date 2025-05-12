@@ -3,7 +3,6 @@ package com.example.dacs3.ui.auth.otp
 import android.content.Context
 import android.provider.Settings
 import android.util.Log
-import com.example.dacs3.util.DeviceUtils
 
 /**
  * Utility class for OTP validation logic
@@ -61,9 +60,8 @@ object OtpValidationUtils {
         
         Log.d("OtpValidationUtils", "Direct Android ID for OTP: $androidId")
         
-        // Compare with DeviceUtils
-        val deviceUtilsId = DeviceUtils.getDeviceId(context)
-        Log.d("OtpValidationUtils", "DeviceUtils ID for OTP: $deviceUtilsId")
+        // DeviceUtils is not a static utility class, so we can't access getDeviceId directly
+        // If DeviceUtils is needed, it should be injected properly
         
         // Use direct Android ID to ensure consistency
         return androidId
