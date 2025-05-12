@@ -56,7 +56,7 @@ fun MainAppScaffold(
     // Define screens that should show bottom navigation
     val showBottomBar by remember(currentDestination) {
         val hideBottomBarScreens = listOf(
-            "login", "register", "welcome", "otp_verification"
+            "login", "register", "welcome", "otp_verification", "reset_password", "forgot_password"
         )
         mutableStateOf(currentDestination?.route?.let { route ->
             !hideBottomBarScreens.any { screen -> route.startsWith(screen) }

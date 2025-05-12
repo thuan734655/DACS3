@@ -21,4 +21,9 @@ data class OtpState(
     val canResend: Boolean = false,
     val requires2FA: Boolean = false,
     val additionalData: Map<String, Any>? = null
+)
+
+data class VerifyEmailRequest(
+    val email: String,
+    val otp: String
 ) 

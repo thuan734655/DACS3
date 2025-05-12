@@ -2,10 +2,11 @@ package com.example.dacs3.ui.auth
 
 import android.provider.Settings
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -31,9 +35,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.dacs3.ui.auth.otp.navigateToOtpVerification
 import com.example.dacs3.util.addFocusCleaner
 import com.example.dacs3.util.DeviceUtils
-import com.example.dacs3.ui.auth.otp.navigateToOtpVerification
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,12 +56,32 @@ fun LoginScreen(
     val isLoading = uiState.isLoading
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    
+    // Focus requesters for better keyboard management
+    val emailFocusRequester = remember { FocusRequester() }
+    val passwordFocusRequester = remember { FocusRequester() }
+    
+    // Request focus on the email field when screen loads
+    LaunchedEffect(Unit) {
+        emailFocusRequester.requestFocus()
+    }
 
     LaunchedEffect(uiState) {
         when {
             uiState.isSuccess -> {
                 navController.navigate("home") {
                     popUpTo(0) { inclusive = true }
+                }
+            }
+            uiState.action == "verify_email" -> {
+                // Yêu cầu server gửi OTP rồi mới chuyển đến màn hình xác thực
+                Log.d("LoginScreen", "Email verification required for: ${uiState.email}")
+                uiState.email?.let { emailAddress ->
+                    // Gửi yêu cầu OTP đến server
+                    viewModel.requestVerificationOtp(emailAddress)
+                    
+                    // Sau đó chuyển đến màn hình OTP
+                    navController.navigateToOtpVerification(emailAddress, "verify_email")
                 }
             }
             uiState.action == "2fa" -> {
@@ -78,6 +103,32 @@ fun LoginScreen(
                     else -> errorMsg
                 }
                 Log.d("LoginScreen", "Error message: $errorMessage")
+            }
+        }
+    }
+
+    // Shimmer animation for loading state
+    val shimmerColors = listOf(
+        Color(0xFFE6E8F0),
+        Color(0xFFF1F3F9),
+        Color(0xFFE6E8F0)
+    )
+    
+    val shimmerBrush = remember {
+        Brush.linearGradient(
+            colors = shimmerColors,
+            start = androidx.compose.ui.geometry.Offset(0f, 0f),
+            end = androidx.compose.ui.geometry.Offset(900f, 900f)
+        )
+    }
+    
+    // Update shimmer animation
+    var shimmerTranslation by remember { mutableStateOf(0f) }
+    LaunchedEffect(isLoading) {
+        if (isLoading) {
+            while (true) {
+                shimmerTranslation = if (shimmerTranslation < 900f) shimmerTranslation + 100f else 0f
+                delay(100)
             }
         }
     }
@@ -124,7 +175,8 @@ fun LoginScreen(
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = 16.dp)
+                    .focusRequester(emailFocusRequester),
                 shape = RoundedCornerShape(10.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color(0xFF1A4AC2),
@@ -154,7 +206,8 @@ fun LoginScreen(
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
+                    .padding(bottom = 8.dp)
+                    .focusRequester(passwordFocusRequester),
                 shape = RoundedCornerShape(10.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color(0xFF1A4AC2),
@@ -194,16 +247,28 @@ fun LoginScreen(
                     color = Color(0xFF1A4AC2),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.clickable { /* TODO: Handle forgot password */ }
+                    modifier = Modifier.clickable { 
+                        // Hide keyboard when clicking on forgot password
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                        navController.navigate("forgot_password") 
+                    }
                 )
             }
             
-            AnimatedVisibility(visible = showError) {
+            AnimatedVisibility(
+                visible = showError,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE7E7)),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (errorMessage.contains("verify your email", ignoreCase = true)) 
+                            Color(0xFFFFF8E1) else Color(0xFFFEE7E7) // Amber 100 for verify email (warning)
+                    ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Row(
@@ -212,10 +277,30 @@ fun LoginScreen(
                     ) {
                         Text(
                             text = errorMessage,
-                            color = Color(0xFFE53935),
+                            color = if (errorMessage.contains("verify your email", ignoreCase = true))
+                                Color(0xFFFF8F00) else Color(0xFFE53935), // Amber for verify, Red for error
                             fontSize = 14.sp,
                             modifier = Modifier.weight(1f)
                         )
+                        
+                        if (errorMessage.contains("verify your email", ignoreCase = true)) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(
+                                onClick = {
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                    // Gửi OTP và chuyển sang màn hình xác thực
+                                    viewModel.requestVerificationOtp(email)
+                                    navController.navigateToOtpVerification(email, "verify_email")
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF1A4AC2)
+                                ),
+                                modifier = Modifier.height(36.dp)
+                            ) {
+                                Text("Verify Now", fontSize = 12.sp)
+                            }
+                        }
                     }
                 }
             }
@@ -263,7 +348,7 @@ fun LoginScreen(
             }
         }
         
-        // Loading overlay
+        // Loading overlay with shimmer effect
         if (isLoading) {
             Box(
                 modifier = Modifier
@@ -285,18 +370,42 @@ fun LoginScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        CircularProgressIndicator(
-                            color = Color(0xFF1A4AC2),
-                            strokeWidth = 4.dp,
-                            modifier = Modifier.size(48.dp)
-                        )
+                        Box {
+                            CircularProgressIndicator(
+                                color = Color(0xFF1A4AC2),
+                                strokeWidth = 4.dp,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            
+                            // Shimmer overlay
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        brush = Brush.linearGradient(
+                                            colors = shimmerColors,
+                                            start = androidx.compose.ui.geometry.Offset(
+                                                shimmerTranslation - 900f, 
+                                                shimmerTranslation - 900f
+                                            ),
+                                            end = androidx.compose.ui.geometry.Offset(
+                                                shimmerTranslation, 
+                                                shimmerTranslation
+                                            )
+                                        ),
+                                        alpha = 0.3f,
+                                        shape = CircleShape
+                                    )
+                            )
+                        }
+                        
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text(
+                Text(
                             text = "Signing in...",
                             color = Color(0xFF333333),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
-                        )
+                )
                     }
                 }
             }
@@ -305,15 +414,20 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 32.dp),
+                .padding(bottom = 32.dp)
+                .clickable {
+                    // Hide keyboard when clicking on register
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                    navController.navigate("register")
+                },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "Create new account",
                 color = Color(0xFF222222),
                 fontWeight = FontWeight.Medium,
-                fontSize = 15.sp,
-                modifier = Modifier.clickable { navController.navigate("register") }
+                fontSize = 15.sp
             )
         }
     }

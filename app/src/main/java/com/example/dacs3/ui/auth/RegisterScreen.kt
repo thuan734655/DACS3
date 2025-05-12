@@ -1,10 +1,11 @@
 package com.example.dacs3.ui.auth
 
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -34,6 +35,7 @@ import com.example.dacs3.ui.auth.otp.navigateToOtpVerification
 import com.example.dacs3.util.ValidationUtils
 import com.example.dacs3.util.addFocusCleaner
 import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,13 +81,30 @@ fun RegisterScreen(
         awaitFrame()
         usernameFocusRequester.requestFocus()
     }
+    
+    // Shimmer animation for loading state
+    val shimmerColors = listOf(
+        Color(0xFFE6E8F0), 
+        Color(0xFFF1F3F9), 
+        Color(0xFFE6E8F0)
+    )
+    
+    var shimmerTranslation by remember { mutableStateOf(0f) }
+    LaunchedEffect(isLoading) {
+        if (isLoading) {
+            while (true) {
+                shimmerTranslation = if (shimmerTranslation < 900f) shimmerTranslation + 100f else 0f
+                delay(100)
+            }
+        }
+    }
 
     LaunchedEffect(uiState) {
         when {
             uiState.isSuccess && uiState.action == "verify_email" -> {
-                // Navigate to OTP verification screen with the registered email
+                // Navigate to OTP verification screen with the registered email and action
                 val registeredEmail = uiState.email ?: email
-                navController.navigateToOtpVerification(registeredEmail)
+                navController.navigateToOtpVerification(registeredEmail, "verify_email")
             }
             uiState.isSuccess -> {
                 // This should not happen in Register flow, but just in case
@@ -298,7 +317,11 @@ fun RegisterScreen(
             )
             if (confirmPasswordError != null) Text(confirmPasswordError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
             
-            AnimatedVisibility(visible = showError) {
+            AnimatedVisibility(
+                visible = showError,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -359,7 +382,14 @@ fun RegisterScreen(
             }
             
             Row(
-                modifier = Modifier.padding(top = 16.dp),
+                modifier = Modifier
+                    .padding(top = 16.dp)
+                    .clickable {
+                        // Hide keyboard when clicking on sign in link
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                        navController.popBackStack()
+                    },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -372,15 +402,12 @@ fun RegisterScreen(
                     text = "Sign In",
                     color = Color(0xFF1A4AC2),
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    modifier = Modifier.clickable {
-                        navController.popBackStack()
-                    }
+                    fontSize = 14.sp
                 )
             }
         }
         
-        // Loading overlay
+        // Loading overlay with shimmer effect
         if (isLoading) {
             Box(
                 modifier = Modifier
@@ -402,11 +429,35 @@ fun RegisterScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        CircularProgressIndicator(
-                            color = Color(0xFF1A4AC2),
-                            strokeWidth = 4.dp,
-                            modifier = Modifier.size(48.dp)
-                        )
+                        Box {
+                            CircularProgressIndicator(
+                                color = Color(0xFF1A4AC2),
+                                strokeWidth = 4.dp,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            
+                            // Shimmer overlay
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        brush = Brush.linearGradient(
+                                            colors = shimmerColors,
+                                            start = androidx.compose.ui.geometry.Offset(
+                                                shimmerTranslation - 900f, 
+                                                shimmerTranslation - 900f
+                                            ),
+                                            end = androidx.compose.ui.geometry.Offset(
+                                                shimmerTranslation, 
+                                                shimmerTranslation
+                                            )
+                                        ),
+                                        alpha = 0.3f,
+                                        shape = CircleShape
+                                    )
+                            )
+                        }
+                        
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "Creating account...",

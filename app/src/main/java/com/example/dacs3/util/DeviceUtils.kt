@@ -1,26 +1,43 @@
 package com.example.dacs3.util
 
-import android.content.Context
+import android.app.Application
 import android.provider.Settings
+import android.util.Log
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
- * Utility class for device identification related operations
+ * Utility class for retrieving device identifiers and information
  */
-object DeviceUtils {
-
+@Singleton
+class DeviceUtils @Inject constructor(
+    private val application: Application
+) {
     /**
-     * Gets a consistent device identifier using Android's Secure Settings
+     * Gets the device identifier using Android's Settings.Secure.ANDROID_ID
+     * Used for authentication and OTP verification.
      * 
-     * This method returns the ANDROID_ID which is a unique device identifier
-     * that persists until a factory reset
-     * 
-     * @param context Android context needed to access content resolver
-     * @return String representing the device's ANDROID_ID
+     * @return String representing the device's unique identifier
      */
-    fun getDeviceId(context: Context): String {
-        return Settings.Secure.getString(
-            context.contentResolver,
+    fun getDeviceId(): String {
+        val deviceId = Settings.Secure.getString(
+            application.contentResolver,
             Settings.Secure.ANDROID_ID
-        ) ?: "unknown-device-id"
+        )
+        Log.d("DeviceUtils", "Retrieved device ID: $deviceId")
+        return deviceId
+    }
+    
+    /**
+     * Gets information about the device, useful for debugging
+     */
+    fun getDeviceInfo(): Map<String, String> {
+        return mapOf(
+            "model" to android.os.Build.MODEL,
+            "brand" to android.os.Build.BRAND,
+            "manufacturer" to android.os.Build.MANUFACTURER,
+            "sdk" to android.os.Build.VERSION.SDK_INT.toString(),
+            "version" to android.os.Build.VERSION.RELEASE
+        )
     }
 } 

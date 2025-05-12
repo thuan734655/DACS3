@@ -14,6 +14,16 @@ data class LoginRequest(
     val deviceID: String
 )
 
+data class ForgotPasswordRequest(
+    val email: String
+)
+
+data class ResetPasswordRequest(
+    val email: String,
+    val password: String,
+    val otp: String
+)
+
 data class AuthResponse(
     val message: String,
     val success: Boolean,

@@ -7,8 +7,11 @@ import com.example.dacs3.data.local.AccountEntity
 import com.example.dacs3.data.local.UserDao
 import com.example.dacs3.data.local.UserEntity
 import com.example.dacs3.data.model.AuthResponse
+import com.example.dacs3.data.model.ForgotPasswordRequest
 import com.example.dacs3.data.model.LoginRequest
 import com.example.dacs3.data.model.RegisterRequest
+import com.example.dacs3.data.model.ResetPasswordRequest
+import com.example.dacs3.data.model.VerifyEmailRequest
 import com.example.dacs3.data.session.SessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -132,9 +135,9 @@ class AuthRepository @Inject constructor(
             return response
         } catch (e: Exception) {
             Log.e("AuthRepository", "Register error", e)
-            throw e
+                throw e
+            }
         }
-    }
     
     suspend fun getLocalUserByEmail(email: String): UserEntity? {
         return withContext(Dispatchers.IO) {
@@ -164,6 +167,59 @@ class AuthRepository @Inject constructor(
                 
                 Log.d("AuthRepository", "Device verification updated for email: $email")
             }
+        }
+    }
+    
+    suspend fun forgotPassword(email: String): Response<AuthResponse> {
+        try {
+            val request = ForgotPasswordRequest(email)
+            return api.forgotPassword(request)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Forgot password error", e)
+            throw e
+        }
+    }
+    
+    suspend fun resetPassword(email: String, password: String, otp: String): Response<AuthResponse> {
+        try {
+            val request = ResetPasswordRequest(email, password, otp)
+            val response = api.resetPassword(request)
+            
+            // If reset is successful, update local password
+            if (response.isSuccessful && response.body()?.success == true) {
+                updateLocalUserPassword(email, password)
+            }
+            
+            return response
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Reset password error", e)
+            throw e
+        }
+    }
+    
+    private suspend fun updateLocalUserPassword(email: String, password: String) {
+        withContext(Dispatchers.IO) {
+            try {
+                val account = accountDao.getAccountByEmail(email)
+                account?.let {
+                    // Note: In real app we'd encrypt the password
+                    // Here we're just storing a placeholder
+                    accountDao.updateAccount(it.copy(password = ""))
+                }
+            } catch (e: Exception) {
+                Log.e("AuthRepository", "Error updating local password", e)
+                // Continue even if local update fails
+            }
+        }
+    }
+    
+    suspend fun verifyEmail(email: String, otp: String): Response<AuthResponse> {
+        try {
+            val request = VerifyEmailRequest(email, otp)
+            return api.verifyEmail(request)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Verify email error", e)
+            throw e
         }
     }
 }
