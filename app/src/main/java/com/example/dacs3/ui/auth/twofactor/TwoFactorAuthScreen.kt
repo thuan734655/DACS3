@@ -15,12 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -28,8 +26,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.dacs3.R
-import kotlinx.coroutines.delay
 import com.example.dacs3.ui.theme.TeamNexusPurple
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
@@ -47,6 +43,17 @@ fun TwoFactorAuthScreen(
     var otpDigits by remember { mutableStateOf(List(6) { "" }) }
     val otpValue = otpDigits.joinToString("")
     
+    // Show success dialog when verification is successful
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    
+    // Handle verification success
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) {
+            Log.d("TwoFactorAuthScreen", "2FA verification success, showing dialog")
+            showSuccessDialog = true
+        }
+    }
+    
     // Set email when screen loads and request OTP
     LaunchedEffect(Unit) {
         viewModel.setEmail(email)
@@ -54,17 +61,7 @@ fun TwoFactorAuthScreen(
         viewModel.resendVerificationEmail()
     }
     
-    // Handle verification success
-    LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) {
-            delay(1500)
-            onVerificationSuccess()
-        }
-    }
-    
     // Show success dialog when verification is successful
-    var showSuccessDialog by remember { mutableStateOf(false) }
-    
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = { 
@@ -88,7 +85,7 @@ fun TwoFactorAuthScreen(
             },
             text = { 
                 Text(
-                    "Your device has been successfully verified. You will be redirected to the login screen.", 
+                    "Your device has been successfully verified. You will be redirected to the home screen.", 
                     textAlign = TextAlign.Center
                 ) 
             },
@@ -103,7 +100,7 @@ fun TwoFactorAuthScreen(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Login")
+                    Text("Continue")
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface,

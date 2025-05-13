@@ -385,8 +385,6 @@ class AuthViewModel @Inject constructor(
                 }
             }
             authResponse?.action == "2fa" -> {
-                // Need two-factor authentication
-                Log.d("AuthViewModel", "2FA required from server, email: ${authResponse.email}")
                 _uiState.update { 
                     it.copy(
                         isLoading = false,

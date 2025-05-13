@@ -188,7 +188,7 @@ fun ForgotPasswordScreen(
                     .focusRequester(focusRequester)
             )
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             
             // Error message
             if (showError) {
@@ -230,7 +230,7 @@ fun ForgotPasswordScreen(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp)
+                    .height(64.dp)
                     .padding(top = 12.dp)
             ) {
                 if (isLoading) {

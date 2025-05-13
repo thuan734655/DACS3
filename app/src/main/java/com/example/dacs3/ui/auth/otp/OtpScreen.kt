@@ -88,9 +88,11 @@ fun OtpScreen(
             // Handle navigation based on action
             when (otpState.action) {
                 "2fa" -> {
+                    Log.d("OtpScreen", "2FA required, redirecting to 2FA screen")
                     onTwoFactorAuthRequired(email)
                 }
                 "reset_password" -> {
+                    Log.d("OtpScreen", "Reset password flow, redirecting to reset screen")
                     delay(200) // Reduced delay for better UX
                     // Chuyển trực tiếp đến trang đặt lại mật khẩu
                     onResetPassword(email, otpValue)
@@ -98,6 +100,7 @@ fun OtpScreen(
                 }
                 else -> {
                     // Hiển thị dialog thành công cho các trường hợp khác (verification email)
+                    Log.d("OtpScreen", "Email verification success, showing success dialog")
                     showSuccessDialog = true
                 }
             }
@@ -146,8 +149,8 @@ fun OtpScreen(
                 Text(
                     text = when(otpState.action) {
                         "reset_password" -> "OTP has been verified successfully. Please set your new password."
-                        "email_verified" -> "Your email has been verified successfully. You will be redirected to the login screen."
-                        else -> "OTP has been verified successfully. You will be redirected to the login screen."
+                        "email_verified" -> "Your email has been verified successfully. You will be redirected to the home screen."
+                        else -> "OTP has been verified successfully. You will be redirected to the home screen."
                     },
                     textAlign = TextAlign.Center
                 ) 
@@ -167,7 +170,7 @@ fun OtpScreen(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(if (otpState.action == "reset_password") "Reset Password" else "Login")
+                    Text(if (otpState.action == "reset_password") "Reset Password" else "Continue")
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface,
@@ -339,11 +342,8 @@ fun OtpScreen(
                             if (allDigitsFilled) {
                                 keyboardController?.hide()
                                 focusManager.clearFocus()
-                                if (action == "verify_email" || otpState.action == "verify_email") {
-                                    viewModel.verifyEmail(email, otpDigits.joinToString(""))
-                                } else {
-                                    viewModel.verifyOtp(otpDigits.joinToString(""))
-                                }
+                                // Luôn gọi verifyOtp, và để logic xác thực email được xử lý bên trong ViewModel
+                                viewModel.verifyOtp(otpDigits.joinToString(""))
                             }
                         }
                     },
@@ -397,11 +397,8 @@ fun OtpScreen(
                 keyboardController?.hide()
                 focusManager.clearFocus()
                 if (otpValue.length == 6) {
-                    if (action == "verify_email" || otpState.action == "verify_email") {
-                        viewModel.verifyEmail(email, otpValue)
-                    } else {
-                        viewModel.verifyOtp(otpValue)
-                    }
+                    // Luôn gọi verifyOtp, và để ViewModel xử lý logic xác thực email
+                    viewModel.verifyOtp(otpValue)
                 } else {
                     // Show error if OTP is incomplete
                     viewModel.clearError()

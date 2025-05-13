@@ -1,5 +1,6 @@
 package com.example.dacs3.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -69,7 +70,7 @@ fun AppNavigation(
         
         // Add Home screen route
         composable("home") {
-            HomeScreen()
+            HomeScreen(navController = navController)
         }
         
         // Add Channels screen route
@@ -91,10 +92,11 @@ fun AppNavigation(
         otpVerificationScreen(
             navController = navController,
             onVerificationSuccess = {
-                // After successful OTP verification, navigate to login screen instead of home
-                // This is appropriate for registration flow, as they'll need to login after verification
-                navController.navigate("login") {
-                    popUpTo("welcome") { inclusive = true }
+                // After successful OTP verification, navigate to home screen
+                Log.d("AppNavigation", "Email verification success, navigating to home screen")
+                navController.navigate("home") {
+                    // Don't clear too much back stack
+                    popUpTo("otp_verification/{email}") { inclusive = true }
                 }
             },
             onNavigateBack = {
@@ -122,9 +124,11 @@ fun AppNavigation(
         // Add Two Factor Authentication screen route
         twoFactorAuthScreen(
             onVerificationSuccess = {
-                // After successful 2FA verification, navigate to login screen
-                navController.navigate("login") {
-                    popUpTo("welcome") { inclusive = true }
+                // After successful 2FA verification, navigate to home screen
+                Log.d("AppNavigation", "2FA success, navigating to home screen")
+                navController.navigate("home") {
+                    // Don't clear too much back stack to preserve login flow
+                    popUpTo("2fa_verification/{email}") { inclusive = true }
                 }
             },
             onNavigateBack = {

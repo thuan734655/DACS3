@@ -110,7 +110,7 @@ fun OnboardingScreen(
                 .height(56.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .constrainAs(startButton) {
-                    bottom.linkTo(parent.bottom, margin = 100.dp)
+                    bottom.linkTo(parent.bottom, margin = 50.dp)
                     start.linkTo(parent.start)
                     end.linkTo(parent.end)
                     width = Dimension.fillToConstraints

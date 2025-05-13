@@ -99,12 +99,18 @@ class OtpViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     val authResponse = response.body()
                     if (authResponse?.success == true) {
-                        _otpState.update { 
-                            it.copy(
-                                isLoading = false,
-                                isSuccess = true,
-                                errorMessage = ""
-                            )
+                        // Nếu OTP hợp lệ và action là verify_email, thì gọi API xác thực email 
+                        if (action == "verify_email") {
+                            verifyEmailAfterOtpSuccess(email, otp)
+                        } else {
+                            // Xử lý thành công cho các action khác
+                            _otpState.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    isSuccess = true,
+                                    errorMessage = ""
+                                )
+                            }
                         }
                     } else {
                         _otpState.update { 
@@ -120,7 +126,18 @@ class OtpViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             isError = true,
-                            errorMessage = "Failed to verify OTP: ${response.message()}"
+                            errorMessage = try {
+                                // Trích xuất thông báo lỗi từ body response
+                                val errorBody = response.errorBody()?.string()
+                                if (errorBody != null) {
+                                    val jsonObject = org.json.JSONObject(errorBody)
+                                    jsonObject.optString("message", "Verification failed: ${response.message()}")
+                                } else {
+                                    "Failed to verify OTP: ${response.message()}"
+                                }
+                            } catch (e: Exception) {
+                                "Failed to verify OTP: ${response.message()}"
+                            }
                         )
                     }
                 }
@@ -148,6 +165,39 @@ class OtpViewModel @Inject constructor(
                         errorMessage = "Error: ${e.message}"
                     )
                 }
+            }
+        }
+    }
+    
+    // Thêm hàm mới để gọi verifyEmail sau khi OTP đã được xác thực thành công
+    private suspend fun verifyEmailAfterOtpSuccess(email: String, otp: String) {
+        try {
+            val response = authRepository.verifyEmail(email, otp)
+            if (response.isSuccessful && response.body()?.success == true) {
+                _otpState.update { 
+                    it.copy(
+                        isLoading = false,
+                        isSuccess = true,
+                        errorMessage = "",
+                        action = "email_verified"
+                    )
+                }
+            } else {
+                _otpState.update { 
+                    it.copy(
+                        isLoading = false,
+                        isError = true,
+                        errorMessage = response.body()?.message ?: "Email verification failed"
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            _otpState.update { 
+                it.copy(
+                    isLoading = false,
+                    isError = true,
+                    errorMessage = "Email verification failed: ${e.message}"
+                )
             }
         }
     }

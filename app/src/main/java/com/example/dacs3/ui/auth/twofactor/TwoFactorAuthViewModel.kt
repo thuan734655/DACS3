@@ -105,7 +105,18 @@ class TwoFactorAuthViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             isError = true,
-                            errorMessage = "OTP verification failed: ${response.message()}"
+                            errorMessage = try {
+                                // Trích xuất thông báo lỗi từ body response
+                                val errorBody = response.errorBody()?.string()
+                                if (errorBody != null) {
+                                    val jsonObject = org.json.JSONObject(errorBody)
+                                    jsonObject.optString("message", "OTP verification failed: ${response.message()}")
+                                } else {
+                                    "OTP verification failed: ${response.message()}"
+                                }
+                            } catch (e: Exception) {
+                                "OTP verification failed: ${response.message()}"
+                            }
                         )
                     }
                 }
