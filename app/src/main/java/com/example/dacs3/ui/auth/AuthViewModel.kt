@@ -1,4 +1,4 @@
- package com.example.dacs3.ui.auth
+package com.example.dacs3.ui.auth
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -20,6 +20,7 @@ import org.json.JSONObject
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
+import java.util.UUID
 
 data class AuthUiState(
     val isLoading: Boolean = false,
@@ -310,8 +311,11 @@ class AuthViewModel @Inject constructor(
         try {
             val localUser = authRepository.getLocalUserByEmail(email)
             if (localUser != null) {
+                // For offline login, create a temporary token valid for 24 hours
+                val tempToken = "offline_token_${System.currentTimeMillis()}"
+                
                 // Found user locally, proceed with offline login
-                sessionManager.saveUserSession(localUser.userId, localUser.email)
+                sessionManager.saveUserSession(localUser.userId, localUser.email, tempToken)
                 _uiState.update { 
                     it.copy(
                         isLoading = false,
@@ -319,7 +323,8 @@ class AuthViewModel @Inject constructor(
                         isOfflineMode = true,
                         username = localUser.username,
                         email = localUser.email,
-                        action = "login_success"
+                        action = "login_success",
+                        token = tempToken
                     )
                 }
             } else {
@@ -348,7 +353,16 @@ class AuthViewModel @Inject constructor(
         
         when {
             authResponse?.success == true -> {
-                // Successful login
+                // Successful login - save session with token
+                authResponse.token?.let { token ->
+                    authResponse.account?.let { account ->
+                        // Generate a unique ID if none exists
+                        val generatedUserId = UUID.randomUUID().toString() 
+                        sessionManager.saveUserSession(generatedUserId, account.email ?: "", token)
+                    }
+                }
+                
+                // Update UI state
                 _uiState.update { 
                     it.copy(
                         isLoading = false,

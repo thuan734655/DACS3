@@ -1,6 +1,10 @@
 package com.example.dacs3.ui.auth
 
 import android.util.Log
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -34,6 +38,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.dacs3.ui.auth.otp.navigateToOtpVerification
 import com.example.dacs3.util.addFocusCleaner
+import com.example.dacs3.ui.theme.*
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
@@ -77,9 +82,9 @@ fun ForgotPasswordScreen(
     
     // Shimmer animation for loading state
     val shimmerColors = listOf(
-        Color(0xFFE6E8F0),
-        Color(0xFFF1F3F9),
-        Color(0xFFE6E8F0)
+        GradientStart,
+        GradientMiddle,
+        GradientEnd
     )
     
     var shimmerTranslation by remember { mutableStateOf(0f) }
@@ -95,7 +100,7 @@ fun ForgotPasswordScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F7F7))
+            .background(BackgroundGrey)
             .addFocusCleaner(focusManager, keyboardController),
         contentAlignment = Alignment.Center
     ) {
@@ -108,7 +113,8 @@ fun ForgotPasswordScreen(
         ) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Back"
+                contentDescription = "Back",
+                tint = TeamNexusPurple
             )
         }
         
@@ -121,7 +127,7 @@ fun ForgotPasswordScreen(
                     brush = Brush.verticalGradient(
                         colors = listOf(
                             Color.White.copy(alpha = 0.98f),
-                            Color(0xFFF5F7FF)
+                            InputBackground
                         )
                     )
                 )
@@ -132,7 +138,7 @@ fun ForgotPasswordScreen(
                 text = "Forgot Password",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1A4AC2),
+                color = TeamNexusPurple,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
             
@@ -140,7 +146,7 @@ fun ForgotPasswordScreen(
                 text = "Enter the email address associated with your account",
                 fontSize = 16.sp,
                 textAlign = TextAlign.Center,
-                color = Color(0xFF5E5E5E),
+                color = MediumGrey,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
             
@@ -153,11 +159,11 @@ fun ForgotPasswordScreen(
                     Icon(
                         imageVector = Icons.Default.Email,
                         contentDescription = "Email",
-                        tint = Color(0xFF6B4EFF)
+                        tint = TeamNexusPurple
                     )
                 },
                 colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color(0xFFF0F1F5),
+                    containerColor = CardLightGrey,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     disabledIndicatorColor = Color.Transparent
@@ -190,7 +196,7 @@ fun ForgotPasswordScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE7E7)),
+                    colors = CardDefaults.cardColors(containerColor = ErrorBackground),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Row(
@@ -199,7 +205,7 @@ fun ForgotPasswordScreen(
                     ) {
                         Text(
                             text = errorMessage,
-                            color = Color(0xFFE53935),
+                            color = ErrorRed,
                             fontSize = 14.sp,
                             modifier = Modifier.weight(1f)
                         )
@@ -219,7 +225,7 @@ fun ForgotPasswordScreen(
                 enabled = !isLoading && email.isNotBlank(),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6B4EFF),
+                    containerColor = TeamNexusPurple,
                     contentColor = Color.White
                 ),
                 modifier = Modifier
@@ -243,7 +249,7 @@ fun ForgotPasswordScreen(
             // Back to login link
             Text(
                 text = "Back to Login",
-                color = Color(0xFF1A4AC2),
+                color = TeamNexusPurple,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
@@ -276,7 +282,7 @@ fun ForgotPasswordScreen(
                     ) {
                         Box {
                             CircularProgressIndicator(
-                                color = Color(0xFF6B4EFF),
+                                color = TeamNexusPurple,
                                 strokeWidth = 4.dp,
                                 modifier = Modifier.size(48.dp)
                             )
@@ -306,7 +312,7 @@ fun ForgotPasswordScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "Sending reset code...",
-                            color = Color(0xFF333333),
+                            color = DarkGrey,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )

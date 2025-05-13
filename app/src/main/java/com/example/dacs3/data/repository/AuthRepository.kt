@@ -67,7 +67,7 @@ class AuthRepository @Inject constructor(
                                 
                                 // Save session info in shared prefs
                                 authResponse.token?.let { token ->
-                                    sessionManager.saveUserSession(userId, account.email)
+                                    sessionManager.saveUserSession(userId, account.email, token)
                                 }
                             } else {
                                 Log.e("AuthRepository", "Login success but username or email is null")

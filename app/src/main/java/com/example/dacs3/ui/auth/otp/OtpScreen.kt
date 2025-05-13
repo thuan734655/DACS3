@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
+import com.example.dacs3.ui.theme.TeamNexusPurple
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -162,7 +163,7 @@ fun OtpScreen(
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = TeamNexusPurple
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -208,7 +209,7 @@ fun OtpScreen(
                         showResendDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = TeamNexusPurple
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -259,7 +260,7 @@ fun OtpScreen(
                         viewModel.clearError()
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = TeamNexusPurple
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -411,7 +412,10 @@ fun OtpScreen(
                 .fillMaxWidth()
                 .height(50.dp)
                 .padding(horizontal = 32.dp),
-            enabled = !otpState.isLoading && !(showSuccessMessage || otpState.isSuccess)
+            enabled = !otpState.isLoading && !(showSuccessMessage || otpState.isSuccess),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = TeamNexusPurple
+            )
         ) {
             if (otpState.isLoading) {
                 CircularProgressIndicator(
@@ -428,38 +432,65 @@ fun OtpScreen(
         
         // Resend OTP section - hide when verification is successful
         AnimatedVisibility(visible = !(showSuccessMessage || otpState.isSuccess)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
                 modifier = Modifier.padding(top = 16.dp)
             ) {
                 Text(
-                    text = "Didn't receive the code? ",
-                    fontSize = 14.sp
+                    text = "Didn't receive the code?",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                 )
                 
+                Spacer(modifier = Modifier.height(8.dp))
+                
                 if (otpState.canResend) {
-                    TextButton(
+                    Button(
                         onClick = { 
-                            viewModel.resendOtp()
-                            // Hiển thị dialog resend thành công
-                            resendMessage = "OTP has been resent to your email. Please check your inbox."
-                            showResendDialog = true
+                            if (otpState.canResend) { // Double-check before proceeding
+                                viewModel.resendOtp()
+                                // Hiển thị dialog resend thành công
+                                resendMessage = "OTP has been resent to your email. Please check your inbox."
+                                showResendDialog = true
+                            }
                         },
-                        contentPadding = PaddingValues(4.dp)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = TeamNexusPurple,
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        enabled = otpState.canResend && !otpState.isLoading,
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(40.dp)
                     ) {
-                        Text(
-                            text = "Resend Now",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text("Resend Code")
                     }
                 } else {
-                    Text(
-                        text = "Resend in ${otpState.remainingSeconds}s",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                    )
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .fillMaxWidth(0.7f)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp, vertical = 10.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Wait ${otpState.remainingSeconds}s to resend",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = TeamNexusPurple
+                            )
+                        }
+                    }
                 }
             }
         }

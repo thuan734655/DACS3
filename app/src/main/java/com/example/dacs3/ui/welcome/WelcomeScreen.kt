@@ -8,12 +8,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.dacs3.R
+import com.example.dacs3.ui.theme.TeamNexusPurple
 
 @Composable
 fun WelcomeScreen(navController: NavController) {
@@ -69,7 +71,10 @@ fun WelcomeScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
-                .scale(scale)
+                .scale(scale),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = TeamNexusPurple
+            )
         ) {
             Text("Login")
         }
@@ -81,7 +86,10 @@ fun WelcomeScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
-                .scale(scale)
+                .scale(scale),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = TeamNexusPurple
+            )
         ) {
             Text("Register")
         }

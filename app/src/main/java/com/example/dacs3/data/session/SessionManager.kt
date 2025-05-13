@@ -2,8 +2,10 @@ package com.example.dacs3.data.session
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.util.Date
 
 /**
  * SessionManager - Handles user authentication state persistence
@@ -11,54 +13,123 @@ import javax.inject.Singleton
 @Singleton
 class SessionManager @Inject constructor(context: Context) {
     
-    private val sharedPreferences: SharedPreferences = 
-        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val editor = prefs.edit()
+    
+    companion object {
+        private const val PREFS_NAME = "dacs3_prefs"
+        private const val KEY_USER_ID = "user_id"
+        private const val KEY_EMAIL = "email"
+        private const val KEY_IS_LOGGED_IN = "is_logged_in"
+        private const val KEY_TOKEN = "user_token"
+        private const val KEY_TOKEN_EXPIRY = "token_expiry_time"
+        private const val KEY_FIRST_TIME = "is_first_time"
+    }
     
     /**
      * Save user session when they log in successfully
      */
-    fun saveUserSession(userId: String, email: String) {
-        val editor = sharedPreferences.edit()
+    fun saveUserSession(userId: String, email: String, token: String) {
         editor.putString(KEY_USER_ID, userId)
         editor.putString(KEY_EMAIL, email)
+        editor.putString(KEY_TOKEN, token)
+        
+        // Calculate expiration time (168 hours from now)
+        val expiryTime = System.currentTimeMillis() + (168 * 60 * 60 * 1000)
+        editor.putLong(KEY_TOKEN_EXPIRY, expiryTime)
+        
         editor.putBoolean(KEY_IS_LOGGED_IN, true)
         editor.apply()
+        
+        Log.d("SessionManager", "Saved user session with token expiry: ${Date(expiryTime)}")
     }
     
     /**
-     * Check if user is logged in
+     * Check if user is logged in with a valid token
      */
     fun isLoggedIn(): Boolean {
-        return sharedPreferences.getBoolean(KEY_IS_LOGGED_IN, false)
+        val isLoggedIn = prefs.getBoolean(KEY_IS_LOGGED_IN, false)
+        if (!isLoggedIn) return false
+        
+        // Check if token exists and is not expired
+        val token = prefs.getString(KEY_TOKEN, null)
+        val tokenExpiryTime = prefs.getLong(KEY_TOKEN_EXPIRY, 0)
+        val currentTime = System.currentTimeMillis()
+        
+        // If token is missing or expired, clear session and return false
+        if (token == null || currentTime > tokenExpiryTime) {
+            Log.d("SessionManager", "Token expired or missing. Clearing session.")
+            clearSession()
+            return false
+        }
+        
+        return true
     }
     
     /**
-     * Get logged in user ID
+     * Get remaining time until token expires (in milliseconds)
+     */
+    fun getTokenRemainingTime(): Long {
+        val tokenExpiryTime = prefs.getLong(KEY_TOKEN_EXPIRY, 0)
+        val currentTime = System.currentTimeMillis()
+        return if (tokenExpiryTime > currentTime) {
+            tokenExpiryTime - currentTime
+        } else 0
+    }
+    
+    /**
+     * Get logged in user id
      */
     fun getUserId(): String? {
-        return sharedPreferences.getString(KEY_USER_ID, null)
+        return prefs.getString(KEY_USER_ID, null)
     }
     
     /**
      * Get logged in user email
      */
     fun getUserEmail(): String? {
-        return sharedPreferences.getString(KEY_EMAIL, null)
+        return prefs.getString(KEY_EMAIL, null)
     }
     
     /**
-     * Clear session when user logs out
+     * Clear session details
      */
     fun clearSession() {
-        val editor = sharedPreferences.edit()
-        editor.clear()
+        editor.remove(KEY_USER_ID)
+        editor.remove(KEY_EMAIL)
+        editor.remove(KEY_TOKEN)
+        editor.remove(KEY_TOKEN_EXPIRY)
+        editor.putBoolean(KEY_IS_LOGGED_IN, false)
         editor.apply()
     }
     
-    companion object {
-        private const val PREF_NAME = "user_session"
-        private const val KEY_USER_ID = "user_id"
-        private const val KEY_EMAIL = "email"
-        private const val KEY_IS_LOGGED_IN = "is_logged_in"
+    fun saveAuthToken(token: String) {
+        editor.putString(KEY_TOKEN, token)
+        
+        // Calculate expiration time (168 hours from now)
+        val expiryTime = System.currentTimeMillis() + (168 * 60 * 60 * 1000)
+        editor.putLong(KEY_TOKEN_EXPIRY, expiryTime)
+        
+        editor.apply()
+    }
+
+    fun getAuthToken(): String? {
+        val token = prefs.getString(KEY_TOKEN, null)
+        val tokenExpiryTime = prefs.getLong(KEY_TOKEN_EXPIRY, 0)
+        val currentTime = System.currentTimeMillis()
+        
+        // Return null if token is expired
+        return if (token != null && currentTime <= tokenExpiryTime) {
+            token
+        } else null
+    }
+
+    fun isFirstTimeUser(): Boolean {
+        return prefs.getBoolean(KEY_FIRST_TIME, true)
+    }
+
+    fun setFirstTimeDone() {
+        editor.putBoolean(KEY_FIRST_TIME, false)
+        editor.apply()
     }
 } 

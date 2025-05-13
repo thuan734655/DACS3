@@ -22,19 +22,26 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.dacs3.data.session.SessionManager
 import com.example.dacs3.navigation.AppNavigation
 import com.example.dacs3.ui.auth.AuthViewModel
 import com.example.dacs3.ui.theme.DACS3Theme
+import com.example.dacs3.ui.theme.PrimaryPurple
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    
+    @Inject
+    lateinit var sessionManager: SessionManager
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             DACS3Theme {
-                MainAppScaffold()
+                MainAppScaffold(sessionManager = sessionManager)
             }
         }
     }
@@ -43,24 +50,22 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainAppScaffold(
-    authViewModel: AuthViewModel = hiltViewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    sessionManager: SessionManager
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     
-    // Check if user is logged in to determine start destination
-    val isLoggedIn = remember { authViewModel.checkLoggedInStatus() }
-    val startDestination = if (isLoggedIn) "home" else "welcome"
-    
     // Define screens that should show bottom navigation
     val showBottomBar by remember(currentDestination) {
         val hideBottomBarScreens = listOf(
-            "login", "register", "welcome", "otp_verification", "reset_password", "forgot_password"
+            "login", "register", "welcome", "otp_verification", "reset_password", 
+            "forgot_password", "onboarding"
         )
         mutableStateOf(currentDestination?.route?.let { route ->
             !hideBottomBarScreens.any { screen -> route.startsWith(screen) }
-        } ?: true)
+        } ?: false)
     }
     
     // Define all available routes for validation in bottom navigation
@@ -71,7 +76,7 @@ fun MainAppScaffold(
             if (showBottomBar) {
                 NavigationBar(
                     containerColor = Color.White,
-                    contentColor = Color(0xFF6B4EFF)
+                    contentColor = PrimaryPurple
                 ) {
                     NavigationBarItem(
                         icon = {
@@ -196,7 +201,7 @@ fun MainAppScaffold(
         ) {
             AppNavigation(
                 navController = navController,
-                startDestination = startDestination
+                sessionManager = sessionManager
             )
         }
     }

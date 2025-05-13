@@ -36,6 +36,7 @@ import com.example.dacs3.util.ValidationUtils
 import com.example.dacs3.util.addFocusCleaner
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
+import com.example.dacs3.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +49,9 @@ fun RegisterScreen(
     var contactNumber by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    
+    // Thêm biến thiếu
+    var acceptTerms by remember { mutableStateOf(false) }
 
     // Biến trạng thái cho việc hiển thị/ẩn mật khẩu
     var passwordVisible by remember { mutableStateOf(false) }
@@ -63,6 +67,16 @@ fun RegisterScreen(
 
     val uiState by viewModel.uiState.collectAsState()
     val isLoading = uiState.isLoading
+    
+    // Tính toán isValidInput dựa trên các điều kiện
+    val isValidInput = remember(username, email, contactNumber, password, confirmPassword, 
+        usernameError, emailError, contactNumberError, passwordError, confirmPasswordError) {
+        username.isNotBlank() && email.isNotBlank() && contactNumber.isNotBlank() && 
+        password.isNotBlank() && confirmPassword.isNotBlank() && 
+        password == confirmPassword &&
+        usernameError == null && emailError == null && contactNumberError == null && 
+        passwordError == null && confirmPasswordError == null
+    }
     
     // Focus and keyboard management
     val focusManager = LocalFocusManager.current
@@ -84,9 +98,9 @@ fun RegisterScreen(
     
     // Shimmer animation for loading state
     val shimmerColors = listOf(
-        Color(0xFFE6E8F0), 
-        Color(0xFFF1F3F9), 
-        Color(0xFFE6E8F0)
+        GradientStart, 
+        GradientMiddle, 
+        GradientEnd
     )
     
     var shimmerTranslation by remember { mutableStateOf(0f) }
@@ -145,7 +159,7 @@ fun RegisterScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F7F7))
+            .background(BackgroundGrey)
             .addFocusCleaner(focusManager, keyboardController),
         contentAlignment = Alignment.Center
     ) {
@@ -158,7 +172,7 @@ fun RegisterScreen(
                     brush = Brush.verticalGradient(
                         colors = listOf(
                             Color.White.copy(alpha = 0.98f),
-                            Color(0xFFF5F7FF)
+                            InputBackground
                         )
                     )
                 )
@@ -167,7 +181,7 @@ fun RegisterScreen(
         ) {
             Text(
                 text = "Create Account",
-                color = Color(0xFF1A4AC2),
+                color = TextDark,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 26.sp,
                 modifier = Modifier.padding(bottom = 6.dp)
@@ -196,14 +210,14 @@ fun RegisterScreen(
                     .onFocusChanged { usernameFocused = it.isFocused },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (usernameFocused) Color(0xFF1A4AC2) else Color(0xFFE0E0E0),
-                    unfocusedBorderColor = Color(0xFFE0E0E0),
-                    unfocusedContainerColor = Color(0xFFF5F7FF),
-                    focusedContainerColor = Color(0xFFF5F7FF)
+                    focusedBorderColor = if (usernameFocused) TeamNexusPurple else InputBorderDefault,
+                    unfocusedBorderColor = InputBorderDefault,
+                    unfocusedContainerColor = InputBackground,
+                    focusedContainerColor = InputBackground
                 ),
                 isError = usernameError != null
             )
-            if (usernameError != null) Text(usernameError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
+            if (usernameError != null) Text(usernameError!!, color = ErrorRed, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = email,
                 onValueChange = {
@@ -219,14 +233,14 @@ fun RegisterScreen(
                     .onFocusChanged { emailFocused = it.isFocused },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (emailFocused) Color(0xFF1A4AC2) else Color(0xFFE0E0E0),
-                    unfocusedBorderColor = Color(0xFFE0E0E0),
-                    unfocusedContainerColor = Color(0xFFF5F7FF),
-                    focusedContainerColor = Color(0xFFF5F7FF)
+                    focusedBorderColor = if (emailFocused) TeamNexusPurple else InputBorderDefault,
+                    unfocusedBorderColor = InputBorderDefault,
+                    unfocusedContainerColor = InputBackground,
+                    focusedContainerColor = InputBackground
                 ),
                 isError = emailError != null
             )
-            if (emailError != null) Text(emailError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
+            if (emailError != null) Text(emailError!!, color = ErrorRed, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = contactNumber,
                 onValueChange = {
@@ -242,14 +256,14 @@ fun RegisterScreen(
                     .onFocusChanged { contactNumberFocused = it.isFocused },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (contactNumberFocused) Color(0xFF1A4AC2) else Color(0xFFE0E0E0),
-                    unfocusedBorderColor = Color(0xFFE0E0E0),
-                    unfocusedContainerColor = Color(0xFFF5F7FF),
-                    focusedContainerColor = Color(0xFFF5F7FF)
+                    focusedBorderColor = if (contactNumberFocused) TeamNexusPurple else InputBorderDefault,
+                    unfocusedBorderColor = InputBorderDefault,
+                    unfocusedContainerColor = InputBackground,
+                    focusedContainerColor = InputBackground
                 ),
                 isError = contactNumberError != null
             )
-            if (contactNumberError != null) Text(contactNumberError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
+            if (contactNumberError != null) Text(contactNumberError!!, color = ErrorRed, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = password,
                 onValueChange = {
@@ -266,23 +280,23 @@ fun RegisterScreen(
                     .onFocusChanged { passwordFocused = it.isFocused },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (passwordFocused) Color(0xFF1A4AC2) else Color(0xFFE0E0E0),
-                    unfocusedBorderColor = Color(0xFFE0E0E0),
-                    unfocusedContainerColor = Color(0xFFF5F7FF),
-                    focusedContainerColor = Color(0xFFF5F7FF)
+                    focusedBorderColor = if (passwordFocused) TeamNexusPurple else InputBorderDefault,
+                    unfocusedBorderColor = InputBorderDefault,
+                    unfocusedContainerColor = InputBackground,
+                    focusedContainerColor = InputBackground
                 ),
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                            tint = Color(0xFF1A4AC2)
+                            tint = TeamNexusPurple
                         )
                     }
                 },
                 isError = passwordError != null
             )
-            if (passwordError != null) Text(passwordError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
+            if (passwordError != null) Text(passwordError!!, color = ErrorRed, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = {
@@ -299,23 +313,23 @@ fun RegisterScreen(
                     .onFocusChanged { confirmPasswordFocused = it.isFocused },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (confirmPasswordFocused) Color(0xFF1A4AC2) else Color(0xFFE0E0E0),
-                    unfocusedBorderColor = Color(0xFFE0E0E0),
-                    unfocusedContainerColor = Color(0xFFF5F7FF),
-                    focusedContainerColor = Color(0xFFF5F7FF)
+                    focusedBorderColor = if (confirmPasswordFocused) TeamNexusPurple else InputBorderDefault,
+                    unfocusedBorderColor = InputBorderDefault,
+                    unfocusedContainerColor = InputBackground,
+                    focusedContainerColor = InputBackground
                 ),
                 trailingIcon = {
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                         Icon(
                             imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password",
-                            tint = Color(0xFF1A4AC2)
+                            tint = TeamNexusPurple
                         )
                     }
                 },
                 isError = confirmPasswordError != null
             )
-            if (confirmPasswordError != null) Text(confirmPasswordError!!, color = Color.Red, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
+            if (confirmPasswordError != null) Text(confirmPasswordError!!, color = ErrorRed, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)) else Spacer(Modifier.height(12.dp))
             
             AnimatedVisibility(
                 visible = showError,
@@ -326,7 +340,7 @@ fun RegisterScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE7E7)),
+                    colors = CardDefaults.cardColors(containerColor = ErrorBackground),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Row(
@@ -335,7 +349,7 @@ fun RegisterScreen(
                     ) {
                         Text(
                             text = errorMessage,
-                            color = Color(0xFFE53935),
+                            color = ErrorRed,
                             fontSize = 14.sp,
                             modifier = Modifier.weight(1f)
                         )
@@ -345,7 +359,6 @@ fun RegisterScreen(
             
             Button(
                 onClick = {
-                    // Hide keyboard when button is clicked
                     keyboardController?.hide()
                     focusManager.clearFocus()
                     
@@ -358,13 +371,13 @@ fun RegisterScreen(
                         )
                     }
                 },
+                enabled = !isLoading && isValidInput,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = TeamNexusPurple),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(top = 8.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4AC2)),
-                enabled = !isLoading
+                    .height(54.dp)
+                    .padding(vertical = 8.dp)
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -388,19 +401,19 @@ fun RegisterScreen(
                         // Hide keyboard when clicking on sign in link
                         keyboardController?.hide()
                         focusManager.clearFocus()
-                        navController.popBackStack()
+                        navController.navigate("login")
                     },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = "Already have an account? ",
-                    color = Color(0xFF666666),
+                    color = TextGrey,
                     fontSize = 14.sp
                 )
                 Text(
                     text = "Sign In",
-                    color = Color(0xFF1A4AC2),
+                    color = TeamNexusPurple,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
@@ -431,7 +444,7 @@ fun RegisterScreen(
                     ) {
                         Box {
                             CircularProgressIndicator(
-                                color = Color(0xFF1A4AC2),
+                                color = TeamNexusPurple,
                                 strokeWidth = 4.dp,
                                 modifier = Modifier.size(48.dp)
                             )
@@ -461,7 +474,7 @@ fun RegisterScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "Creating account...",
-                            color = Color(0xFF333333),
+                            color = DarkGrey,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )

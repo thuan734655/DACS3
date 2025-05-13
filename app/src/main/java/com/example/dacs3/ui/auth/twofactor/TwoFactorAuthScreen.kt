@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dacs3.R
 import kotlinx.coroutines.delay
+import com.example.dacs3.ui.theme.TeamNexusPurple
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -223,7 +224,10 @@ fun TwoFactorAuthScreen(
                 .fillMaxWidth()
                 .height(50.dp)
                 .padding(horizontal = 32.dp),
-            enabled = !state.isLoading && otpValue.length == 6
+            enabled = !state.isLoading && otpValue.length == 6,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = TeamNexusPurple
+            )
         ) {
             if (state.isLoading) {
                 CircularProgressIndicator(

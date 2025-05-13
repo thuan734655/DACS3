@@ -34,6 +34,9 @@ class OtpViewModel @Inject constructor(
     
     private var countDownTimer: CountDownTimer? = null
     
+    // Track last resend time to enforce cooldown
+    private var lastResendTime: Long = 0
+    
     fun setEmail(email: String, action: String? = null) {
         if (email.isBlank()) return
         
@@ -51,6 +54,8 @@ class OtpViewModel @Inject constructor(
             setAction(action)
         }
         
+        // Start cooldown timer on initial load to prevent immediate resend
+        lastResendTime = System.currentTimeMillis()
         startCountdown()
     }
     
@@ -162,20 +167,47 @@ class OtpViewModel @Inject constructor(
         // Allow resending immediately for 2FA, regardless of timer
         val is2fa = _otpState.value.action == "2fa"
         
-        // Kiểm tra nếu không phải 2FA và chưa đủ thời gian để resend
-        if (!is2fa && !_otpState.value.canResend) {
-            // Không hiển thị lỗi khi chưa đủ thời gian resend
+        // Check if enough time has passed since last resend (60 seconds)
+        val currentTime = System.currentTimeMillis()
+        val elapsedTime = currentTime - lastResendTime
+        
+        // Strict enforcement: Don't allow resend until full 60 seconds have passed
+        if (!is2fa && elapsedTime < 60000) {
+            // Calculate remaining seconds and update UI
+            val remainingMs = 60000 - elapsedTime
+            val remainingSec = (remainingMs / 1000).toInt() + 1 // Round up
+            
+            _otpState.update {
+                it.copy(
+                    canResend = false,
+                    remainingSeconds = remainingSec
+                )
+            }
             return
         }
+        
+        // Cancel any existing timer
+        countDownTimer?.cancel()
+        
+        // Update resend timestamp immediately
+        lastResendTime = currentTime
+        
+        // Enforce cooldown immediately
+        _otpState.update { 
+            it.copy(
+                canResend = false,
+                remainingSeconds = 60
+            )
+        }
+        
+        // Start the countdown
+        startCountdown()
         
         viewModelScope.launch {
             _otpState.update { 
                 it.copy(
                     isLoading = true, 
-                    isError = false, // Luôn reset lỗi khi resend
-                    errorMessage = "",
-                    remainingSeconds = 60,
-                    canResend = false
+                    isError = false // Always reset error on resend
                 )
             }
             
@@ -192,14 +224,12 @@ class OtpViewModel @Inject constructor(
                                 errorMessage = ""
                             )
                         }
-                        startCountdown()
                     } else {
                         _otpState.update { 
                             it.copy(
                                 isLoading = false,
-                                // Không đặt isError = true để không hiển thị lỗi màu đỏ
-                                errorMessage = authResponse?.message ?: "Failed to resend OTP",
-                                canResend = true
+                                errorMessage = authResponse?.message ?: "Failed to resend OTP"
+                                // Keep canResend false to enforce waiting period regardless of success
                             )
                         }
                     }
@@ -207,9 +237,8 @@ class OtpViewModel @Inject constructor(
                     _otpState.update { 
                         it.copy(
                             isLoading = false,
-                            // Không đặt isError = true để không hiển thị lỗi màu đỏ
-                            errorMessage = "Failed to resend OTP: ${response.message()}",
-                            canResend = true
+                            errorMessage = "Failed to resend OTP: ${response.message()}"
+                            // Keep canResend false to enforce waiting period regardless of success
                         )
                     }
                 }
@@ -217,9 +246,8 @@ class OtpViewModel @Inject constructor(
                 _otpState.update { 
                     it.copy(
                         isLoading = false,
-                        // Không đặt isError = true để không hiển thị lỗi màu đỏ
-                        errorMessage = "Error: ${e.message}",
-                        canResend = true
+                        errorMessage = "Error: ${e.message}"
+                        // Keep canResend false to enforce waiting period regardless of success
                     )
                 }
             }
@@ -234,16 +262,57 @@ class OtpViewModel @Inject constructor(
             override fun onTick(millisUntilFinished: Long) {
                 val secondsRemaining = (millisUntilFinished / 1000).toInt()
                 _otpState.update { 
-                    it.copy(remainingSeconds = secondsRemaining)
+                    it.copy(
+                        remainingSeconds = secondsRemaining,
+                        canResend = false // Always ensure canResend is false during countdown
+                    )
                 }
             }
             
             override fun onFinish() {
-                _otpState.update { 
-                    it.copy(
-                        remainingSeconds = 0,
-                        canResend = true
-                    )
+                // Calculate time since last resend
+                val timeSinceResend = System.currentTimeMillis() - lastResendTime
+                
+                // Only allow resend if full 60 seconds have passed
+                if (timeSinceResend >= 60000) {
+                    _otpState.update { 
+                        it.copy(
+                            remainingSeconds = 0,
+                            canResend = true
+                        )
+                    }
+                } else {
+                    // If less than 60 seconds have passed, restart countdown with remaining time
+                    val remainingMs = 60000 - timeSinceResend
+                    _otpState.update {
+                        it.copy(
+                            remainingSeconds = (remainingMs / 1000).toInt() + 1, // Round up
+                            canResend = false
+                        )
+                    }
+                    
+                    // Start new timer with remaining time
+                    countDownTimer?.cancel()
+                    countDownTimer = object : CountDownTimer(remainingMs, 1000) {
+                        override fun onTick(millisUntilFinished: Long) {
+                            val seconds = (millisUntilFinished / 1000).toInt()
+                            _otpState.update {
+                                it.copy(
+                                    remainingSeconds = seconds,
+                                    canResend = false
+                                )
+                            }
+                        }
+                        
+                        override fun onFinish() {
+                            _otpState.update {
+                                it.copy(
+                                    remainingSeconds = 0,
+                                    canResend = true
+                                )
+                            }
+                        }
+                    }.start()
                 }
             }
         }.start()

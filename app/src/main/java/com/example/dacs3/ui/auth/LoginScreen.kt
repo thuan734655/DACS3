@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.dacs3.ui.auth.otp.navigateToOtpVerification
+import com.example.dacs3.ui.theme.*
 import com.example.dacs3.util.addFocusCleaner
 import com.example.dacs3.util.DeviceUtils
 import kotlinx.coroutines.delay
@@ -61,7 +62,7 @@ fun LoginScreen(
     val emailFocusRequester = remember { FocusRequester() }
     val passwordFocusRequester = remember { FocusRequester() }
     
-    // Request focus on the email field when screen loads
+    // Focus on email field initially
     LaunchedEffect(Unit) {
         emailFocusRequester.requestFocus()
     }
@@ -109,9 +110,9 @@ fun LoginScreen(
 
     // Shimmer animation for loading state
     val shimmerColors = listOf(
-        Color(0xFFE6E8F0),
-        Color(0xFFF1F3F9),
-        Color(0xFFE6E8F0)
+        GradientStart,
+        GradientMiddle,
+        GradientEnd
     )
     
     val shimmerBrush = remember {
@@ -136,7 +137,7 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F7F7))
+            .background(BackgroundGrey)
             .addFocusCleaner(focusManager, keyboardController),
         contentAlignment = Alignment.Center
     ) {
@@ -150,14 +151,14 @@ fun LoginScreen(
         ) {
             Text(
                 text = "Login",
-                color = Color(0xFF1A4AC2),
+                color = TextDark,
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             Text(
                 text = "Welcome back you've\nbeen missed!",
-                color = Color.Black,
+                color = DarkGrey,
                 fontWeight = FontWeight.Medium,
                 fontSize = 16.sp,
                 textAlign = TextAlign.Center,
@@ -179,14 +180,16 @@ fun LoginScreen(
                     .focusRequester(emailFocusRequester),
                 shape = RoundedCornerShape(10.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF1A4AC2),
-                    unfocusedBorderColor = Color(0xFF1A4AC2)
+                    focusedBorderColor = TeamNexusPurple ,
+                    unfocusedBorderColor = InputBorderDefault,
+                    unfocusedContainerColor = InputBackground,
+                    focusedContainerColor = InputBackground
                 ),
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Email,
                         contentDescription = "Email Icon",
-                        tint = Color(0xFF1A4AC2)
+                        tint = TeamNexusPurple
                     )
                 },
                 keyboardOptions = KeyboardOptions(
@@ -210,14 +213,16 @@ fun LoginScreen(
                     .focusRequester(passwordFocusRequester),
                 shape = RoundedCornerShape(10.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF1A4AC2),
-                    unfocusedBorderColor = Color(0xFF1A4AC2)
+                    focusedBorderColor =  TeamNexusPurple ,
+                    unfocusedBorderColor = InputBorderDefault,
+                    unfocusedContainerColor = InputBackground,
+                    focusedContainerColor = InputBackground
                 ),
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Lock,
                         contentDescription = "Password Icon",
-                        tint = Color(0xFF1A4AC2)
+                        tint = TeamNexusPurple
                     )
                 },
                 trailingIcon = {
@@ -225,7 +230,7 @@ fun LoginScreen(
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = "Toggle password visibility",
-                            tint = Color(0xFF1A4AC2)
+                            tint = TeamNexusPurple
                         )
                     }
                 },
@@ -240,12 +245,14 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                // Forgot password text
                 Text(
                     text = "Forgot password?",
-                    color = Color(0xFF1A4AC2),
-                    fontSize = 14.sp,
+                    color = TeamNexusPurple,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.clickable { 
                         // Hide keyboard when clicking on forgot password
@@ -267,7 +274,7 @@ fun LoginScreen(
                         .padding(bottom = 16.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = if (errorMessage.contains("verify your email", ignoreCase = true)) 
-                            Color(0xFFFFF8E1) else Color(0xFFFEE7E7) // Amber 100 for verify email (warning)
+                            ErrorBackground else ErrorBackground // Amber 100 for verify email (warning)
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
@@ -278,7 +285,7 @@ fun LoginScreen(
                         Text(
                             text = errorMessage,
                             color = if (errorMessage.contains("verify your email", ignoreCase = true))
-                                Color(0xFFFF8F00) else Color(0xFFE53935), // Amber for verify, Red for error
+                                ErrorRed else ErrorRed, // Amber for verify, Red for error
                             fontSize = 14.sp,
                             modifier = Modifier.weight(1f)
                         )
@@ -294,7 +301,7 @@ fun LoginScreen(
                                     navController.navigateToOtpVerification(email, "verify_email")
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF1A4AC2)
+                                    containerColor = TeamNexusPurple
                                 ),
                                 modifier = Modifier.height(36.dp)
                             ) {
@@ -322,6 +329,7 @@ fun LoginScreen(
                         // Log the device ID for debugging
                         Log.d("LoginScreen", "Using direct Android ID for login: $deviceId")
                         
+                        // Call login without remember me parameter
                         viewModel.login(email, password, isEmail, deviceId)
                     } else {
                         showError = true
@@ -333,7 +341,7 @@ fun LoginScreen(
                     .height(48.dp)
                     .shadow(6.dp, RoundedCornerShape(10.dp)),
                 shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4AC2)),
+                colors = ButtonDefaults.buttonColors(containerColor = TeamNexusPurple),
                 enabled = !isLoading
             ) {
                 if (isLoading) {
@@ -372,7 +380,7 @@ fun LoginScreen(
                     ) {
                         Box {
                             CircularProgressIndicator(
-                                color = Color(0xFF1A4AC2),
+                                color = TeamNexusPurple,
                                 strokeWidth = 4.dp,
                                 modifier = Modifier.size(48.dp)
                             )
@@ -402,7 +410,7 @@ fun LoginScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                 Text(
                             text = "Signing in...",
-                            color = Color(0xFF333333),
+                            color = DarkGrey,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                 )
@@ -425,7 +433,7 @@ fun LoginScreen(
         ) {
             Text(
                 text = "Create new account",
-                color = Color(0xFF222222),
+                color = TextDark,
                 fontWeight = FontWeight.Medium,
                 fontSize = 15.sp
             )

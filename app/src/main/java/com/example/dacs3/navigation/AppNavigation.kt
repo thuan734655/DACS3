@@ -3,12 +3,14 @@ package com.example.dacs3.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.dacs3.data.session.SessionManager
 import com.example.dacs3.ui.auth.AuthViewModel
 import com.example.dacs3.ui.auth.ForgotPasswordScreen
 import com.example.dacs3.ui.auth.LoginScreen
@@ -19,23 +21,35 @@ import com.example.dacs3.ui.auth.otp.resetPasswordScreen
 import com.example.dacs3.ui.auth.twofactor.twoFactorAuthScreen
 import com.example.dacs3.ui.channels.ChannelsScreen
 import com.example.dacs3.ui.home.HomeScreen
+import com.example.dacs3.ui.onboarding.OnboardingScreen
 import com.example.dacs3.ui.profile.ProfileScreen
 import com.example.dacs3.ui.welcome.WelcomeScreen
 import com.example.dacs3.ui.workspaces.WorkspacesScreen
+import javax.inject.Inject
 
 @Composable
 fun AppNavigation(
-    navController: NavHostController, 
-    startDestination: String = "welcome",
-    authViewModel: AuthViewModel = hiltViewModel()
+    navController: NavHostController,
+    authViewModel: AuthViewModel = hiltViewModel(),
+    sessionManager: SessionManager
 ) {
-    // Always start with welcome or login, never directly to home
-    // Remove automatic home navigation based on session
+    // Determine initial destination based on if it's first time using the app
+    val initialDestination = if (sessionManager.isFirstTimeUser()) {
+        "onboarding"
+    } else if (sessionManager.isLoggedIn()) {
+        "home"
+    } else {
+        "welcome"
+    }
     
     // Get current user ID from AuthViewModel
     val currentUserId = authViewModel.currentUserId.collectAsState().value
     
-    NavHost(navController = navController, startDestination = startDestination) {
+    NavHost(navController = navController, startDestination = initialDestination) {
+        composable("onboarding") {
+            OnboardingScreen(navController = navController)
+        }
+        
         composable("welcome") {
             WelcomeScreen(navController)
         }

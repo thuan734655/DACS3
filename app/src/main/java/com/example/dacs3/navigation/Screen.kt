@@ -1,6 +1,7 @@
 package com.example.dacs3.navigation
 
 sealed class Screen(val route: String) {
+    object Onboarding : Screen("onboarding")
     object Welcome : Screen("welcome")
     object Login : Screen("login")
     object Register : Screen("register")
