@@ -61,5 +61,12 @@ fun NavGraph(
         composable("home") {
             HomeScreen(navController = navController)
         }
+        
+        // Create Workspace screen
+        composable("create_workspace") {
+            // TODO: Replace this with your actual CreateWorkspaceScreen when implemented
+            androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }.value
+            androidx.compose.material3.Text("Create Workspace Screen - To Be Implemented")
+        }
     }
 } 

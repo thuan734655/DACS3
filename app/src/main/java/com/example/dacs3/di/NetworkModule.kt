@@ -1,7 +1,9 @@
 package com.example.dacs3.di
 
 import com.example.dacs3.data.api.AuthApi
+import com.example.dacs3.data.api.HomeApi
 import com.example.dacs3.data.api.OtpApi
+import com.example.dacs3.data.network.WorkspaceApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -52,5 +54,17 @@ object NetworkModule {
     @Singleton
     fun provideOtpApi(retrofit: Retrofit): OtpApi {
         return retrofit.create(OtpApi::class.java)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideHomeApi(retrofit: Retrofit): HomeApi {
+        return retrofit.create(HomeApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWorkspaceApi(retrofit: Retrofit): WorkspaceApi {
+        return retrofit.create(WorkspaceApi::class.java)
     }
 } 
