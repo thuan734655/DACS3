@@ -41,6 +41,7 @@ fun OtpScreen(
     onTwoFactorAuthRequired: (String) -> Unit = {},
     onResetPassword: (String, String) -> Unit = { _, _ -> },
     action: String? = null,
+    source: String? = null,
     viewModel: OtpViewModel = hiltViewModel()
 ) {
     val otpState by viewModel.otpState.collectAsState()

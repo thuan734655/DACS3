@@ -1,6 +1,5 @@
 package com.example.dacs3.ui.auth
 
-import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,6 +40,7 @@ import androidx.navigation.NavController
 import com.example.dacs3.util.addFocusCleaner
 import kotlinx.coroutines.delay
 import com.example.dacs3.ui.theme.*
+import com.example.dacs3.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable

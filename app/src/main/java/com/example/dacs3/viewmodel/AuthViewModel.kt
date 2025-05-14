@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.auth
+package com.example.dacs3.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel

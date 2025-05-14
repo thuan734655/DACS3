@@ -1,7 +1,6 @@
 package com.example.dacs3.di
 
-import com.example.dacs3.data.api.AuthApi
-import com.example.dacs3.data.api.OtpApi
+import com.example.dacs3.data.api.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,7 +22,7 @@ object NetworkModule {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
-        
+
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
@@ -36,7 +35,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:3000/")
+            .baseUrl("http://10.0.2.2:3000/api/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -47,10 +46,64 @@ object NetworkModule {
     fun provideAuthApi(retrofit: Retrofit): AuthApi {
         return retrofit.create(AuthApi::class.java)
     }
-    
+
     @Provides
     @Singleton
     fun provideOtpApi(retrofit: Retrofit): OtpApi {
         return retrofit.create(OtpApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideChannelApi(retrofit: Retrofit): ChannelApi {
+        return retrofit.create(ChannelApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWorkspaceApi(retrofit: Retrofit): WorkspaceApi {
+        return retrofit.create(WorkspaceApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMessagesApi(retrofit: Retrofit): MessagesApi {
+        return retrofit.create(MessagesApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideHomeApi(retrofit: Retrofit): HomeApi {
+        return retrofit.create(HomeApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTaskApi(retrofit: Retrofit): TaskApi {
+        return retrofit.create(TaskApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideEpicApi(retrofit: Retrofit): EpicApi {
+        return retrofit.create(EpicApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSprintApi(retrofit: Retrofit): SprintApi {
+        return retrofit.create(SprintApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReportApi(retrofit: Retrofit): ReportApi {
+        return retrofit.create(ReportApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotificationApi(retrofit: Retrofit): NotificationApi {
+        return retrofit.create(NotificationApi::class.java)
     }
 } 

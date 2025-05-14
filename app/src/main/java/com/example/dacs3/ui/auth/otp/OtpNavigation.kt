@@ -12,13 +12,22 @@ import com.example.dacs3.ui.auth.twofactor.TWO_FACTOR_AUTH_ROUTE
 const val OTP_VERIFICATION_ROUTE = "otp_verification"
 const val EMAIL_ARG = "email"
 const val ACTION_ARG = "action"
+const val SOURCE_ARG = "source"
 const val RESET_PASSWORD_ROUTE = "reset_password"
 
-fun NavController.navigateToOtpVerification(email: String, action: String? = null) {
-    val route = if (action != null) {
-        "$OTP_VERIFICATION_ROUTE/$email?$ACTION_ARG=$action"
-    } else {
-        "$OTP_VERIFICATION_ROUTE/$email"
+fun NavController.navigateToOtpVerification(email: String, action: String? = null, source: String? = null) {
+    val route = buildString {
+        append("$OTP_VERIFICATION_ROUTE/$email")
+        if (action != null || source != null) {
+            append("?")
+            if (action != null) {
+                append("$ACTION_ARG=$action")
+            }
+            if (source != null) {
+                if (action != null) append("&")
+                append("$SOURCE_ARG=$source")
+            }
+        }
     }
     this.navigate(route)
 }
@@ -29,18 +38,23 @@ fun NavController.navigateToResetPassword(email: String, otp: String) {
 
 fun NavGraphBuilder.otpVerificationScreen(
     navController: NavController,
-    onVerificationSuccess: () -> Unit,
+    onVerificationSuccess: (String?) -> Unit,
     onNavigateBack: () -> Unit,
     onTwoFactorRequired: (String) -> Unit = { email ->
         // Default implementation that can be overridden
     }
 ) {
     composable(
-        route = "$OTP_VERIFICATION_ROUTE/{$EMAIL_ARG}?$ACTION_ARG={$ACTION_ARG}",
+        route = "$OTP_VERIFICATION_ROUTE/{$EMAIL_ARG}?$ACTION_ARG={$ACTION_ARG}&$SOURCE_ARG={$SOURCE_ARG}",
         arguments = listOf(
             navArgument(EMAIL_ARG) { type = NavType.StringType },
             navArgument(ACTION_ARG) { 
                 type = NavType.StringType 
+                nullable = true
+                defaultValue = null
+            },
+            navArgument(SOURCE_ARG) {
+                type = NavType.StringType
                 nullable = true
                 defaultValue = null
             }
@@ -48,19 +62,22 @@ fun NavGraphBuilder.otpVerificationScreen(
     ) { entry ->
         val email = entry.arguments?.getString(EMAIL_ARG) ?: ""
         val action = entry.arguments?.getString(ACTION_ARG)
+        val source = entry.arguments?.getString(SOURCE_ARG)
         
-        Log.d("OtpNavigation", "Loading OTP screen with email: $email, action: $action")
+        Log.d("OtpNavigation", "Loading OTP screen with email: $email, action: $action, source: $source")
         
         OtpScreen(
             email = email,
             action = action,
-            onVerificationSuccess = onVerificationSuccess,
+            source = source,
+            onVerificationSuccess = { 
+                onVerificationSuccess(source)
+            },
             onNavigateBack = onNavigateBack,
             onTwoFactorAuthRequired = { emailArg ->
                 onTwoFactorRequired(emailArg)
             },
             onResetPassword = { emailArg, otpCode ->
-                // Handle navigation to reset password screen
                 Log.d("OtpNavigation", "Navigating to reset password with email: $emailArg")
                 navController.navigateToResetPassword(emailArg, otpCode)
             }

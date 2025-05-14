@@ -38,7 +38,7 @@ import androidx.navigation.NavController
 import com.example.dacs3.ui.auth.otp.navigateToOtpVerification
 import com.example.dacs3.ui.theme.*
 import com.example.dacs3.util.addFocusCleaner
-import com.example.dacs3.util.DeviceUtils
+import com.example.dacs3.viewmodel.AuthViewModel
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,14 +82,14 @@ fun LoginScreen(
                     viewModel.requestVerificationOtp(emailAddress)
                     
                     // Sau đó chuyển đến màn hình OTP
-                    navController.navigateToOtpVerification(emailAddress, "verify_email")
+                    navController.navigateToOtpVerification(emailAddress, "verify_email", "login")
                 }
             }
             uiState.action == "2fa" -> {
                 // Navigate to OTP verification when 2FA is required
                 Log.d("LoginScreen", "2FA required, navigating to OTP screen with email: ${uiState.email}")
                 uiState.email?.let { email ->
-                    navController.navigateToOtpVerification(email, "2fa")
+                    navController.navigateToOtpVerification(email, "2fa", "login")
                 }
             }
             uiState.isError -> {
@@ -298,7 +298,7 @@ fun LoginScreen(
                                     focusManager.clearFocus()
                                     // Gửi OTP và chuyển sang màn hình xác thực
                                     viewModel.requestVerificationOtp(email)
-                                    navController.navigateToOtpVerification(email, "verify_email")
+                                    navController.navigateToOtpVerification(email, "verify_email", "login")
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = TeamNexusPurple

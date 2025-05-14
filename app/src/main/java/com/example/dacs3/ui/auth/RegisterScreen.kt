@@ -37,6 +37,7 @@ import com.example.dacs3.util.addFocusCleaner
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import com.example.dacs3.ui.theme.*
+import com.example.dacs3.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,7 +119,7 @@ fun RegisterScreen(
             uiState.isSuccess && uiState.action == "verify_email" -> {
                 // Navigate to OTP verification screen with the registered email and action
                 val registeredEmail = uiState.email ?: email
-                navController.navigateToOtpVerification(registeredEmail, "verify_email")
+                navController.navigateToOtpVerification(registeredEmail, "verify_email", "register")
             }
             uiState.isSuccess -> {
                 // This should not happen in Register flow, but just in case

@@ -11,18 +11,18 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface AuthApi {
-    @POST("api/auth/register")
+    @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
 
-    @POST("api/auth/login")
+    @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): Response<AuthResponse>
     
-    @POST("api/auth/forgotpassword")
+    @POST("auth/forgotpassword")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<AuthResponse>
     
-    @POST("api/auth/resetpassword")
+    @POST("auth/resetpassword")
     suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<AuthResponse>
     
-    @POST("api/auth/veify-email")
+    @POST("auth/veify-email")
     suspend fun verifyEmail(@Body request: VerifyEmailRequest): Response<AuthResponse>
 } 

@@ -8,9 +8,9 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface OtpApi {
-    @POST("api/otp/verify")
+    @POST("otp/verify")
     suspend fun verifyOtp(@Body request: OtpVerificationRequest): Response<AuthResponse>
     
-    @POST("api/otp/resend")
+    @POST("otp/resend")
     suspend fun resendOtp(@Body request: OtpResendRequest): Response<AuthResponse>
 } 

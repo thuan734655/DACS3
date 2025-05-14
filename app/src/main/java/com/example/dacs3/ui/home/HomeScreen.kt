@@ -1,9 +1,20 @@
 package com.example.dacs3.ui.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,338 +29,420 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dacs3.R
+import com.example.dacs3.data.model.Channel
+import com.example.dacs3.data.model.Workspace
+import com.example.dacs3.ui.theme.MediumGrey
 import com.example.dacs3.ui.theme.TeamNexusPurple
+import com.example.dacs3.ui.theme.TextDark
+import com.example.dacs3.viewmodel.ChannelViewModel
+import com.example.dacs3.viewmodel.WorkspaceViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
-    navController: NavController
+fun HomeHeader(
+    userName: String,
+    workspaceName: String,
+    onWorkspaceClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val selectedTab = remember { mutableStateOf(0) }
-    
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            BottomNav(
-                selectedTab = selectedTab.value,
-                onTabSelected = { selectedTab.value = it }
-            )
-        }
-    ) { paddingValues ->
-        ConstraintLayout(
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(4.dp),
+        color = Color.White
+    ) {
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = paddingValues.calculateBottomPadding())
-                .background(Color.White)
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            val (header, channelsTitle, channels, divider1, 
-                unreadsTitle, unreads, addChannel, divider2, 
-                activityTitle, emptyNotification) = createRefs()
-            
-            Row(
-                modifier = Modifier
-                    .constrainAs(header) {
-                        top.linkTo(parent.top)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        width = Dimension.fillToConstraints
-                    }
-                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Your Workspace",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                )
-                
-                Box(
-                    modifier = Modifier.size(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notifications",
-                        tint = Color.Black,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-            
-            SectionHeader(
-                title = "Channels",
-                hasDropdown = true,
-                modifier = Modifier.constrainAs(channelsTitle) {
-                    top.linkTo(header.bottom, margin = 16.dp)
-                    start.linkTo(parent.start, margin = 16.dp)
-                    end.linkTo(parent.end, margin = 16.dp)
-                    width = Dimension.fillToConstraints
-                }
-            )
-            
-            Column(
-                modifier = Modifier.constrainAs(channels) {
-                    top.linkTo(channelsTitle.bottom, margin = 4.dp)
-                    start.linkTo(parent.start, margin = 16.dp)
-                    end.linkTo(parent.end, margin = 16.dp)
-                    width = Dimension.fillToConstraints
-                }
-            ) {
-                repeat(3) {
-                    ChannelItem(name = "abc-xyz")
-                }
-            }
-            
-            Divider(
-                modifier = Modifier.constrainAs(divider1) {
-                    top.linkTo(channels.bottom, margin = 8.dp)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                    width = Dimension.fillToConstraints
-                },
-                color = Color.LightGray.copy(alpha = 0.5f)
-            )
-            
-            SectionHeader(
-                title = "Unreads",
-                hasDropdown = false,
-                modifier = Modifier.constrainAs(unreadsTitle) {
-                    top.linkTo(divider1.bottom, margin = 16.dp)
-                    start.linkTo(parent.start, margin = 16.dp)
-                    end.linkTo(parent.end, margin = 16.dp)
-                    width = Dimension.fillToConstraints
-                }
-            )
-            
-            Column(
-                modifier = Modifier.constrainAs(unreads) {
-                    top.linkTo(unreadsTitle.bottom, margin = 4.dp)
-                    start.linkTo(parent.start, margin = 16.dp)
-                    end.linkTo(parent.end, margin = 16.dp)
-                    width = Dimension.fillToConstraints
-                }
-            ) {
-                ChannelItem(name = "abc-xyz")
-            }
-            
-            Row(
-                modifier = Modifier
-                    .constrainAs(addChannel) {
-                        top.linkTo(unreads.bottom, margin = 4.dp)
-                        start.linkTo(parent.start, margin = 16.dp)
-                        end.linkTo(parent.end, margin = 16.dp)
-                        width = Dimension.fillToConstraints
-                    }
-                    .clickable { }
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Channel",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Add channel",
-                    color = Color.Gray,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            
-            Divider(
-                modifier = Modifier.constrainAs(divider2) {
-                    top.linkTo(addChannel.bottom, margin = 8.dp)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                    width = Dimension.fillToConstraints
-                },
-                color = Color.LightGray.copy(alpha = 0.5f)
-            )
-            
-            SectionHeader(
-                title = "Activity stream",
-                hasDropdown = true,
-                modifier = Modifier.constrainAs(activityTitle) {
-                    top.linkTo(divider2.bottom, margin = 16.dp)
-                    start.linkTo(parent.start, margin = 16.dp)
-                    end.linkTo(parent.end, margin = 16.dp)
-                    width = Dimension.fillToConstraints
-                }
-            )
-            
+            // User avatar - now on the left
             Box(
                 modifier = Modifier
-                    .constrainAs(emptyNotification) {
-                        top.linkTo(activityTitle.bottom, margin = 140.dp)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        width = Dimension.fillToConstraints
-                    },
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(TeamNexusPurple)
+                    .clickable { /* User profile action */ },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No notification!",
-                    color = Color.Gray,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Normal
+                    text = userName.first().toString().uppercase(),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp // Tăng font size
+                )
+            }
+
+            // Workspace info - clickable to show workspace sidebar
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp)
+                    .clickable { onWorkspaceClick() }
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = workspaceName,
+                        fontSize = 18.sp, // Tăng font size
+                        fontWeight = FontWeight.Bold, // Đổi thành Bold
+                        color = TeamNexusPurple // Sử dụng màu chính
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Show workspaces",
+                        tint = TeamNexusPurple, // Đổi màu sang màu chính
+                        modifier = Modifier.size(20.dp) // Tăng kích thước
+                    )
+                }
+
+                Text(
+                    text = "Hello $userName",
+                    fontSize = 15.sp, // Tăng font size nhẹ
+                    fontWeight = FontWeight.SemiBold, // Đổi thành SemiBold
+                    color = TextDark // Sử dụng màu đậm hơn
+                )
+            }
+
+            // Notification icon on the right
+            IconButton(onClick = { /* Notification action */ }) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Notifications",
+                    tint = TeamNexusPurple, // Đổi màu sang màu chính
+                    modifier = Modifier.size(28.dp) // Tăng kích thước
                 )
             }
         }
     }
 }
 
+// Chỉnh sửa text trong HomeContent để nổi bật hơn
 @Composable
-fun SectionHeader(
-    title: String,
-    hasDropdown: Boolean,
+fun HomeContent(
     modifier: Modifier = Modifier
 ) {
-    Row(
+    Column(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(horizontal = 16.dp)
     ) {
-        Text(
-            text = title,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
+        // Channels section
+        ExpandableSection(
+            title = "Channels",
+            initialExpanded = true,
+            content = {
+                ChannelsList(
+                    channels = listOf("abc-xyz", "abc-xyz", "abc-xyz")
+                )
+            }
         )
-        
-        if (hasDropdown) {
+
+        Divider(modifier = Modifier.padding(vertical = 4.dp))
+
+        // Unreads section
+        Text(
+            text = "Unreads",
+            fontSize = 18.sp, // Tăng font size
+            fontWeight = FontWeight.Bold, // Đổi thành Bold
+            color = TeamNexusPurple, // Sử dụng màu chính
+            modifier = Modifier.padding(vertical = 12.dp)
+        )
+
+        ChannelItem(channelName = "abc-xyz")
+
+        // Add channel button
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+                .clickable { /* Add channel action */ }
+        ) {
             Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = "Dropdown",
-                tint = Color.Black,
-                modifier = Modifier.size(20.dp)
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add channel",
+                tint = TeamNexusPurple,
+                modifier = Modifier.size(20.dp) // Tăng kích thước
             )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = "Add channel",
+                fontSize = 15.sp, // Tăng font size
+                fontWeight = FontWeight.SemiBold, // Đổi thành SemiBold
+                color = TeamNexusPurple
+            )
+        }
+
+        Divider(modifier = Modifier.padding(vertical = 4.dp))
+
+        // Activity stream section
+        ExpandableSection(
+            title = "Activity stream",
+            initialExpanded = true,
+            content = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No notification!",
+                        color = TextDark, // Đổi sang màu đậm hơn
+                        fontSize = 16.sp, // Tăng font size
+                        fontWeight = FontWeight.Medium // Đổi font weight
+                    )
+                }
+            }
+        )
+    }
+}
+
+// Chỉnh sửa ExpandableSection để nổi bật hơn
+@Composable
+fun ExpandableSection(
+    title: String,
+    initialExpanded: Boolean = false,
+    content: @Composable () -> Unit
+) {
+    var expanded by remember { mutableStateOf(initialExpanded) }
+
+    Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(vertical = 12.dp)
+        ) {
+            Text(
+                text = title,
+                fontSize = 18.sp, // Tăng font size
+                fontWeight = FontWeight.Bold, // Đổi thành Bold
+                color = TeamNexusPurple, // Sử dụng màu chính
+                modifier = Modifier.weight(1f)
+            )
+
+            Icon(
+                imageVector = if (expanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
+                contentDescription = if (expanded) "Collapse" else "Expand",
+                tint = TeamNexusPurple, // Đổi sang màu chính
+                modifier = Modifier.size(24.dp) // Tăng kích thước
+            )
+        }
+
+        AnimatedVisibility(visible = expanded) {
+            content()
         }
     }
 }
 
+// Chỉnh sửa ChannelItem để nổi bật hơn
 @Composable
-fun ChannelItem(name: String) {
+fun ChannelItem(
+    channelName: String
+) {
     Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .clickable { },
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 8.dp)
+            .clickable { /* Channel click action */ }
     ) {
         Text(
-            text = "#",
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
-        
-        Spacer(modifier = Modifier.width(4.dp))
-        
-        Text(
-            text = name,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Normal,
-            color = Color.Black
+            text = "# $channelName",
+            fontSize = 16.sp, // Tăng font size
+            fontWeight = FontWeight.Medium, // Đổi thành Medium
+            color = TextDark // Sử dụng màu đậm hơn
         )
     }
 }
 
+// Chỉnh sửa WorkspaceSidebar để nổi bật text hơn
 @Composable
-fun BottomNav(
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit
-) {
-    Column {
-        Divider(
-            color = Color.LightGray.copy(alpha = 0.5f),
-            thickness = 1.dp
-        )
-        
-        Row(
-            modifier = Modifier
-                .height(48.dp)
-                .fillMaxWidth()
-                .background(Color.White),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BottomNavIcon(
-                icon = Icons.Filled.Home,
-                label = "Home",
-                selected = selectedTab == 0,
-                onClick = { onTabSelected(0) },
-                tint = if (selectedTab == 0) TeamNexusPurple else Color.Gray
-            )
-            
-            BottomNavIcon(
-                icon = Icons.AutoMirrored.Filled.Message, 
-                label = "Chat",
-                selected = selectedTab == 1,
-                onClick = { onTabSelected(1) }
-            )
-            
-            BottomNavIcon(
-                icon = Icons.Filled.GridView,
-                label = "Workspace",
-                selected = selectedTab == 2,
-                onClick = { onTabSelected(2) }
-            )
-            
-            BottomNavIcon(
-                icon = Icons.Filled.Person,
-                label = "Profile",
-                selected = selectedTab == 3,
-                onClick = { onTabSelected(3) }
-            )
-            
-            BottomNavIcon(
-                icon = Icons.Filled.MoreVert,
-                label = "More",
-                selected = selectedTab == 4,
-                onClick = { onTabSelected(4) }
-            )
-        }
-    }
-}
-
-@Composable
-fun BottomNavIcon(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    tint: Color = Color.Gray
+fun WorkspaceSidebar(
+    onDismiss: () -> Unit
 ) {
     Box(
         modifier = Modifier
-            .clickable(onClick = onClick)
-            .padding(4.dp)
-            .size(40.dp),
-        contentAlignment = Alignment.Center
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.4f))
+            .clickable { onDismiss() }
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = tint,
-            modifier = Modifier.size(24.dp)
-        )
+        // Sidebar container - đặt ở dưới cùng
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .background(Color(0xFFF2EFFA))
+                .clickable(onClick = {}) // Intercept clicks
+        ) {
+            // Header with handle for dragging
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(36.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color.Gray.copy(alpha = 0.3f))
+                )
+            }
+
+            // Sidebar header
+            Text(
+                text = "Workspace",
+                fontSize = 22.sp, // Tăng font size
+                fontWeight = FontWeight.Bold,
+                color = TeamNexusPurple, // Sử dụng màu chính
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 16.dp)
+            )
+
+            // Add workspace button
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .clickable { /* Add workspace action */ }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                        .border(1.dp, Color.Gray.copy(alpha = 0.3f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add workspace",
+                        tint = TeamNexusPurple, // Đổi sang màu chính
+                        modifier = Modifier.size(18.dp) // Tăng kích thước
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = "Add a Workspace",
+                    fontSize = 16.sp, // Tăng font size
+                    fontWeight = FontWeight.Medium, // Đổi thành Medium
+                    color = TextDark // Sử dụng màu đậm hơn
+                )
+            }
+
+            // Workspace list
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 100.dp, max = 400.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                items(4) {
+                    WorkspaceItem()
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
+            // Spacer để thêm padding ở dưới cùng
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
-} 
+}
+
+// Chỉnh sửa WorkspaceItem để nổi bật text hơn
+@Composable
+fun WorkspaceItem() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clickable { /* Workspace selection action */ }
+    ) {
+        // Workspace avatar
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(TeamNexusPurple),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "LM",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp // Tăng font size
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Workspace details
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = "Les Misérables",
+                fontSize = 16.sp, // Tăng font size
+                fontWeight = FontWeight.Bold, // Đổi thành Bold
+                color = TextDark, // Sử dụng màu đậm hơn
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Text(
+                text = "Admin: Dedo Scruf",
+                fontSize = 14.sp, // Tăng font size nhẹ
+                fontWeight = FontWeight.Medium, // Đổi thành Medium
+                color = MediumGrey, // Sử dụng màu rõ hơn
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Options menu
+        IconButton(
+            onClick = { /* Workspace options */ },
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = "Workspace options",
+                tint = TeamNexusPurple, // Đổi sang màu chính
+                modifier = Modifier.size(24.dp) // Tăng kích thước
+            )
+        }
+    }
+}

@@ -3,30 +3,22 @@ package com.example.dacs3.navigation
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.example.dacs3.data.session.SessionManager
-import com.example.dacs3.ui.auth.AuthViewModel
+import com.example.dacs3.viewmodel.AuthViewModel
 import com.example.dacs3.ui.auth.ForgotPasswordScreen
 import com.example.dacs3.ui.auth.LoginScreen
 import com.example.dacs3.ui.auth.RegisterScreen
-import com.example.dacs3.ui.auth.otp.OtpScreen
 import com.example.dacs3.ui.auth.otp.otpVerificationScreen
 import com.example.dacs3.ui.auth.otp.resetPasswordScreen
 import com.example.dacs3.ui.auth.twofactor.twoFactorAuthScreen
-import com.example.dacs3.ui.channels.ChannelsScreen
 import com.example.dacs3.ui.home.HomeScreen
 import com.example.dacs3.ui.onboarding.OnboardingScreen
 import com.example.dacs3.ui.profile.ProfileScreen
 import com.example.dacs3.ui.welcome.WelcomeScreen
-import com.example.dacs3.ui.workspaces.WorkspacesScreen
-import javax.inject.Inject
 
 @Composable
 fun AppNavigation(
@@ -73,15 +65,15 @@ fun AppNavigation(
             HomeScreen(navController = navController)
         }
         
-        // Add Channels screen route
-        composable("channels") {
-            ChannelsScreen()
-        }
-        
-        // Add Workspaces screen route
-        composable("workspaces") {
-            WorkspacesScreen()
-        }
+//        // Add Channels screen route
+//        composable("channels") {
+//            ChannelsScreen()
+//        }
+//
+//        // Add Workspaces screen route
+//        composable("workspaces") {
+//            WorkspacesScreen()
+//        }
         
         // Add Profile screen route
         composable("profile") {
@@ -91,12 +83,30 @@ fun AppNavigation(
         // Add OTP verification screen route
         otpVerificationScreen(
             navController = navController,
-            onVerificationSuccess = {
-                // After successful OTP verification, navigate to home screen
-                Log.d("AppNavigation", "Email verification success, navigating to home screen")
-                navController.navigate("home") {
-                    // Don't clear too much back stack
-                    popUpTo("otp_verification/{email}") { inclusive = true }
+            onVerificationSuccess = { source ->
+                // After successful OTP verification, navigate based on source
+                when (source) {
+                    "register" -> {
+                        // If OTP was called from register, navigate to login
+                        Log.d("AppNavigation", "Email verification from register, navigating to login screen")
+                        navController.navigate("login") {
+                            popUpTo("otp_verification/{email}") { inclusive = true }
+                        }
+                    }
+                    "login" -> {
+                        // If OTP was called from login, navigate to home
+                        Log.d("AppNavigation", "Email verification from login, navigating to home screen")
+                        navController.navigate("home") {
+                            popUpTo("otp_verification/{email}") { inclusive = true }
+                        }
+                    }
+                    else -> {
+                        // Default behavior (same as before)
+                        Log.d("AppNavigation", "Email verification success, navigating to home screen")
+                        navController.navigate("home") {
+                            popUpTo("otp_verification/{email}") { inclusive = true }
+                        }
+                    }
                 }
             },
             onNavigateBack = {
