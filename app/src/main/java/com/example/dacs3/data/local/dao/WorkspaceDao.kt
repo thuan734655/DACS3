@@ -12,7 +12,7 @@ interface WorkspaceDao {
     @Query("SELECT * FROM workspaces WHERE _id = :id")
     suspend fun getWorkspaceById(id: String): WorkspaceEntity?
 
-    @Query("SELECT * FROM workspaces WHERE created_by = :userId")
+    @Query("SELECT * FROM workspaces WHERE createdById = :userId")
     fun getWorkspacesByUserId(userId: String): Flow<List<WorkspaceEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

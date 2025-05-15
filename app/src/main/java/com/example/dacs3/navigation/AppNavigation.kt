@@ -25,7 +25,7 @@ import com.example.dacs3.ui.home.HomeScreen
 import com.example.dacs3.ui.onboarding.OnboardingScreen
 import com.example.dacs3.ui.profile.ProfileScreen
 import com.example.dacs3.ui.welcome.WelcomeScreen
-import com.example.dacs3.ui.workspaces.WorkspacesScreen
+import com.example.dacs3.ui.workspace.WorkspaceScreen
 import javax.inject.Inject
 
 @Composable
@@ -45,6 +45,7 @@ fun AppNavigation(
     
     // Get current user ID from AuthViewModel
     val currentUserId = authViewModel.currentUserId.collectAsState().value
+//    val currentUser = authViewModel.currentUser.collectAsState().value
     
     NavHost(navController = navController, startDestination = initialDestination) {
         composable("onboarding") {
@@ -70,7 +71,9 @@ fun AppNavigation(
         
         // Add Home screen route
         composable("home") {
-            HomeScreen(navController = navController)
+            HomeScreen(
+                username =  "User"
+            )
         }
         
         // Add Channels screen route
@@ -80,7 +83,16 @@ fun AppNavigation(
         
         // Add Workspaces screen route
         composable("workspaces") {
-            WorkspacesScreen()
+            WorkspaceScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onWorkspaceSelected = { workspace ->
+                    // Select workspace and navigate back to home
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("selected_workspace", workspace)
+                    navController.popBackStack()
+                }
+            )
         }
         
         // Add Profile screen route

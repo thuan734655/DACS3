@@ -23,6 +23,17 @@ class Converters {
         return date?.time
     }
 
+    // User converters
+    @TypeConverter
+    fun fromUser(user: User?): String {
+        return gson.toJson(user)
+    }
+
+    @TypeConverter
+    fun toUser(value: String): User? {
+        return gson.fromJson(value, User::class.java)
+    }
+
     // String List converters
     @TypeConverter
     fun fromStringList(value: List<String>?): String {

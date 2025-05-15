@@ -9,7 +9,7 @@ data class Workspace(
     val _id: String,
     val name: String,
     val description: String?,
-    val created_by: String,
+    val created_by: User,
     val created_at: Date,
     val members: List<WorkspaceMember>?,
     val channels: List<String>?
