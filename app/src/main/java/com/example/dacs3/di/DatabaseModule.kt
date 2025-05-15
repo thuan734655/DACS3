@@ -1,7 +1,9 @@
 package com.example.dacs3.di
 
 import android.content.Context
-import com.example.dacs3.data.local.*
+import androidx.room.Room
+import com.example.dacs3.data.local.AppDatabase
+import com.example.dacs3.data.local.dao.*
 import com.example.dacs3.data.session.SessionManager
 import dagger.Module
 import dagger.Provides
@@ -14,10 +16,14 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
     
-    @Singleton
     @Provides
-    fun provideWorkspaceDatabase(@ApplicationContext context: Context): WorkspaceDatabase {
-        return WorkspaceDatabase.getDatabase(context)
+    @Singleton
+    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
+        return Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            AppDatabase.DATABASE_NAME
+        ).build()
     }
     
     @Singleton
@@ -27,62 +33,68 @@ object DatabaseModule {
     }
     
     @Provides
-    fun provideUserDao(database: WorkspaceDatabase): UserDao {
-        return database.userDao()
+    @Singleton
+    fun provideUserDao(appDatabase: AppDatabase): UserDao {
+        return appDatabase.userDao()
     }
     
     @Provides
-    fun provideAccountDao(database: WorkspaceDatabase): AccountDao {
-        return database.accountDao()
+    @Singleton
+    fun provideWorkspaceDao(appDatabase: AppDatabase): WorkspaceDao {
+        return appDatabase.workspaceDao()
     }
     
     @Provides
-    fun provideWorkspaceDao(database: WorkspaceDatabase): WorkspaceDao {
-        return database.workspaceDao()
+    @Singleton
+    fun provideBugDao(appDatabase: AppDatabase): BugDao {
+        return appDatabase.bugDao()
     }
     
     @Provides
-    fun provideChannelDao(database: WorkspaceDatabase): ChannelDao {
-        return database.channelDao()
+    @Singleton
+    fun provideChannelDao(appDatabase: AppDatabase): ChannelDao {
+        return appDatabase.channelDao()
     }
     
     @Provides
-    fun provideMessageDao(database: WorkspaceDatabase): MessageDao {
-        return database.messageDao()
+    @Singleton
+    fun provideEpicDao(appDatabase: AppDatabase): EpicDao {
+        return appDatabase.epicDao()
     }
     
     @Provides
-    fun provideTaskDao(database: WorkspaceDatabase): TaskDao {
-        return database.taskDao()
+    @Singleton
+    fun provideMessageDao(appDatabase: AppDatabase): MessageDao {
+        return appDatabase.messageDao()
     }
     
     @Provides
-    fun provideBugDao(database: WorkspaceDatabase): BugDao {
-        return database.bugDao()
+    @Singleton
+    fun provideNotificationDao(appDatabase: AppDatabase): NotificationDao {
+        return appDatabase.notificationDao()
     }
     
     @Provides
-    fun provideEpicDao(database: WorkspaceDatabase): EpicDao {
-        return database.epicDao()
+    @Singleton
+    fun provideReportDailyDao(appDatabase: AppDatabase): ReportDailyDao {
+        return appDatabase.reportDailyDao()
     }
     
     @Provides
-    fun provideNotificationDao(database: WorkspaceDatabase): NotificationDao {
-        return database.notificationDao()
+    @Singleton
+    fun provideSprintDao(appDatabase: AppDatabase): SprintDao {
+        return appDatabase.sprintDao()
     }
     
     @Provides
-    fun provideInvitationDao(database: WorkspaceDatabase): InvitationDao {
-        return database.invitationDao()
+    @Singleton
+    fun provideTaskDao(appDatabase: AppDatabase): TaskDao {
+        return appDatabase.taskDao()
     }
     
     @Provides
-    fun provideUserChannelMembershipDao(database: WorkspaceDatabase): UserChannelMembershipDao {
-        return database.userChannelMembershipDao()
-    }
-    
-    @Provides
-    fun provideWorkspaceUserMembershipDao(database: WorkspaceDatabase): WorkspaceUserMembershipDao {
-        return database.workspaceUserMembershipDao()
+    @Singleton
+    fun provideAccountDao(appDatabase: AppDatabase): AccountDao {
+        return appDatabase.accountDao()
     }
 } 

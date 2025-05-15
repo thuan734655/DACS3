@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.model.AuthResponse
 import com.example.dacs3.data.model.LoginRequest
+import com.example.dacs3.data.model.LoginResponse
 import com.example.dacs3.data.model.RegisterRequest
 import com.example.dacs3.data.repository.AuthRepository
 import com.example.dacs3.data.repository.OtpRepository
@@ -71,60 +72,23 @@ class AuthViewModel @Inject constructor(
                 val request = RegisterRequest(username, email, contactNumber, password)
                 val response = authRepository.register(request)
                 
-                if (response.isSuccessful) {
-                    val authResponse = response.body()
-                    if (authResponse?.success == true) {
-                        _uiState.update { 
-                            it.copy(
-                                isLoading = false,
-                                isSuccess = true,
-                                action = "verify_email",
-                                email = authResponse.account?.email
-                            )
-                        }
-                    } else {
-                        _uiState.update { 
-                            it.copy(
-                                isLoading = false, 
-                                isError = true, 
-                                errorMessage = authResponse?.message ?: "Registration failed"
-                            )
-                        }
+                if (response.success) {
+                    _uiState.update { 
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = true,
+                            action = "verify_email",
+                            email = response.account?.email
+                        )
                     }
                 } else {
-                    // Try to extract detailed error message from response body
-                    val errorMessage = extractErrorMessage(response.errorBody())
                     _uiState.update { 
                         it.copy(
                             isLoading = false, 
                             isError = true, 
-                            errorMessage = errorMessage ?: "Registration failed: ${response.message()}"
+                            errorMessage = response.message
                         )
                     }
-                }
-            } catch (e: IOException) {
-                // Network error - can't reach server
-                Log.e("AuthViewModel", "Network error during registration", e)
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false, 
-                        isError = true, 
-                        errorMessage = "Network error: Check your internet connection"
-                    )
-                }
-            } catch (e: HttpException) {
-                // HTTP error - server responded with an error
-                Log.e("AuthViewModel", "HTTP error during registration: ${e.code()}", e)
-                
-                // Try to extract detailed error message from response body
-                val errorMessage = extractErrorMessage(e.response()?.errorBody())
-                
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false, 
-                        isError = true, 
-                        errorMessage = errorMessage ?: "Server error (${e.code()}): ${e.message()}"
-                    )
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Register error", e)
@@ -186,113 +150,38 @@ class AuthViewModel @Inject constructor(
                 val request = LoginRequest(accountName, password, type, deviceId)
                 val response = authRepository.login(request)
                 
-                if (response.isSuccessful) {
-                    val authResponse = response.body()
-                    handleLoginResponse(authResponse)
+                if (response.success) {
+                    handleLoginResponse(response)
                 } else {
-                    // Try to extract detailed error message from response body
-                    val errorBody = response.errorBody()
-                    val errorString = errorBody?.string() ?: ""
-                    Log.d("AuthViewModel", "Login error response: $errorString")
-                    
-                    // Check if this is an action response (verify_email or 2fa)
-                    if (errorString.contains("\"action\":\"verify_email\"") || errorString.contains("Please verify your email")) {
-                        try {
-                            val jsonObject = JSONObject(errorString)
-                            val emailFromResponse = jsonObject.optString("email", accountName)
-                            
-                            Log.d("AuthViewModel", "Detected verify_email requirement in error response")
-                            _uiState.update { 
-                                it.copy(
-                                    isLoading = false,
-                                    isSuccess = false,
-                                    isError = false, // Not an error in user flow context
-                                    action = "verify_email",
-                                    email = emailFromResponse
-                                )
-                            }
-                        } catch (e: Exception) {
-                            Log.e("AuthViewModel", "Error parsing verify_email response", e)
-                            _uiState.update { 
-                                it.copy(
-                                    isLoading = false, 
-                                    isError = true, 
-                                    errorMessage = "Please verify your email before logging in"
-                                )
-                            }
+                    // Check for specific actions in the response
+                    if (response.action == "verify_email") {
+                        _uiState.update { 
+                            it.copy(
+                                isLoading = false,
+                                isSuccess = false,
+                                isError = false, // Not an error in user flow context
+                                action = "verify_email",
+                                email = accountName
+                            )
                         }
-                    } else if (errorString.contains("\"action\":\"2fa\"")) {
-                        try {
-                            val jsonObject = JSONObject(errorString)
-                            val email = jsonObject.optString("email", accountName)
-                            
-                            Log.d("AuthViewModel", "Detected 2FA requirement in error response")
-                            _uiState.update { 
-                                it.copy(
-                                    isLoading = false,
-                                    isSuccess = false,
-                                    action = "2fa",
-                                    email = email
-                                )
-                            }
-                        } catch (e: Exception) {
-                            Log.e("AuthViewModel", "Error parsing 2FA error response", e)
-                            _uiState.update { 
-                                it.copy(
-                                    isLoading = false, 
-                                    isError = true, 
-                                    errorMessage = "Login failed: 2FA parsing error"
-                                )
-                            }
+                    } else if (response.action == "2fa") {
+                        _uiState.update { 
+                            it.copy(
+                                isLoading = false,
+                                isSuccess = false,
+                                action = "2fa",
+                                email = accountName
+                            )
                         }
                     } else {
-                        // Try to parse error directly from the errorString
-                        try {
-                            val jsonObject = JSONObject(errorString)
-                            val message = jsonObject.optString("message", null)
-                            val errorMessage = when {
-                                message.contains("Invalid credentials") -> 
-                                    "Invalid email or password. Please try again."
-                                message.isNotEmpty() -> message
-                                else -> "Login failed: ${response.message()}"
-                            }
-                            
-                            _uiState.update { 
-                                it.copy(
-                                    isLoading = false, 
-                                    isError = true, 
-                                    errorMessage = errorMessage
-                                )
-                            }
-                        } catch (e: Exception) {
-                            Log.e("AuthViewModel", "Error parsing login error response", e)
-                            _uiState.update { 
-                                it.copy(
-                                    isLoading = false, 
-                                    isError = true, 
-                                    errorMessage = errorString.ifBlank { "Login failed: ${response.message()}" }
-                                )
-                            }
+                        _uiState.update { 
+                            it.copy(
+                                isLoading = false, 
+                                isError = true, 
+                                errorMessage = response.message
+                            )
                         }
                     }
-                }
-            } catch (e: IOException) {
-                // Network error - can't reach server, try offline login
-                Log.e("AuthViewModel", "Network error during login, trying offline", e)
-                tryOfflineLogin(accountName)
-            } catch (e: HttpException) {
-                // HTTP error - server responded with an error
-                Log.e("AuthViewModel", "HTTP error during login: ${e.code()}", e)
-                
-                // Try to extract detailed error message from response body
-                val errorMessage = extractErrorMessage(e.response()?.errorBody())
-                
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false, 
-                        isError = true, 
-                        errorMessage = errorMessage ?: "Server error (${e.code()}): ${e.message()}"
-                    )
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Login error", e)
@@ -307,102 +196,18 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    private suspend fun tryOfflineLogin(email: String) {
-        try {
-            val localUser = authRepository.getLocalUserByEmail(email)
-            if (localUser != null) {
-                // For offline login, create a temporary token valid for 24 hours
-                val tempToken = "offline_token_${System.currentTimeMillis()}"
-                
-                // Found user locally, proceed with offline login
-                sessionManager.saveUserSession(localUser.userId, localUser.email, tempToken)
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false,
-                        isSuccess = true,
-                        isOfflineMode = true,
-                        username = localUser.username,
-                        email = localUser.email,
-                        action = "login_success",
-                        token = tempToken
-                    )
-                }
-            } else {
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false, 
-                        isError = true, 
-                        errorMessage = "Cannot login offline: Account not found locally"
-                    )
-                }
-            }
-        } catch (e: Exception) {
+    private fun handleLoginResponse(response: LoginResponse) {
+        if (response.success && response.token != null) {
+            // Save token in SessionManager
+            sessionManager.saveToken(response.token)
+            
             _uiState.update { 
                 it.copy(
-                    isLoading = false, 
-                    isError = true, 
-                    errorMessage = "Offline login failed: ${e.message}"
+                    isLoading = false,
+                    isSuccess = true,
+                    action = "login_success",
+                    errorMessage = ""
                 )
-            }
-        }
-    }
-
-    private fun handleLoginResponse(authResponse: AuthResponse?) {
-        // Log the response for debugging
-        Log.d("AuthViewModel", "Handling login response: success=${authResponse?.success}, action=${authResponse?.action}, message=${authResponse?.message}")
-        
-        when {
-            authResponse?.success == true -> {
-                // Successful login - save session with token
-                authResponse.token?.let { token ->
-                    authResponse.account?.let { account ->
-                        // Generate a unique ID if none exists
-                        val generatedUserId = UUID.randomUUID().toString() 
-                        sessionManager.saveUserSession(generatedUserId, account.email ?: "", token)
-                    }
-                }
-                
-                // Update UI state
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false,
-                        isSuccess = true,
-                        token = authResponse.token,
-                        username = authResponse.account?.username,
-                        action = "login_success"
-                    )
-                }
-            }
-            authResponse?.action == "verify_email" -> {
-                // Need email verification
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false,
-                        isSuccess = false,
-                        action = "verify_email",
-                        email = authResponse.email
-                    )
-                }
-            }
-            authResponse?.action == "2fa" -> {
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false,
-                        isSuccess = false,
-                        action = "2fa",
-                        email = authResponse.email ?: authResponse.data?.email
-                    )
-                }
-            }
-            else -> {
-                // Other error
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false, 
-                        isError = true, 
-                        errorMessage = authResponse?.message ?: "Login failed"
-                    )
-                }
             }
         }
     }
@@ -427,43 +232,31 @@ class AuthViewModel @Inject constructor(
 
     fun forgotPassword(email: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, isError = false, errorMessage = "", action = null) }
+            _uiState.update { it.copy(isLoading = true, isError = false, errorMessage = "") }
             
             try {
                 val response = authRepository.forgotPassword(email)
                 
-                if (response.isSuccessful) {
-                    val authResponse = response.body()
-                    if (authResponse?.success == true) {
-                        _uiState.update { 
-                            it.copy(
-                                isLoading = false,
-                                isSuccess = true,
-                                action = "verify_otp_for_reset",
-                                email = email
-                            )
-                        }
-                    } else {
-                        _uiState.update { 
-                            it.copy(
-                                isLoading = false, 
-                                isError = true, 
-                                errorMessage = authResponse?.message ?: "Password reset request failed"
-                            )
-                        }
+                if (response.success) {
+                    _uiState.update { 
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = true,
+                            action = response.action ?: "reset_password",
+                            email = response.email ?: email
+                        )
                     }
                 } else {
-                    // Extract error message from response
-                    val errorMessage = extractErrorMessage(response.errorBody())
                     _uiState.update { 
                         it.copy(
                             isLoading = false, 
                             isError = true, 
-                            errorMessage = errorMessage ?: "Password reset request failed: ${response.message()}"
+                            errorMessage = response.message
                         )
                     }
                 }
             } catch (e: Exception) {
+                Log.e("AuthViewModel", "Forgot password error", e)
                 _uiState.update { 
                     it.copy(
                         isLoading = false, 
@@ -482,38 +275,26 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = authRepository.resetPassword(email, password, otp)
                 
-                if (response.isSuccessful) {
-                    val authResponse = response.body()
-                    if (authResponse?.success == true) {
-                        _uiState.update { 
-                            it.copy(
-                                isLoading = false,
-                                isSuccess = true,
-                                action = "password_reset_success",
-                                email = email
-                            )
-                        }
-                    } else {
-                        _uiState.update { 
-                            it.copy(
-                                isLoading = false, 
-                                isError = true, 
-                                errorMessage = authResponse?.message ?: "Password reset failed"
-                            )
-                        }
+                if (response.success) {
+                    _uiState.update { 
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = true,
+                            action = "password_reset_complete",
+                            email = response.email ?: email
+                        )
                     }
                 } else {
-                    // Extract error message from response
-                    val errorMessage = extractErrorMessage(response.errorBody())
                     _uiState.update { 
                         it.copy(
                             isLoading = false, 
                             isError = true, 
-                            errorMessage = errorMessage ?: "Password reset failed: ${response.message()}"
+                            errorMessage = response.message
                         )
                     }
                 }
             } catch (e: Exception) {
+                Log.e("AuthViewModel", "Reset password error", e)
                 _uiState.update { 
                     it.copy(
                         isLoading = false, 
@@ -525,17 +306,54 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun resendOtp(email: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, isError = false, errorMessage = "") }
+            
+            try {
+                val response = authRepository.resendOtp(email, true)
+                
+                if (response.success) {
+                    _uiState.update { 
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = true,
+                            email = response.email ?: email
+                        )
+                    }
+                } else {
+                    _uiState.update { 
+                        it.copy(
+                            isLoading = false, 
+                            isError = true, 
+                            errorMessage = response.message
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Resend OTP error", e)
+                _uiState.update { 
+                    it.copy(
+                        isLoading = false, 
+                        isError = true, 
+                        errorMessage = "Failed to resend verification code: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
     // Add function to request verification OTP
     fun requestVerificationOtp(email: String) {
         viewModelScope.launch {
             try {
                 Log.d("AuthViewModel", "Requesting verification OTP for: $email")
-                val response = otpRepository.resendOtp(email)
+                val response = authRepository.resendOtp(email, true)
                 
-                if (response.isSuccessful) {
+                if (response.success) {
                     Log.d("AuthViewModel", "Verification OTP sent successfully")
                 } else {
-                    Log.e("AuthViewModel", "Failed to send verification OTP: ${response.message()}")
+                    Log.e("AuthViewModel", "Failed to send verification OTP: ${response.message}")
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Error requesting verification OTP", e)

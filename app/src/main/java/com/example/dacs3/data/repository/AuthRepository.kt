@@ -2,20 +2,15 @@ package com.example.dacs3.data.repository
 
 import android.util.Log
 import com.example.dacs3.data.api.AuthApi
-import com.example.dacs3.data.local.AccountDao
-import com.example.dacs3.data.local.AccountEntity
-import com.example.dacs3.data.local.UserDao
-import com.example.dacs3.data.local.UserEntity
-import com.example.dacs3.data.model.AuthResponse
-import com.example.dacs3.data.model.ForgotPasswordRequest
-import com.example.dacs3.data.model.LoginRequest
-import com.example.dacs3.data.model.RegisterRequest
-import com.example.dacs3.data.model.ResetPasswordRequest
-import com.example.dacs3.data.model.VerifyEmailRequest
+import com.example.dacs3.data.local.dao.AccountDao
+import com.example.dacs3.data.local.entity.AccountEntity
+import com.example.dacs3.data.local.dao.UserDao
+import com.example.dacs3.data.local.entity.UserEntity
+import com.example.dacs3.data.model.*
 import com.example.dacs3.data.session.SessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import retrofit2.Response
+import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -27,51 +22,45 @@ class AuthRepository @Inject constructor(
     private val userDao: UserDao,
     private val sessionManager: SessionManager
 ) {
-    suspend fun login(req: LoginRequest): Response<AuthResponse> {
+    suspend fun login(request: LoginRequest): LoginResponse {
         try {
-            val response = api.login(req)
+            val response = api.login(request)
             
             // If login successful, save to Room database
-            if (response.isSuccessful && response.body()?.success == true) {
+            if (response.success) {
                 withContext(Dispatchers.IO) {
-                    response.body()?.let { authResponse ->
-                        authResponse.account?.let { account ->
-                            // Generate a local user ID if none exists
-                            val userId = UUID.randomUUID().toString()
-                            val accountId = UUID.randomUUID().toString()
+                    response.account?.let { account ->
+                        // Save user info
+                        val user = userDao.getUserById(account.username)
+                        
+                        if (user == null && account.email != null) {
+                            // If user doesn't exist locally, create it
+                            val userEntity = UserEntity(
+                                _id = UUID.randomUUID().toString(),
+                                name = account.username,
+                                avatar = null,
+                                created_at = Date()
+                            )
+                            userDao.insertUser(userEntity)
                             
-                            // Check for null values before creating entities
-                            if (account.username != null && account.email != null) {
-                                // Save user info
-                                val userEntity = UserEntity(
-                                    userId = userId,
-                                    username = account.username,
-                                    email = account.email,
-                                    password = "",  // We don't store actual password
-                                    avatarUrl = null,
-                                    isOnline = true
-                                )
-                                userDao.insertUser(userEntity)
-                                
-                                // Save account info
-                                val accountEntity = AccountEntity(
-                                    accountId = accountId,
-                                    email = account.email,
-                                    contactNumber = account.contactNumber ?: "",
-                                    password = "",  // We don't store actual password
-                                    isEmailVerified = true,
-                                    deviceId = req.deviceID,
-                                    userId = userId
-                                )
-                                accountDao.insertAccount(accountEntity)
-                                
-                                // Save session info in shared prefs
-                                authResponse.token?.let { token ->
-                                    sessionManager.saveUserSession(userId, account.email, token)
-                                }
-                            } else {
-                                Log.e("AuthRepository", "Login success but username or email is null")
-                            }
+                            // Save account info
+                            val accountEntity = AccountEntity(
+                                _id = UUID.randomUUID().toString(),
+                                email = account.email,
+                                contactNumber = account.contactNumber,
+                                password = "",  // We don't store actual password
+                                otp = null,
+                                create_at_otp = null,
+                                verifyMail = true,
+                                deviceID = request.deviceID,
+                                user_id = userEntity._id
+                            )
+                            accountDao.insertAccount(accountEntity)
+                        }
+                        
+                        // Save session info
+                        response.token?.let { token ->
+                            sessionManager.saveToken(token)
                         }
                     }
                 }
@@ -83,51 +72,41 @@ class AuthRepository @Inject constructor(
         }
     }
     
-    suspend fun register(req: RegisterRequest): Response<AuthResponse> {
+    suspend fun register(request: RegisterRequest): RegisterResponse {
         try {
-            val response = api.register(req)
+            val response = api.register(request)
             
             // If registration successful, save to Room database
-            if (response.isSuccessful && response.body()?.success == true) {
+            if (response.success) {
                 withContext(Dispatchers.IO) {
-                    response.body()?.let { authResponse ->
-                        authResponse.account?.let { account ->
-                            try {
-                                // Generate a local user ID if none exists
-                                val userId = UUID.randomUUID().toString()
-                                val accountId = UUID.randomUUID().toString()
-                                
-                                // Check for null values and use request data as fallback
-                                val username = account.username ?: req.username ?: throw IllegalArgumentException("Username cannot be null")
-                                val email = account.email ?: req.email ?: throw IllegalArgumentException("Email cannot be null")
-                                
-                                // Save user info
-                                val userEntity = UserEntity(
-                                    userId = userId,
-                                    username = username,
-                                    email = email,
-                                    password = "",  // We don't store actual password
-                                    avatarUrl = null
-                                )
-                                userDao.insertUser(userEntity)
-                                
-                                // Save account info but mark as not verified
-                                val accountEntity = AccountEntity(
-                                    accountId = accountId,
-                                    email = email,
-                                    contactNumber = account.contactNumber ?: req.contactNumber ?: "",
-                                    password = "",  // We don't store actual password
-                                    isEmailVerified = false,
-                                    userId = userId
-                                )
-                                accountDao.insertAccount(accountEntity)
-                                
-                                Log.d("AuthRepository", "Successfully saved user data locally")
-                            } catch (e: Exception) {
-                                Log.e("AuthRepository", "Error saving user data locally", e)
-                                // Continue with response - don't fail the whole registration
-                                // if local data storage fails
-                            }
+                    response.account?.let { account ->
+                        try {
+                            // Save user info
+                            val userEntity = UserEntity(
+                                _id = UUID.randomUUID().toString(),
+                                name = account.username,
+                                avatar = null,
+                                created_at = Date()
+                            )
+                            userDao.insertUser(userEntity)
+                            
+                            // Save account info but mark as not verified
+                            val accountEntity = AccountEntity(
+                                _id = UUID.randomUUID().toString(),
+                                email = account.email,
+                                contactNumber = account.contactNumber,
+                                password = "",  // We don't store actual password
+                                otp = null,
+                                create_at_otp = null,
+                                verifyMail = false,
+                                deviceID = null,
+                                user_id = userEntity._id
+                            )
+                            accountDao.insertAccount(accountEntity)
+                            
+                            Log.d("AuthRepository", "Successfully saved user data locally")
+                        } catch (e: Exception) {
+                            Log.e("AuthRepository", "Error saving user data locally", e)
                         }
                     }
                 }
@@ -135,42 +114,11 @@ class AuthRepository @Inject constructor(
             return response
         } catch (e: Exception) {
             Log.e("AuthRepository", "Register error", e)
-                throw e
-            }
-        }
-    
-    suspend fun getLocalUserByEmail(email: String): UserEntity? {
-        return withContext(Dispatchers.IO) {
-            val account = accountDao.getAccountByEmail(email)
-            account?.let {
-                userDao.getUserById(it.userId)
-            }
+            throw e
         }
     }
     
-    suspend fun updateEmailVerification(email: String, isVerified: Boolean) {
-        withContext(Dispatchers.IO) {
-            val account = accountDao.getAccountByEmail(email)
-            account?.let {
-                accountDao.updateAccount(it.copy(isEmailVerified = isVerified))
-            }
-        }
-    }
-    
-    suspend fun updateDeviceVerification(email: String, isVerified: Boolean) {
-        withContext(Dispatchers.IO) {
-            val account = accountDao.getAccountByEmail(email)
-            account?.let {
-                // In a real app, you would store the current device ID that was verified
-                // For demo, we just update a flag in the account entity
-                accountDao.updateAccount(it.copy(isDeviceVerified = true))
-                
-                Log.d("AuthRepository", "Device verification updated for email: $email")
-            }
-        }
-    }
-    
-    suspend fun forgotPassword(email: String): Response<AuthResponse> {
+    suspend fun forgotPassword(email: String): ForgotPasswordResponse {
         try {
             val request = ForgotPasswordRequest(email)
             return api.forgotPassword(request)
@@ -180,14 +128,20 @@ class AuthRepository @Inject constructor(
         }
     }
     
-    suspend fun resetPassword(email: String, password: String, otp: String): Response<AuthResponse> {
+    suspend fun resetPassword(email: String, password: String, otp: String): ResetPasswordResponse {
         try {
             val request = ResetPasswordRequest(email, password, otp)
             val response = api.resetPassword(request)
             
             // If reset is successful, update local password
-            if (response.isSuccessful && response.body()?.success == true) {
-                updateLocalUserPassword(email, password)
+            if (response.success) {
+                withContext(Dispatchers.IO) {
+                    try {
+                        accountDao.updatePassword(email, "")
+                    } catch (e: Exception) {
+                        Log.e("AuthRepository", "Error updating local password", e)
+                    }
+                }
             }
             
             return response
@@ -197,28 +151,44 @@ class AuthRepository @Inject constructor(
         }
     }
     
-    private suspend fun updateLocalUserPassword(email: String, password: String) {
-        withContext(Dispatchers.IO) {
-            try {
-                val account = accountDao.getAccountByEmail(email)
-                account?.let {
-                    // Note: In real app we'd encrypt the password
-                    // Here we're just storing a placeholder
-                    accountDao.updateAccount(it.copy(password = ""))
+    suspend fun verifyEmail(email: String, otp: String): VerifyEmailResponse {
+        try {
+            val request = VerifyEmailRequest(email, otp)
+            val response = api.verifyEmail(request)
+            
+            if (response.success) {
+                withContext(Dispatchers.IO) {
+                    try {
+                        accountDao.updateEmailVerification(email, true)
+                    } catch (e: Exception) {
+                        Log.e("AuthRepository", "Error updating email verification", e)
+                    }
                 }
-            } catch (e: Exception) {
-                Log.e("AuthRepository", "Error updating local password", e)
-                // Continue even if local update fails
             }
+            
+            return response
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Verify email error", e)
+            throw e
         }
     }
     
-    suspend fun verifyEmail(email: String, otp: String): Response<AuthResponse> {
+    suspend fun resendOtp(email: String, forVerification: Boolean = true): ResendOtpResponse {
         try {
-            val request = VerifyEmailRequest(email, otp)
-            return api.verifyEmail(request)
+            val request = ResendOtpRequest(email, forVerification)
+            return api.resendOtp(request)
         } catch (e: Exception) {
-            Log.e("AuthRepository", "Verify email error", e)
+            Log.e("AuthRepository", "Resend OTP error", e)
+            throw e
+        }
+    }
+    
+    suspend fun verifyOtp(email: String, otp: String, deviceID: String?): VerifyOtpResponse {
+        try {
+            val request = VerifyOtpRequest(email, otp, deviceID ?: "")
+            return api.verifyOtp(request)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Verify OTP error", e)
             throw e
         }
     }

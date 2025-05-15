@@ -1,5 +1,7 @@
 package com.example.dacs3.data.model
 
+import com.example.dacs3.data.model.VerifyEmailRequest
+
 data class RegisterRequest(
     val username: String,
     val email: String,
@@ -24,6 +26,19 @@ data class ResetPasswordRequest(
     val otp: String
 )
 
+// VerifyEmailRequest is imported from CommonModels.kt
+
+data class ResendOtpRequest(
+    val email: String,
+    val forVerification: Boolean
+)
+
+data class VerifyOtpRequest(
+    val email: String,
+    val otp: String,
+    val deviceID: String
+)
+
 data class AuthResponse(
     val message: String,
     val success: Boolean,
@@ -44,4 +59,55 @@ data class Account(
     val username: String? = null,
     val email: String? = null,
     val contactNumber: String? = null
+)
+
+data class RegisterResponse(
+    val message: String,
+    val success: Boolean,
+    val account: AccountInfo?
+)
+
+data class LoginResponse(
+    val message: String,
+    val token: String?,
+    val success: Boolean,
+    val account: AccountInfo?,
+    val action: String?
+)
+
+data class ForgotPasswordResponse(
+    val message: String,
+    val success: Boolean,
+    val email: String?,
+    val action: String?
+)
+
+data class ResetPasswordResponse(
+    val message: String,
+    val success: Boolean,
+    val email: String?
+)
+
+data class VerifyEmailResponse(
+    val message: String,
+    val success: Boolean,
+    val email: String?
+)
+
+data class ResendOtpResponse(
+    val message: String,
+    val success: Boolean,
+    val email: String?
+)
+
+data class VerifyOtpResponse(
+    val message: String,
+    val success: Boolean,
+    val token: String?
+)
+
+data class AccountInfo(
+    val username: String,
+    val email: String,
+    val contactNumber: String
 ) 

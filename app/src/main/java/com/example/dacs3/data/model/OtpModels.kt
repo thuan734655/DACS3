@@ -1,13 +1,37 @@
 package com.example.dacs3.data.model
 
+import com.example.dacs3.data.model.VerifyEmailRequest
+
+// OTP Verification Requests
 data class OtpVerificationRequest(
     val email: String,
     val otp: String,
-    val deviceID: String? = null
+    val purpose: String // "verify_email", "reset_password", "2fa"
 )
 
+// OTP Resend Request
 data class OtpResendRequest(
-    val email: String
+    val email: String,
+    val purpose: String // "verify_email", "reset_password", "2fa"
+)
+
+// OTP Responses
+data class OtpVerificationResponse(
+    val success: Boolean,
+    val message: String,
+    val data: OtpResponseData?
+)
+
+data class OtpResendResponse(
+    val success: Boolean,
+    val message: String,
+    val email: String?
+)
+
+data class OtpResponseData(
+    val email: String,
+    val verified: Boolean,
+    val token: String?
 )
 
 data class OtpState(
@@ -23,7 +47,4 @@ data class OtpState(
     val additionalData: Map<String, Any>? = null
 )
 
-data class VerifyEmailRequest(
-    val email: String,
-    val otp: String
-) 
+// VerifyEmailRequest is imported from CommonModels.kt 

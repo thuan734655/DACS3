@@ -1,28 +1,34 @@
 package com.example.dacs3.data.api
 
-import com.example.dacs3.data.model.AuthResponse
-import com.example.dacs3.data.model.ForgotPasswordRequest
-import com.example.dacs3.data.model.LoginRequest
-import com.example.dacs3.data.model.RegisterRequest
-import com.example.dacs3.data.model.ResetPasswordRequest
-import com.example.dacs3.data.model.VerifyEmailRequest
-import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.POST
+import com.example.dacs3.data.model.*
+import retrofit2.http.*
 
 interface AuthApi {
-    @POST("api/auth/register")
-    suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
+    // POST register a new user
+    @POST("auth/register")
+    suspend fun register(@Body request: RegisterRequest): RegisterResponse
 
-    @POST("api/auth/login")
-    suspend fun login(@Body request: LoginRequest): Response<AuthResponse>
-    
-    @POST("api/auth/forgotpassword")
-    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<AuthResponse>
-    
-    @POST("api/auth/resetpassword")
-    suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<AuthResponse>
-    
-    @POST("api/auth/veify-email")
-    suspend fun verifyEmail(@Body request: VerifyEmailRequest): Response<AuthResponse>
+    // POST login with email or phone
+    @POST("auth/login")
+    suspend fun login(@Body request: LoginRequest): LoginResponse
+
+    // POST forgot password request
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): ForgotPasswordResponse
+
+    // POST reset password with OTP
+    @POST("auth/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): ResetPasswordResponse
+
+    // POST verify email with OTP
+    @POST("auth/verify-email")
+    suspend fun verifyEmail(@Body request: VerifyEmailRequest): VerifyEmailResponse
+
+    // POST resend OTP
+    @POST("auth/resend-otp")
+    suspend fun resendOtp(@Body request: ResendOtpRequest): ResendOtpResponse
+
+    // POST verify OTP for 2FA
+    @POST("auth/verify-otp")
+    suspend fun verifyOtp(@Body request: VerifyOtpRequest): VerifyOtpResponse
 } 

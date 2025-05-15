@@ -61,6 +61,8 @@ class OtpViewModel @Inject constructor(
     
     fun verifyOtp(otp: String) {
         val email = _otpState.value.email
+        
+        // Validate inputs
         if (email.isBlank()) {
             _otpState.update { 
                 it.copy(
@@ -71,21 +73,11 @@ class OtpViewModel @Inject constructor(
             return
         }
         
-        if (!OtpValidationUtils.isValidOtp(otp)) {
-            _otpState.update { 
-                it.copy(
-                    isError = true,
-                    errorMessage = "OTP must be 6 digits"
-                )
-            }
-            return
-        }
-        
         viewModelScope.launch {
             _otpState.update { 
                 it.copy(
                     isLoading = true, 
-                    isError = false, 
+                    isError = false,
                     errorMessage = ""
                 )
             }
@@ -96,28 +88,22 @@ class OtpViewModel @Inject constructor(
                 
                 val response = otpRepository.verifyOtp(email, otp, deviceId)
                 
-                if (response.isSuccessful) {
-                    val authResponse = response.body()
-                    if (authResponse?.success == true) {
-                        // Nếu OTP hợp lệ và action là verify_email, thì gọi API xác thực email 
-                        if (action == "verify_email") {
-                            verifyEmailAfterOtpSuccess(email, otp)
-                        } else {
-                            // Xử lý thành công cho các action khác
-                            _otpState.update { 
-                                it.copy(
-                                    isLoading = false,
-                                    isSuccess = true,
-                                    errorMessage = ""
-                                )
-                            }
-                        }
+                if (response.success) {
+                    // If OTP is valid and action is verify_email, then call API to verify email 
+                    if (action == "verify_email") {
+                        verifyEmailAfterOtpSuccess(email, otp)
                     } else {
+                        // Handle success for other actions
+                        // If token is present in response (like for 2FA), save it
+                        response.token?.let { token ->
+                            sessionManager.saveToken(token)
+                        }
+                        
                         _otpState.update { 
                             it.copy(
                                 isLoading = false,
-                                isError = true,
-                                errorMessage = authResponse?.message ?: "Verification failed"
+                                isSuccess = true,
+                                errorMessage = ""
                             )
                         }
                     }
@@ -126,54 +112,27 @@ class OtpViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             isError = true,
-                            errorMessage = try {
-                                // Trích xuất thông báo lỗi từ body response
-                                val errorBody = response.errorBody()?.string()
-                                if (errorBody != null) {
-                                    val jsonObject = org.json.JSONObject(errorBody)
-                                    jsonObject.optString("message", "Verification failed: ${response.message()}")
-                                } else {
-                                    "Failed to verify OTP: ${response.message()}"
-                                }
-                            } catch (e: Exception) {
-                                "Failed to verify OTP: ${response.message()}"
-                            }
+                            errorMessage = response.message
                         )
                     }
-                }
-            } catch (e: IOException) {
-                _otpState.update { 
-                    it.copy(
-                        isLoading = false,
-                        isError = true,
-                        errorMessage = "Network error, please check your connection"
-                    )
-                }
-            } catch (e: HttpException) {
-                _otpState.update { 
-                    it.copy(
-                        isLoading = false,
-                        isError = true,
-                        errorMessage = "Server error (${e.code()}): ${e.message()}"
-                    )
                 }
             } catch (e: Exception) {
                 _otpState.update { 
                     it.copy(
                         isLoading = false,
                         isError = true,
-                        errorMessage = "Error: ${e.message}"
+                        errorMessage = "Failed to verify OTP: ${e.message}"
                     )
                 }
             }
         }
     }
     
-    // Thêm hàm mới để gọi verifyEmail sau khi OTP đã được xác thực thành công
+    // Function to call verifyEmail after OTP has been successfully verified
     private suspend fun verifyEmailAfterOtpSuccess(email: String, otp: String) {
         try {
             val response = authRepository.verifyEmail(email, otp)
-            if (response.isSuccessful && response.body()?.success == true) {
+            if (response.success) {
                 _otpState.update { 
                     it.copy(
                         isLoading = false,
@@ -187,7 +146,7 @@ class OtpViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         isError = true,
-                        errorMessage = response.body()?.message ?: "Email verification failed"
+                        errorMessage = response.message
                     )
                 }
             }
@@ -262,32 +221,22 @@ class OtpViewModel @Inject constructor(
             }
             
             try {
-                val response = otpRepository.resendOtp(email)
+                val isVerification = _otpState.value.action == "verify_email"
+                val response = otpRepository.resendOtp(email, isVerification)
                 
-                if (response.isSuccessful) {
-                    val authResponse = response.body()
-                    if (authResponse?.success == true) {
-                        _otpState.update { 
-                            it.copy(
-                                isLoading = false,
-                                isError = false,
-                                errorMessage = ""
-                            )
-                        }
-                    } else {
-                        _otpState.update { 
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = authResponse?.message ?: "Failed to resend OTP"
-                                // Keep canResend false to enforce waiting period regardless of success
-                            )
-                        }
+                if (response.success) {
+                    _otpState.update { 
+                        it.copy(
+                            isLoading = false,
+                            isError = false,
+                            errorMessage = ""
+                        )
                     }
                 } else {
                     _otpState.update { 
                         it.copy(
                             isLoading = false,
-                            errorMessage = "Failed to resend OTP: ${response.message()}"
+                            errorMessage = response.message
                             // Keep canResend false to enforce waiting period regardless of success
                         )
                     }
@@ -296,8 +245,8 @@ class OtpViewModel @Inject constructor(
                 _otpState.update { 
                     it.copy(
                         isLoading = false,
-                        errorMessage = "Error: ${e.message}"
-                        // Keep canResend false to enforce waiting period regardless of success
+                        isError = true,
+                        errorMessage = "Failed to resend OTP: ${e.message}"
                     )
                 }
             }
@@ -388,10 +337,10 @@ class OtpViewModel @Inject constructor(
             _otpState.update { it.copy(isLoading = true, isError = false, errorMessage = "") }
             try {
                 val response = authRepository.verifyEmail(email, otp)
-                if (response.isSuccessful && response.body()?.success == true) {
+                if (response.success) {
                     _otpState.update { it.copy(isLoading = false, isSuccess = true, errorMessage = "", action = "email_verified") }
                 } else {
-                    _otpState.update { it.copy(isLoading = false, isError = true, errorMessage = response.body()?.message ?: "Verification failed") }
+                    _otpState.update { it.copy(isLoading = false, isError = true, errorMessage = response.message) }
                 }
             } catch (e: Exception) {
                 _otpState.update { it.copy(isLoading = false, isError = true, errorMessage = "Verification failed: ${e.message}") }

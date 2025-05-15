@@ -123,6 +123,15 @@ class SessionManager @Inject constructor(context: Context) {
             token
         } else null
     }
+    
+    // Alias methods for saveAuthToken and getAuthToken
+    fun saveToken(token: String) {
+        saveAuthToken(token)
+    }
+    
+    fun getToken(): String? {
+        return getAuthToken()
+    }
 
     fun isFirstTimeUser(): Boolean {
         return prefs.getBoolean(KEY_FIRST_TIME, true)

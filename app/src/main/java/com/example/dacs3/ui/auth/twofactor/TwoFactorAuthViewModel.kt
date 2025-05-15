@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dacs3.data.model.OtpState
 import com.example.dacs3.data.repository.AuthRepository
 import com.example.dacs3.data.repository.OtpRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,14 +18,6 @@ import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
 
-data class TwoFactorAuthState(
-    val isLoading: Boolean = false,
-    val isSuccess: Boolean = false,
-    val isError: Boolean = false,
-    val errorMessage: String = "",
-    val email: String = ""
-)
-
 @HiltViewModel
 class TwoFactorAuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
@@ -32,8 +25,8 @@ class TwoFactorAuthViewModel @Inject constructor(
     application: Application
 ) : AndroidViewModel(application) {
 
-    private val _state = MutableStateFlow(TwoFactorAuthState())
-    val state: StateFlow<TwoFactorAuthState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(OtpState())
+    val state: StateFlow<OtpState> = _state.asStateFlow()
     
     fun setEmail(email: String) {
         if (email.isBlank() || email == _state.value.email) return
@@ -69,7 +62,7 @@ class TwoFactorAuthViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true, isError = false, errorMessage = "") }
             
             try {
-                // Call API to verify OTP
+                // Get the device ID
                 val deviceId = android.provider.Settings.Secure.getString(
                     getApplication<Application>().contentResolver,
                     android.provider.Settings.Secure.ANDROID_ID
@@ -78,45 +71,20 @@ class TwoFactorAuthViewModel @Inject constructor(
                 // Use the OTP repository to verify the code
                 val response = otpRepository.verifyOtp(email, otp, deviceId)
                 
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body?.success == true || body?.message?.contains("successfully", ignoreCase = true) == true) {
-                        _state.update { 
-                            it.copy(
-                                isLoading = false,
-                                isSuccess = true,
-                                isError = false
-                            )
-                        }
-                        
-                        // Update local device verification status
-                        authRepository.updateDeviceVerification(email, true)
-                    } else {
-                        _state.update { 
-                            it.copy(
-                                isLoading = false,
-                                isError = true,
-                                errorMessage = body?.message ?: "OTP verification failed"
-                            )
-                        }
+                if (response.success) {
+                    _state.update { 
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = true,
+                            isError = false
+                        )
                     }
                 } else {
                     _state.update { 
                         it.copy(
                             isLoading = false,
                             isError = true,
-                            errorMessage = try {
-                                // Trích xuất thông báo lỗi từ body response
-                                val errorBody = response.errorBody()?.string()
-                                if (errorBody != null) {
-                                    val jsonObject = org.json.JSONObject(errorBody)
-                                    jsonObject.optString("message", "OTP verification failed: ${response.message()}")
-                                } else {
-                                    "OTP verification failed: ${response.message()}"
-                                }
-                            } catch (e: Exception) {
-                                "OTP verification failed: ${response.message()}"
-                            }
+                            errorMessage = response.message
                         )
                     }
                 }
@@ -180,9 +148,9 @@ class TwoFactorAuthViewModel @Inject constructor(
             try {
                 // Call the API to resend the verification email with OTP
                 Log.d("TwoFactorAuthViewModel", "Requesting OTP for email: $email")
-                val response = otpRepository.resendOtp(email)
+                val response = otpRepository.resendOtp(email, forVerification = false)
                 
-                if (response.isSuccessful) {
+                if (response.success) {
                     Log.d("TwoFactorAuthViewModel", "OTP requested successfully")
                     _state.update { 
                         it.copy(
@@ -191,12 +159,12 @@ class TwoFactorAuthViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    Log.e("TwoFactorAuthViewModel", "Failed to request OTP: ${response.message()}")
+                    Log.e("TwoFactorAuthViewModel", "Failed to request OTP: ${response.message}")
                     _state.update { 
                         it.copy(
                             isLoading = false,
                             isError = true,
-                            errorMessage = "Failed to send OTP code: ${response.message()}"
+                            errorMessage = "Failed to send OTP code: ${response.message}"
                         )
                     }
                 }
