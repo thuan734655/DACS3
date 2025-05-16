@@ -13,11 +13,11 @@ interface AuthApi {
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
     // POST forgot password request
-    @POST("auth/forgot-password")
+    @POST("auth/forgotpassword")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): ForgotPasswordResponse
 
     // POST reset password with OTP
-    @POST("auth/reset-password")
+    @POST("auth/resetpassword")
     suspend fun resetPassword(@Body request: ResetPasswordRequest): ResetPasswordResponse
 
     // POST verify email with OTP

@@ -3,6 +3,7 @@ package com.example.dacs3.data.repository
 import com.example.dacs3.data.local.entity.WorkspaceEntity
 import com.example.dacs3.data.model.WorkspaceListResponse
 import com.example.dacs3.data.model.WorkspaceResponse
+import com.example.dacs3.data.model.UserListResponse
 import com.example.dacs3.data.repository.base.BaseRepository
 import kotlinx.coroutines.flow.Flow
 
@@ -61,4 +62,9 @@ interface WorkspaceRepository : BaseRepository<WorkspaceEntity, String> {
      * Leave a workspace
      */
     suspend fun leaveWorkspace(workspaceId: String): Boolean
+    
+    /**
+     * Get all members of a workspace (with avatars)
+     */
+    suspend fun getWorkspaceMembersFromApi(workspaceId: String): UserListResponse
 } 

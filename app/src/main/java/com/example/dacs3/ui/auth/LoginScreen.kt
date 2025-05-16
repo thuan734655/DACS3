@@ -40,8 +40,10 @@ import com.example.dacs3.ui.theme.*
 import com.example.dacs3.util.addFocusCleaner
 import com.example.dacs3.util.DeviceUtils
 import kotlinx.coroutines.delay
+import androidx.compose.ui.ExperimentalComposeUiApi
+import com.example.dacs3.navigation.Screen
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun LoginScreen(
     navController: NavController,
@@ -56,6 +58,7 @@ fun LoginScreen(
     val uiState by viewModel.uiState.collectAsState()
     val isLoading = uiState.isLoading
     val focusManager = LocalFocusManager.current
+    @OptIn(ExperimentalComposeUiApi::class)
     val keyboardController = LocalSoftwareKeyboardController.current
     
     // Focus requesters for better keyboard management
@@ -69,41 +72,28 @@ fun LoginScreen(
 
     LaunchedEffect(uiState) {
         when {
-            uiState.isSuccess -> {
-                navController.navigate("home") {
-                    popUpTo(0) { inclusive = true }
-                }
-            }
-            uiState.action == "verify_email" -> {
-                // Yêu cầu server gửi OTP rồi mới chuyển đến màn hình xác thực
-                Log.d("LoginScreen", "Email verification required for: ${uiState.email}")
-                uiState.email?.let { emailAddress ->
-                    // Gửi yêu cầu OTP đến server
-                    viewModel.requestVerificationOtp(emailAddress)
-                    
-                    // Sau đó chuyển đến màn hình OTP
-                    navController.navigateToOtpVerification(emailAddress, "verify_email")
+            uiState.isSuccess && uiState.action == "login_success" -> {
+                Log.d("LoginScreen", "Login successful, navigating to home")
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(Screen.Login.route) { inclusive = true }
                 }
             }
             uiState.action == "2fa" -> {
-                // Navigate to OTP verification when 2FA is required
-                Log.d("LoginScreen", "2FA required, navigating to OTP screen with email: ${uiState.email}")
+                Log.d("LoginScreen", "2FA required, navigating to 2FA screen with email: ${uiState.email}")
                 uiState.email?.let { email ->
-                    navController.navigateToOtpVerification(email, "2fa")
+                    navController.navigate(Screen.TwoFactorAuth.createRoute(email)) {
+                        // Don't clear the backstack to allow returning to login if needed
+                    }
                 }
             }
-            uiState.isError -> {
+            uiState.action == "verify_email" -> {
                 showError = true
-                // Extract meaningful error message from server response if possible
-                val errorMsg = uiState.errorMessage
-                errorMessage = when {
-                    errorMsg.contains("Invalid credentials") -> 
-                        "Invalid email or password. Please try again."
-                    errorMsg.contains("User not found") -> 
-                        "Account not found. Please check your email or create an account."
-                    else -> errorMsg
-                }
-                Log.d("LoginScreen", "Error message: $errorMessage")
+                errorMessage = "Please verify your email first"
+            }
+            uiState.isError -> {
+                Log.d("LoginScreen", "Error message: ${uiState.errorMessage}")
+                showError = true
+                errorMessage = uiState.errorMessage
             }
         }
     }
@@ -138,7 +128,10 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundGrey)
-            .addFocusCleaner(focusManager, keyboardController),
+            .run { 
+                @OptIn(ExperimentalComposeUiApi::class)
+                addFocusCleaner(focusManager, keyboardController)
+            },
         contentAlignment = Alignment.Center
     ) {
         Column(

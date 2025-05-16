@@ -31,13 +31,16 @@ class AuthRepository @Inject constructor(
                 withContext(Dispatchers.IO) {
                     response.account?.let { account ->
                         // Save user info
-                        val user = userDao.getUserById(account.username)
+                        // Extract username from email if username is null
+                        val username = account.username ?: account.email?.substringBefore("@") ?: "user_${System.currentTimeMillis()}"
+                        
+                        val user = userDao.getUserById(username)
                         
                         if (user == null && account.email != null) {
                             // If user doesn't exist locally, create it
                             val userEntity = UserEntity(
                                 _id = UUID.randomUUID().toString(),
-                                name = account.username,
+                                name = username,
                                 avatar = null,
                                 created_at = Date()
                             )
@@ -60,6 +63,9 @@ class AuthRepository @Inject constructor(
                         
                         // Save session info
                         response.token?.let { token ->
+                            // Save token and user info in session manager
+                            val userId = UUID.randomUUID().toString() // Generate a temporary ID if needed
+                            sessionManager.saveUserSession(userId, account.email, token)
                             sessionManager.saveToken(token)
                         }
                     }
@@ -81,10 +87,13 @@ class AuthRepository @Inject constructor(
                 withContext(Dispatchers.IO) {
                     response.account?.let { account ->
                         try {
+                            // Extract username from email if username is null
+                            val username = account.username ?: account.email?.substringBefore("@") ?: "user_${System.currentTimeMillis()}"
+                            
                             // Save user info
                             val userEntity = UserEntity(
                                 _id = UUID.randomUUID().toString(),
-                                name = account.username,
+                                name = username,
                                 avatar = null,
                                 created_at = Date()
                             )

@@ -101,9 +101,9 @@ fun ResetPasswordScreen(
     // Handle UI state changes
     LaunchedEffect(uiState) {
         when {
-            uiState.isSuccess && uiState.action == "password_reset_success" -> {
+            uiState.isSuccess && (uiState.action == "password_reset_complete" || uiState.action == "password_reset_success") -> {
                 // Navigate back to login screen after successful password reset
-                delay(500) // Short delay for better UX
+                delay(1000) // Short delay for better UX
                 navController.navigate("login") {
                     popUpTo("login") { inclusive = true }
                 }

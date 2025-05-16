@@ -59,4 +59,8 @@ interface WorkspaceApi {
     // DELETE leave a workspace
     @DELETE("workspaces/{id}/leave")
     suspend fun leaveWorkspace(@Path("id") id: String): MessageResponse
+
+    // GET workspace members with user details
+    @GET("workspaces/{id}/members")
+    suspend fun getWorkspaceMembers(@Path("id") id: String): UserListResponse
 }

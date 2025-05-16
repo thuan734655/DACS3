@@ -80,4 +80,9 @@ interface EpicRepository : BaseRepository<EpicEntity, String> {
      * Delete an epic on the remote API
      */
     suspend fun deleteEpicFromApi(id: String): Boolean
+    
+    /**
+     * Delete an epic on the remote API and update the UI with result
+     */
+    suspend fun deleteEpic(id: String): EpicResponse
 } 

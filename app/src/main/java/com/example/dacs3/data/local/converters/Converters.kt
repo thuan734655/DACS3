@@ -91,7 +91,58 @@ class Converters {
     @TypeConverter
     fun toWorkspaceMemberList(value: String): List<WorkspaceMember>? {
         val listType = object : TypeToken<List<WorkspaceMember>>() {}.type
-        return gson.fromJson(value, listType)
+        
+        // Create a custom Gson instance that can properly deserialize WorkspaceMember objects
+        val customGson = Gson().newBuilder()
+            .registerTypeAdapter(object : TypeToken<List<WorkspaceMember>>() {}.type, object : com.google.gson.JsonDeserializer<List<WorkspaceMember>> {
+                override fun deserialize(json: com.google.gson.JsonElement, typeOfT: java.lang.reflect.Type, context: com.google.gson.JsonDeserializationContext): List<WorkspaceMember> {
+                    val result = mutableListOf<WorkspaceMember>()
+                    val jsonArray = json.asJsonArray
+                    
+                    for (element in jsonArray) {
+                        val jsonObject = element.asJsonObject
+                        val roleElement = jsonObject.get("role")
+                        val idElement = jsonObject.get("_id")
+                        val userIdElement = jsonObject.get("user_id")
+                        
+                        // Handle user_id that can be either a string or a User object
+                        val userId: User = if (userIdElement.isJsonObject) {
+                            val userObject = userIdElement.asJsonObject
+                            val userId = userObject.get("_id").asString
+                            val userName = userObject.get("name")?.asString ?: "Unknown"
+                            val userAvatar = userObject.get("avatar")?.asString
+                            val userCreatedAt = if (userObject.has("created_at")) {
+                                try {
+                                    val timestamp = userObject.get("created_at").asString
+                                    val simpleDateFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault())
+                                    simpleDateFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                                    simpleDateFormat.parse(timestamp)
+                                } catch (e: Exception) {
+                                    Date()
+                                }
+                            } else {
+                                Date()
+                            }
+                            
+                            User(userId, userName, userAvatar, userCreatedAt)
+                        } else {
+                            // Fallback for legacy data that might have user_id as a string
+                            val userId = userIdElement.asString
+                            User(userId, "Unknown", null, Date())
+                        }
+                        
+                        val role = roleElement?.asString ?: "Member"
+                        val id = idElement?.asString
+                        
+                        result.add(WorkspaceMember(userId, role, id))
+                    }
+                    
+                    return result
+                }
+            })
+            .create()
+            
+        return customGson.fromJson(value, listType)
     }
 
     // ReportTask converters

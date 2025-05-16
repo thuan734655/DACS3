@@ -6,9 +6,13 @@ sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Register : Screen("register")
     object Home : Screen("home")
-    object WorkspaceList : Screen("workspace_list")
+    object WorkspaceList : Screen("workspaces")
     object WorkspaceDetail : Screen("workspace_detail/{workspaceId}") {
         fun createRoute(workspaceId: String) = "workspace_detail/$workspaceId"
+    }
+    object ConversationList : Screen("conversations") 
+    object WorkspaceChat : Screen("workspace_chat/{workspaceId}") {
+        fun createRoute(workspaceId: String) = "workspace_chat/$workspaceId"
     }
     // OTP verification
     object OtpVerification : Screen("otp_verification/{email}") {
@@ -36,11 +40,27 @@ sealed class Screen(val route: String) {
     object CreateTask : Screen("create_task/{epicId}") {
         fun createRoute(epicId: String) = "create_task/$epicId"
     }
+    object SprintList : Screen("sprints/{workspaceId}") {
+        fun createRoute(workspaceId: String) = "sprints/$workspaceId"
+    }
+    object SprintDetail : Screen("sprint_detail/{sprintId}") {
+        fun createRoute(sprintId: String) = "sprint_detail/$sprintId"
+    }
+    object CreateSprint : Screen("create_sprint/{workspaceId}") {
+        fun createRoute(workspaceId: String) = "create_sprint/$workspaceId"
+    }
+    object MyTasks : Screen("my_tasks")
+    object DailyReport : Screen("daily_report")
     object BugList : Screen("bug_list/{taskId}") {
         fun createRoute(taskId: String) = "bug_list/$taskId"
     }
     object CreateBug : Screen("create_bug/{taskId}") {
         fun createRoute(taskId: String) = "create_bug/$taskId"
     }
+    object WorkspaceMembers : Screen("workspace_members/{workspaceId}") {
+        fun createRoute(workspaceId: String) = "workspace_members/$workspaceId"
+    }
+    object Profile : Screen("profile")
+    object Notifications : Screen("notifications") 
     // Add other screens as needed
 } 

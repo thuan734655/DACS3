@@ -241,6 +241,32 @@ class TaskRepositoryImpl @Inject constructor(
         }
     }
     
+    override suspend fun deleteTask(id: String): TaskResponse {
+        return try {
+            // First get the task to return it in the response
+            val task = taskDao.getTaskById(id)
+            
+            val success = deleteTaskFromApi(id)
+            if (success) {
+                // Create a successful response with the deleted task data
+                return TaskResponse(
+                    success = true,
+                    data = task?.let { task.toTask() }
+                )
+            } else {
+                // Create a failure response
+                return TaskResponse(
+                    success = false,
+                    data = null
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in deleteTask", e)
+            // Return empty response with success=false when operation fails
+            return TaskResponse(false, null)
+        }
+    }
+    
     override suspend fun addComment(taskId: String, content: String): CommentResponse {
         return try {
             val request = AddCommentRequest(content)

@@ -25,12 +25,35 @@ data class EpicEntity(
     val updated_at: Date
 ) {
     fun toEpic(): Epic {
+        // Create placeholder workspace and user objects
+        val workspace = com.example.dacs3.data.model.Workspace(
+            _id = workspace_id,
+            name = "Unknown",  // We don't have this information locally
+            description = null,
+            created_by = com.example.dacs3.data.model.User(
+                _id = created_by,
+                name = "Unknown",
+                avatar = null,
+                created_at = created_at
+            ),
+            created_at = created_at,
+            members = null,
+            channels = null
+        )
+        
+        val user = com.example.dacs3.data.model.User(
+            _id = created_by,
+            name = "Unknown",
+            avatar = null,
+            created_at = created_at
+        )
+        
         return Epic(
             _id = _id,
             title = title,
             description = description,
-            workspace_id = workspace_id,
-            created_by = created_by,
+            workspace_id = workspace,
+            created_by = user,
             assigned_to = assigned_to,
             status = status,
             priority = priority,
@@ -50,8 +73,8 @@ data class EpicEntity(
                 _id = epic._id,
                 title = epic.title,
                 description = epic.description,
-                workspace_id = epic.workspace_id,
-                created_by = epic.created_by,
+                workspace_id = epic.workspace_id._id,  // Extract ID from Workspace object
+                created_by = epic.created_by._id,      // Extract ID from User object
                 assigned_to = epic.assigned_to,
                 status = epic.status,
                 priority = epic.priority,

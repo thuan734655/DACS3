@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -38,7 +39,7 @@ import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import com.example.dacs3.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun RegisterScreen(
     navController: NavController,
@@ -80,6 +81,7 @@ fun RegisterScreen(
     
     // Focus and keyboard management
     val focusManager = LocalFocusManager.current
+    @OptIn(ExperimentalComposeUiApi::class)
     val keyboardController = LocalSoftwareKeyboardController.current
 
     // Focus management
@@ -160,7 +162,10 @@ fun RegisterScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundGrey)
-            .addFocusCleaner(focusManager, keyboardController),
+            .run {
+                @OptIn(ExperimentalComposeUiApi::class)
+                addFocusCleaner(focusManager, keyboardController)
+            },
         contentAlignment = Alignment.Center
     ) {
         Column(

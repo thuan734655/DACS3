@@ -17,6 +17,9 @@ import com.example.dacs3.data.model.ThreadRepliesData
 import com.example.dacs3.data.model.ThreadRepliesResponse
 import com.example.dacs3.data.model.UpdateMessageRequest
 import com.example.dacs3.data.repository.MessageRepository
+import com.example.dacs3.di.IoDispatcher
+import com.example.dacs3.data.user.UserManager
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
@@ -29,7 +32,8 @@ class MessageRepositoryImpl @Inject constructor(
     private val messageDao: MessageDao,
     private val messageApi: MessageApi,
     private val channelMessageApi: ChannelMessageApi,
-    private val directMessageApi: DirectMessageApi
+    private val directMessageApi: DirectMessageApi,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : MessageRepository {
     
     private val TAG = "MessageRepositoryImpl"

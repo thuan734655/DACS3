@@ -99,12 +99,40 @@ class TwoFactorAuthViewModel @Inject constructor(
                 }
             } catch (e: HttpException) {
                 Log.e("TwoFactorAuthViewModel", "HTTP error during OTP verification: ${e.code()}", e)
-                _state.update { 
-                    it.copy(
-                        isLoading = false,
-                        isError = true,
-                        errorMessage = "Server error (${e.code()}): ${e.message()}"
-                    )
+                try {
+                    val errorBody = e.response()?.errorBody()
+                    val errorString = errorBody?.string() ?: ""
+                    Log.d("TwoFactorAuthViewModel", "Error response body: $errorString")
+                    
+                    try {
+                        val jsonObject = org.json.JSONObject(errorString)
+                        val message = jsonObject.optString("message", "")
+                        val action = jsonObject.optString("action", null)
+                        
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                isError = true,
+                                errorMessage = if (message.isNotEmpty()) message else "Verification failed (${e.code()})"
+                            )
+                        }
+                    } catch (jsonException: Exception) {
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                isError = true,
+                                errorMessage = "Verification failed: ${e.message()}"
+                            )
+                        }
+                    }
+                } catch (parseException: Exception) {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isError = true,
+                            errorMessage = "Verification failed: ${e.message()}"
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("TwoFactorAuthViewModel", "Error verifying OTP", e)
@@ -179,12 +207,40 @@ class TwoFactorAuthViewModel @Inject constructor(
                 }
             } catch (e: HttpException) {
                 Log.e("TwoFactorAuthViewModel", "HTTP error resending OTP: ${e.code()}", e)
-                _state.update { 
-                    it.copy(
-                        isLoading = false,
-                        isError = true,
-                        errorMessage = "Server error (${e.code()}): ${e.message()}"
-                    )
+                try {
+                    val errorBody = e.response()?.errorBody()
+                    val errorString = errorBody?.string() ?: ""
+                    Log.d("TwoFactorAuthViewModel", "Error response body: $errorString")
+                    
+                    try {
+                        val jsonObject = org.json.JSONObject(errorString)
+                        val message = jsonObject.optString("message", "")
+                        val action = jsonObject.optString("action", null)
+                        
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                isError = true,
+                                errorMessage = if (message.isNotEmpty()) message else "Verification failed (${e.code()})"
+                            )
+                        }
+                    } catch (jsonException: Exception) {
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                isError = true,
+                                errorMessage = "Verification failed: ${e.message()}"
+                            )
+                        }
+                    }
+                } catch (parseException: Exception) {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isError = true,
+                            errorMessage = "Verification failed: ${e.message()}"
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("TwoFactorAuthViewModel", "Error resending OTP", e)

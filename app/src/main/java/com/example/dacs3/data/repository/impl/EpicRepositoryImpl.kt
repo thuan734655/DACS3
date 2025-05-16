@@ -101,10 +101,15 @@ class EpicRepositoryImpl @Inject constructor(
             )
             
             // If successful, store epics in local database
-            if (response.success && response.data != null) {
+            if (response.success && response.data.isNotEmpty()) {
                 withContext(Dispatchers.IO) {
-                    val epicEntities = response.data.map { EpicEntity.fromEpic(it) }
-                    epicDao.insertEpics(epicEntities)
+                    try {
+                        val epicEntities = response.data.map { EpicEntity.fromEpic(it) }
+                        epicDao.insertEpics(epicEntities)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error saving epics to local database", e)
+                        // Continue with the response even if local save fails
+                    }
                 }
             }
             
@@ -123,8 +128,13 @@ class EpicRepositoryImpl @Inject constructor(
             // If successful, store epic in local database
             if (response.success && response.data != null) {
                 withContext(Dispatchers.IO) {
-                    val epicEntity = EpicEntity.fromEpic(response.data)
-                    epicDao.insertEpic(epicEntity)
+                    try {
+                        val epicEntity = EpicEntity.fromEpic(response.data)
+                        epicDao.insertEpic(epicEntity)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error saving epic to local database", e)
+                        // Continue with the response even if local save fails
+                    }
                 }
             }
             
@@ -157,8 +167,13 @@ class EpicRepositoryImpl @Inject constructor(
             // If successful, store epic in local database
             if (response.success && response.data != null) {
                 withContext(Dispatchers.IO) {
-                    val epicEntity = EpicEntity.fromEpic(response.data)
-                    epicDao.insertEpic(epicEntity)
+                    try {
+                        val epicEntity = EpicEntity.fromEpic(response.data)
+                        epicDao.insertEpic(epicEntity)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error saving created epic to local database", e)
+                        // Continue with the response even if local save fails
+                    }
                 }
             }
             
@@ -192,8 +207,13 @@ class EpicRepositoryImpl @Inject constructor(
             // If successful, update epic in local database
             if (response.success && response.data != null) {
                 withContext(Dispatchers.IO) {
-                    val epicEntity = EpicEntity.fromEpic(response.data)
-                    epicDao.updateEpic(epicEntity)
+                    try {
+                        val epicEntity = EpicEntity.fromEpic(response.data)
+                        epicDao.updateEpic(epicEntity)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error saving updated epic to local database", e)
+                        // Continue with the response even if local save fails
+                    }
                 }
             }
             
@@ -222,4 +242,30 @@ class EpicRepositoryImpl @Inject constructor(
             false
         }
     }
-} 
+    
+    override suspend fun deleteEpic(id: String): EpicResponse {
+        return try {
+            // First get the epic to return it in the response
+            val epic = epicDao.getEpicById(id)
+            
+            val success = deleteEpicFromApi(id)
+            if (success) {
+                // Create a successful response with the deleted epic data
+                return EpicResponse(
+                    success = true,
+                    data = epic?.let { epic.toEpic() }
+                )
+            } else {
+                // Create a failure response
+                return EpicResponse(
+                    success = false,
+                    data = null
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in deleteEpic", e)
+            // Return empty response with success=false when operation fails
+            return EpicResponse(false, null)
+        }
+    }
+}

@@ -1,6 +1,7 @@
 package com.example.dacs3
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.dacs3.data.session.SessionManager
+import com.example.dacs3.data.session.SessionManagerViewModel
 import com.example.dacs3.navigation.AppNavigation
 import com.example.dacs3.ui.auth.AuthViewModel
 import com.example.dacs3.ui.theme.DACS3Theme
@@ -28,9 +30,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // Check if user is already logged in
+        val isLoggedIn = sessionManager.isLoggedIn()
+        Log.d("MainActivity", "User is logged in: $isLoggedIn")
+        
         setContent {
             DACS3Theme {
-                MainAppScaffold(sessionManager = sessionManager)
+                MainAppScaffold()
             }
         }
     }
@@ -40,7 +47,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainAppScaffold(
     authViewModel: AuthViewModel = hiltViewModel(),
-    sessionManager: SessionManager
+    sessionManagerViewModel: SessionManagerViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
 
@@ -52,7 +59,7 @@ fun MainAppScaffold(
         ) {
             AppNavigation(
                 navController = navController,
-                sessionManager = sessionManager
+                sessionManager = sessionManagerViewModel
             )
         }
     }

@@ -101,6 +101,11 @@ interface TaskRepository : BaseRepository<TaskEntity, String> {
     suspend fun deleteTaskFromApi(id: String): Boolean
     
     /**
+     * Delete a task on the remote API and update the UI with result
+     */
+    suspend fun deleteTask(id: String): TaskResponse
+    
+    /**
      * Add a comment to a task
      */
     suspend fun addComment(taskId: String, content: String): CommentResponse

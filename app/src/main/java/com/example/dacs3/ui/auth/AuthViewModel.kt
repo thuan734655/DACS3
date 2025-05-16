@@ -178,9 +178,61 @@ class AuthViewModel @Inject constructor(
                             it.copy(
                                 isLoading = false, 
                                 isError = true, 
-                                errorMessage = response.message
+                                errorMessage = response.message ?: "Login failed"
                             )
                         }
+                    }
+                }
+            } catch (e: HttpException) {
+                Log.e("AuthViewModel", "Login error (Ask Gemini)", e)
+                try {
+                    val errorBody = e.response()?.errorBody()
+                    val errorString = errorBody?.string() ?: ""
+                    Log.d("AuthViewModel", "Error response body: $errorString")
+                    
+                    try {
+                        val jsonObject = JSONObject(errorString)
+                        val message = jsonObject.optString("message", "")
+                        val action = jsonObject.optString("action", null)
+                        
+                        if (action == "2fa") {
+                            // This is a 2FA request, not a real error
+                            val data = jsonObject.optJSONObject("data")
+                            val email = data?.optString("email", accountName) ?: accountName
+                            
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    isError = false,
+                                    action = "2fa",
+                                    email = email
+                                )
+                            }
+                        } else {
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    isError = true,
+                                    errorMessage = message.ifEmpty { "Login failed: ${e.message}" }
+                                )
+                            }
+                        }
+                    } catch (jsonException: Exception) {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isError = true,
+                                errorMessage = "Login failed: ${e.message}"
+                            )
+                        }
+                    }
+                } catch (parseException: Exception) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isError = true,
+                            errorMessage = "Login failed: ${e.message}"
+                        )
                     }
                 }
             } catch (e: Exception) {
@@ -198,14 +250,35 @@ class AuthViewModel @Inject constructor(
 
     private fun handleLoginResponse(response: LoginResponse) {
         if (response.success && response.token != null) {
-            // Save token in SessionManager
-            sessionManager.saveToken(response.token)
+            // Extract user information from response
+            val email = response.account?.email ?: ""
+            
+            // Extract userId from JWT token or generate one
+            val userId = try {
+                val payload = response.token.split(".")[1]
+                val decodedBytes = android.util.Base64.decode(payload, android.util.Base64.URL_SAFE)
+                val decodedString = String(decodedBytes)
+                val jsonObject = JSONObject(decodedString)
+                jsonObject.optString("id", UUID.randomUUID().toString())
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Error extracting user ID from token", e)
+                UUID.randomUUID().toString()
+            }
+            
+            // Save complete user session
+            sessionManager.saveUserSession(userId, email, response.token)
+            
+            // Set current user ID
+            _currentUserId.value = userId
             
             _uiState.update { 
                 it.copy(
                     isLoading = false,
                     isSuccess = true,
                     action = "login_success",
+                    email = email,
+                    username = email.substringBefore('@'),
+                    token = response.token,
                     errorMessage = ""
                 )
             }
@@ -251,7 +324,42 @@ class AuthViewModel @Inject constructor(
                         it.copy(
                             isLoading = false, 
                             isError = true, 
-                            errorMessage = response.message
+                            errorMessage = response.message ?: "Failed to send reset code"
+                        )
+                    }
+                }
+            } catch (e: HttpException) {
+                Log.e("AuthViewModel", "Forgot password error", e)
+                try {
+                    val errorBody = e.response()?.errorBody()
+                    val errorString = errorBody?.string() ?: ""
+                    
+                    try {
+                        val jsonObject = JSONObject(errorString)
+                        val message = jsonObject.optString("message", "")
+                        
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isError = true,
+                                errorMessage = message.ifEmpty { "Password reset request failed: ${e.message}" }
+                            )
+                        }
+                    } catch (jsonException: Exception) {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isError = true,
+                                errorMessage = "Password reset request failed: ${e.message}"
+                            )
+                        }
+                    }
+                } catch (parseException: Exception) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isError = true,
+                            errorMessage = "Password reset request failed: ${e.message}"
                         )
                     }
                 }
@@ -289,7 +397,42 @@ class AuthViewModel @Inject constructor(
                         it.copy(
                             isLoading = false, 
                             isError = true, 
-                            errorMessage = response.message
+                            errorMessage = response.message ?: "Failed to reset password"
+                        )
+                    }
+                }
+            } catch (e: HttpException) {
+                Log.e("AuthViewModel", "Reset password error", e)
+                try {
+                    val errorBody = e.response()?.errorBody()
+                    val errorString = errorBody?.string() ?: ""
+                    
+                    try {
+                        val jsonObject = JSONObject(errorString)
+                        val message = jsonObject.optString("message", "")
+                        
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isError = true,
+                                errorMessage = message.ifEmpty { "Password reset failed: ${e.message}" }
+                            )
+                        }
+                    } catch (jsonException: Exception) {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isError = true,
+                                errorMessage = "Password reset failed: ${e.message}"
+                            )
+                        }
+                    }
+                } catch (parseException: Exception) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isError = true,
+                            errorMessage = "Password reset failed: ${e.message}"
                         )
                     }
                 }

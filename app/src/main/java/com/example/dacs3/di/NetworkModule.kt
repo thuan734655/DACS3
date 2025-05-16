@@ -48,11 +48,22 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideGson(): com.google.gson.Gson {
+        return com.google.gson.GsonBuilder()
+            // Register custom type adapters for handling API response inconsistencies
+            .registerTypeAdapter(com.example.dacs3.data.model.Epic::class.java, 
+                com.example.dacs3.data.api.deserializer.EpicDeserializer())
+            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+            .create()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: com.google.gson.Gson): Retrofit {
         return Retrofit.Builder()
             .baseUrl("http://10.0.2.2:3000/api/")
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 

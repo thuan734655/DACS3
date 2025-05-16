@@ -24,7 +24,7 @@ data class WorkspaceEntity(
             _id = _id,
             name = name,
             description = description,
-            created_by = User(
+            created_by = com.example.dacs3.data.model.User(
                 _id = createdById,
                 name = createdByName,
                 avatar = null,

@@ -16,8 +16,9 @@ data class Workspace(
 )
 
 data class WorkspaceMember(
-    val user_id: String,
-    val role: String
+    val user_id: User,
+    val role: String,
+    val _id: String? = null
 )
 
 // Requests

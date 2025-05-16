@@ -4,6 +4,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 /**
  * Extension function to dismiss keyboard when tapping outside of text fields
  */
+@OptIn(ExperimentalComposeUiApi::class)
 fun Modifier.addFocusCleaner(
     focusManager: FocusManager,
     keyboardController: SoftwareKeyboardController?

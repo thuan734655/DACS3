@@ -4,11 +4,7 @@ import android.util.Log
 import com.example.dacs3.data.api.WorkspaceApi
 import com.example.dacs3.data.local.dao.WorkspaceDao
 import com.example.dacs3.data.local.entity.WorkspaceEntity
-import com.example.dacs3.data.model.AddMemberRequest
-import com.example.dacs3.data.model.CreateWorkspaceRequest
-import com.example.dacs3.data.model.UpdateWorkspaceRequest
-import com.example.dacs3.data.model.WorkspaceListResponse
-import com.example.dacs3.data.model.WorkspaceResponse
+import com.example.dacs3.data.model.*
 import com.example.dacs3.data.repository.WorkspaceRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -259,18 +255,21 @@ class WorkspaceRepositoryImpl @Inject constructor(
     override suspend fun leaveWorkspace(workspaceId: String): Boolean {
         return try {
             val response = workspaceApi.leaveWorkspace(workspaceId)
-            
-            // If successful, remove workspace from local database
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    workspaceDao.deleteWorkspaceById(workspaceId)
-                }
-            }
-            
             response.success
         } catch (e: Exception) {
             Log.e(TAG, "Error leaving workspace", e)
             false
+        }
+    }
+    
+    override suspend fun getWorkspaceMembersFromApi(workspaceId: String): UserListResponse {
+        return try {
+            val response = workspaceApi.getWorkspaceMembers(workspaceId)
+            response
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting workspace members", e)
+            // Return empty response with success=false when API fails
+            UserListResponse(false, 0, 0, emptyList())
         }
     }
 } 

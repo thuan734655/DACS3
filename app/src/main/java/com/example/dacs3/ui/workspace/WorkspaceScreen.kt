@@ -1,104 +1,44 @@
 package com.example.dacs3.ui.workspace
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.dacs3.data.local.entity.WorkspaceEntity
-import com.example.dacs3.domain.viewmodel.WorkspaceViewModel
-import com.example.dacs3.ui.theme.DarkGrey
-import com.example.dacs3.ui.theme.MediumGrey
-import com.example.dacs3.ui.theme.TeamNexusPurple
+import com.example.dacs3.data.model.Workspace
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkspaceScreen(
+    viewModel: WorkspaceViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onWorkspaceSelected: (WorkspaceEntity) -> Unit,
-    viewModel: WorkspaceViewModel = hiltViewModel()
+    onWorkspaceSelected: (Workspace) -> Unit,
+    onManageMembers: (String) -> Unit = {},
+    onNavigateToHome: (() -> Unit)? = null
 ) {
-    val workspaces by viewModel.workspaces.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val hasMoreData by viewModel.hasMoreData.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    var showCreateDialog by remember { mutableStateOf(false) }
     
-    val listState = rememberLazyListState()
-    
-    // Check if we need to load more data
-    val shouldLoadMore by remember {
-        derivedStateOf {
-            val layoutInfo = listState.layoutInfo
-            val totalItemsNumber = layoutInfo.totalItemsCount
-            val lastVisibleItemIndex = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
-            
-            // Load more when we get to the last 2 items
-            lastVisibleItemIndex > (totalItemsNumber - 2) && hasMoreData && !isLoading
-        }
-    }
-    
-    // Effect to load more when scrolling
-    LaunchedEffect(shouldLoadMore) {
-        if (shouldLoadMore) {
-            viewModel.loadMoreWorkspaces()
-        }
+    LaunchedEffect(Unit) {
+        viewModel.loadWorkspaces()
     }
     
     Scaffold(
@@ -107,160 +47,107 @@ fun WorkspaceScreen(
                 title = { Text("Workspaces") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Go back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                actions = {
+                    IconButton(onClick = { 
+                        // Navigate to home screen
+                        onNavigateToHome?.invoke() 
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = "Go to Home"
+                        )
+                    }
+                }
             )
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* TODO: Add dialog to create workspace */ },
-                containerColor = MaterialTheme.colorScheme.primary
+                onClick = { showCreateDialog = true }
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Workspace",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
+                Icon(Icons.Default.Add, contentDescription = "Create Workspace")
             }
         }
-    ) { paddingValues ->
+    ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(padding)
         ) {
-            if (isLoading && workspaces.isEmpty()) {
-                // Show a loading indicator only if there's no data yet
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            } else if (uiState.workspaces.isEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    CircularProgressIndicator(color = TeamNexusPurple)
-                }
-            } else if (workspaces.isEmpty()) {
-                // Empty state for workspaces
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(64.dp)
-                                .background(
-                                    color = TeamNexusPurple.copy(alpha = 0.1f),
-                                    shape = CircleShape
-                                )
-                                .padding(16.dp),
-                            tint = TeamNexusPurple
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        Text(
-                            text = "No Workspaces Found",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkGrey
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Text(
-                            text = "Create your first workspace to get started",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MediumGrey,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                        
-                        Spacer(modifier = Modifier.height(24.dp))
-                        
-                        Button(
-                            onClick = { /* TODO: Show create workspace dialog */ },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = TeamNexusPurple
-                            ),
-                            modifier = Modifier.padding(horizontal = 32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            
-                            Spacer(modifier = Modifier.width(8.dp))
-                            
-                            Text("Create Workspace")
-                        }
+                    Text(
+                        text = "No workspaces found",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { showCreateDialog = true }) {
+                        Text("Create Workspace")
                     }
                 }
             } else {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    // Error message if any
-                    AnimatedVisibility(
-                        visible = error != null,
-                        enter = fadeIn() + slideInVertically(),
-                        exit = fadeOut() + slideOutVertically()
-                    ) {
-                        error?.let {
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                color = MaterialTheme.colorScheme.errorContainer
-                            ) {
-                                Text(
-                                    text = it,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.padding(16.dp)
-                                )
-                            }
-                        }
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    items(uiState.workspaces) { workspace ->
+                        WorkspaceItem(
+                            workspace = workspace,
+                            onClick = { onWorkspaceSelected(workspace) },
+                            onManageMembers = onManageMembers
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
-                    
-                    // Workspace list
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(16.dp)
-                    ) {
-                        items(workspaces) { workspace ->
-                            WorkspaceItem(
-                                workspace = workspace,
-                                onClick = { onWorkspaceSelected(workspace) },
-                                onEdit = { /* TODO: Handle edit */ },
-                                onDelete = { /* TODO: Handle delete */ }
-                            )
-                        }
-                        
-                        // Footer loading indicator
-                        if (isLoading && workspaces.isNotEmpty()) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(32.dp),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                        }
+                }
+            }
+            
+            // Show error message if any
+            uiState.error?.let { error ->
+                Snackbar(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                ) {
+                    Text(error)
+                }
+            }
+            
+            // Create Workspace Dialog
+            if (showCreateDialog) {
+                CreateWorkspaceDialog(
+                    onDismiss = { showCreateDialog = false },
+                    onCreateWorkspace = { name, description ->
+                        viewModel.createWorkspace(name, description)
+                        showCreateDialog = false
                     }
+                )
+            }
+            
+            // Success message
+            if (uiState.isCreationSuccessful) {
+                LaunchedEffect(uiState.isCreationSuccessful) {
+                    // Reset the state after showing success
+                    viewModel.resetCreationState()
+                }
+                Snackbar(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                ) {
+                    Text("Workspace created successfully!")
                 }
             }
         }
@@ -269,108 +156,148 @@ fun WorkspaceScreen(
 
 @Composable
 fun WorkspaceItem(
-    workspace: WorkspaceEntity,
+    workspace: Workspace,
     onClick: () -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onManageMembers: (String) -> Unit = {}
 ) {
-    var showMenu by remember { mutableStateOf(false) }
+    val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            // Workspace initials avatar
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = workspace.name.take(2).uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
+            Text(
+                text = workspace.name,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
             
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
-            // Workspace details
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            workspace.description?.let {
                 Text(
-                    text = workspace.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
+                    text = it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                workspace.description?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                // Member count
-                Text(
-                    text = "${workspace.members?.size ?: 0} members",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
+                Spacer(modifier = Modifier.height(8.dp))
             }
             
-            // Menu icon
-            Box {
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More options",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Created: ${dateFormat.format(workspace.created_at)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
+                TextButton(
+                    onClick = { onManageMembers(workspace._id) }
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("Edit Workspace") },
-                        onClick = {
-                            onEdit()
-                            showMenu = false
-                        }
+                    Icon(
+                        imageVector = Icons.Default.Group,
+                        contentDescription = "Manage Members",
+                        modifier = Modifier.size(18.dp)
                     )
-                    DropdownMenuItem(
-                        text = { Text("Delete Workspace") },
-                        onClick = {
-                            onDelete()
-                            showMenu = false
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Members")
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateWorkspaceDialog(
+    onDismiss: () -> Unit,
+    onCreateWorkspace: (name: String, description: String) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var nameError by remember { mutableStateOf<String?>(null) }
+    
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    text = "Create Workspace",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                TextField(
+                    value = name,
+                    onValueChange = { 
+                        name = it
+                        nameError = if (it.isBlank()) "Name cannot be empty" else null
+                    },
+                    label = { Text("Workspace Name*") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = nameError != null,
+                    supportingText = {
+                        nameError?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
-                    )
+                    }
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                TextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Button(
+                        onClick = { 
+                            if (name.isBlank()) {
+                                nameError = "Name cannot be empty"
+                            } else {
+                                onCreateWorkspace(name, description)
+                            }
+                        }
+                    ) {
+                        Text("Create")
+                    }
                 }
             }
         }
