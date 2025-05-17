@@ -6,7 +6,6 @@ import com.example.dacs3.data.model.CommentResponse
 import com.example.dacs3.data.model.AddCommentRequest
 import com.example.dacs3.data.model.MessageResponse
 
-// Models
 data class Bug(
     val _id: String,
     val title: String,
@@ -23,9 +22,6 @@ data class Bug(
     val updated_at: Date
 )
 
-// Comment is imported from CommonModels.kt
-
-// Requests
 data class CreateBugRequest(
     val title: String,
     val description: String?,
@@ -51,9 +47,6 @@ data class UpdateBugRequest(
     val actual_behavior: String?
 )
 
-// AddCommentRequest is imported from CommonModels.kt
-
-// Responses
 data class BugResponse(
     val success: Boolean,
     val data: Bug?
@@ -65,7 +58,3 @@ data class BugListResponse(
     val total: Int,
     val data: List<Bug>
 )
-
-// CommentResponse is imported from CommonModels.kt
-
-// MessageResponse is imported from CommonModels.kt

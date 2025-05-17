@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.auth.twofactor
+package com.example.dacs3.viewmodel
 
 import android.app.Application
 import android.util.Log
@@ -8,7 +8,6 @@ import com.example.dacs3.data.model.OtpState
 import com.example.dacs3.data.repository.AuthRepository
 import com.example.dacs3.data.repository.OtpRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

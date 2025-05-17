@@ -1,11 +1,10 @@
-package com.example.dacs3.ui.epic
+package com.example.dacs3.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.model.Epic
 import com.example.dacs3.data.repository.EpicRepository
 import com.example.dacs3.data.session.SessionManager
-import com.example.dacs3.data.user.UserManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +29,6 @@ data class EpicUiState(
 class EpicViewModel @Inject constructor(
     private val epicRepository: EpicRepository,
     private val sessionManager: SessionManager,
-    private val userManager: UserManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EpicUiState())

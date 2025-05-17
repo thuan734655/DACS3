@@ -38,10 +38,10 @@ import androidx.navigation.NavController
 import com.example.dacs3.ui.auth.otp.navigateToOtpVerification
 import com.example.dacs3.ui.theme.*
 import com.example.dacs3.util.addFocusCleaner
-import com.example.dacs3.util.DeviceUtils
 import kotlinx.coroutines.delay
 import androidx.compose.ui.ExperimentalComposeUiApi
 import com.example.dacs3.navigation.Screen
+import com.example.dacs3.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable

@@ -29,7 +29,7 @@ import androidx.navigation.NavController
 import com.example.dacs3.R
 import com.example.dacs3.data.session.SessionManager
 import com.example.dacs3.ui.theme.*
-import javax.inject.Inject
+import com.example.dacs3.viewmodel.OnboardingViewModel
 
 @Composable
 fun OnboardingScreen(

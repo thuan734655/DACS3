@@ -1,10 +1,7 @@
 package com.example.dacs3.data.model
 
 import java.util.Date
-import com.example.dacs3.data.model.AddMemberRequest
-import com.example.dacs3.data.model.MessageResponse
 
-// Models
 data class Channel(
     val _id: String,
     val name: String,
@@ -26,7 +23,6 @@ data class ChannelMember(
     val joined_at: Date
 )
 
-// Requests
 data class CreateChannelRequest(
     val name: String,
     val description: String?,
@@ -41,9 +37,6 @@ data class UpdateChannelRequest(
     val is_private: Boolean?
 )
 
-// AddMemberRequest is imported from CommonModels.kt
-
-// Responses
 data class ChannelResponse(
     val success: Boolean,
     val data: Channel?
@@ -55,5 +48,3 @@ data class ChannelListResponse(
     val total: Int,
     val data: List<Channel>
 )
-
-// MessageResponse is imported from CommonModels.kt

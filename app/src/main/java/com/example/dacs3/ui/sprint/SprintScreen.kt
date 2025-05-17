@@ -20,10 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dacs3.data.model.Sprint
+import com.example.dacs3.viewmodel.SprintViewModel
 import java.text.SimpleDateFormat
 import java.util.*
-import java.time.LocalDate
-import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

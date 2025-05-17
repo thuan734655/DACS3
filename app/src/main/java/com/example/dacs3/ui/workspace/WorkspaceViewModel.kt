@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.model.WorkspaceResponse
 import com.example.dacs3.data.repository.WorkspaceRepository
 import com.example.dacs3.data.session.SessionManager
-import com.example.dacs3.data.user.UserManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +25,7 @@ data class WorkspaceUiState(
 class WorkspaceViewModel @Inject constructor(
     private val workspaceRepository: WorkspaceRepository,
     private val sessionManager: SessionManager,
-    private val userManager: UserManager
+
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WorkspaceUiState())

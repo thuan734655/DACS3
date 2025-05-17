@@ -1,10 +1,10 @@
-package com.example.dacs3.ui.task
+package com.example.dacs3.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.model.Task
 import com.example.dacs3.data.repository.TaskRepository
-import com.example.dacs3.data.user.UserManager
+import com.example.dacs3.data.session.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +25,7 @@ data class MyTaskUiState(
 @HiltViewModel
 class MyTaskViewModel @Inject constructor(
     private val taskRepository: TaskRepository,
-    private val userManager: UserManager
+    private  val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MyTaskUiState())
@@ -39,7 +39,7 @@ class MyTaskViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
             
             try {
-                val userId = userManager.getCurrentUserId()
+                val userId = sessionManager.getUserId()
                 if (userId == null) {
                     _uiState.update { 
                         it.copy(

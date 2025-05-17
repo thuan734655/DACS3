@@ -33,10 +33,7 @@ import com.example.dacs3.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 // Import dialog components
-import com.example.dacs3.ui.epic.CreateEpicDialog
-import com.example.dacs3.ui.epic.UpdateEpicDialog
-import com.example.dacs3.ui.epic.FilterEpicDialog
-import com.example.dacs3.ui.epic.capitalize
+import com.example.dacs3.viewmodel.EpicViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

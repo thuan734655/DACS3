@@ -1,6 +1,5 @@
 package com.example.dacs3.ui.message
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dacs3.data.model.Conversation
+import com.example.dacs3.viewmodel.MessageViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 

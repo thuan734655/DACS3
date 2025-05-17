@@ -12,7 +12,6 @@ import com.example.dacs3.data.repository.WorkspaceRepository
 import com.example.dacs3.data.repository.SprintRepository
 import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.data.session.SessionManager
-import com.example.dacs3.data.user.UserManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -49,7 +48,6 @@ class TaskViewModel @Inject constructor(
     private val sprintRepository: SprintRepository,
     private val userRepository: UserRepository,
     private val sessionManager: SessionManager,
-    private val userManager: UserManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TaskUiState())

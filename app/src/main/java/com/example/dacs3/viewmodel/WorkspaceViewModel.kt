@@ -1,9 +1,8 @@
-package com.example.dacs3.domain.viewmodel
+package com.example.dacs3.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.local.entity.WorkspaceEntity
-import com.example.dacs3.data.model.CreateWorkspaceRequest
 import com.example.dacs3.data.repository.WorkspaceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

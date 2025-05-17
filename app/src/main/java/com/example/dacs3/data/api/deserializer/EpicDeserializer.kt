@@ -43,8 +43,7 @@ class EpicDeserializer : JsonDeserializer<Epic> {
         val completedDate = parseDate(jsonObject.get("completed_date"), dateFormat)
         val createdAt = parseDate(jsonObject.get("created_at"), dateFormat) ?: Date()
         val updatedAt = parseDate(jsonObject.get("updated_at"), dateFormat) ?: Date()
-        
-        // Parse tasks list
+
         val tasksElement = jsonObject.get("tasks")
         val tasks = if (tasksElement != null && !tasksElement.isJsonNull) {
             val taskList = mutableListOf<String>()

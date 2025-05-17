@@ -20,6 +20,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dacs3.data.model.Task
+import com.example.dacs3.viewmodel.DailyReportData
+import com.example.dacs3.viewmodel.ReportViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 

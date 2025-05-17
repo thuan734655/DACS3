@@ -6,6 +6,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -16,6 +18,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+    private const val BASE_URL = "http://10.0.2.2:3000/api/"
+
+    @Provides
+    @Singleton
+    @IoDispatcher
+    fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
 
     @Provides
     @Singleton
@@ -50,9 +58,10 @@ object NetworkModule {
     @Singleton
     fun provideGson(): com.google.gson.Gson {
         return com.google.gson.GsonBuilder()
-            // Register custom type adapters for handling API response inconsistencies
-            .registerTypeAdapter(com.example.dacs3.data.model.Epic::class.java, 
-                com.example.dacs3.data.api.deserializer.EpicDeserializer())
+            .registerTypeAdapter(
+                com.example.dacs3.data.model.Epic::class.java,
+                com.example.dacs3.data.api.deserializer.EpicDeserializer()
+            )
             .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
             .create()
     }
@@ -61,7 +70,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient, gson: com.google.gson.Gson): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:3000/api/")
+            .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
@@ -150,4 +159,4 @@ object NetworkModule {
     fun provideReportDailyApi(retrofit: Retrofit): ReportDailyApi {
         return retrofit.create(ReportDailyApi::class.java)
     }
-} 
+}

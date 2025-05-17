@@ -1,4 +1,4 @@
-package com.example.dacs3.utils
+package com.example.dacs3.util
 
 import java.util.*
 import java.text.SimpleDateFormat

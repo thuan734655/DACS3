@@ -1,9 +1,8 @@
-package com.example.dacs3.ui.auth
+package com.example.dacs3.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.dacs3.data.model.AuthResponse
 import com.example.dacs3.data.model.LoginRequest
 import com.example.dacs3.data.model.LoginResponse
 import com.example.dacs3.data.model.RegisterRequest
@@ -19,7 +18,6 @@ import kotlinx.coroutines.launch
 import okhttp3.ResponseBody
 import org.json.JSONObject
 import retrofit2.HttpException
-import java.io.IOException
 import javax.inject.Inject
 import java.util.UUID
 

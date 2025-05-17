@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.onboarding
+package com.example.dacs3.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.example.dacs3.data.session.SessionManager

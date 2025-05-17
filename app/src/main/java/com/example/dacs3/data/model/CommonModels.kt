@@ -2,7 +2,6 @@ package com.example.dacs3.data.model
 
 import java.util.Date
 
-// Common response models used across multiple APIs
 data class MessageResponse(
     val success: Boolean,
     val message: String
@@ -29,7 +28,6 @@ data class AddMemberRequest(
     val role: String? = null
 )
 
-// For OTP and Auth
 data class VerifyEmailRequest(
     val email: String,
     val otp: String

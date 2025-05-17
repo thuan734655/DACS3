@@ -9,20 +9,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.dacs3.data.session.SessionManager
 import com.example.dacs3.data.session.SessionManagerViewModel
-import com.example.dacs3.ui.auth.AuthViewModel
+import com.example.dacs3.viewmodel.AuthViewModel
 import com.example.dacs3.ui.auth.ForgotPasswordScreen
 import com.example.dacs3.ui.auth.LoginScreen
 import com.example.dacs3.ui.auth.RegisterScreen
-import com.example.dacs3.ui.auth.otp.OtpScreen
 import com.example.dacs3.ui.auth.otp.otpVerificationScreen
 import com.example.dacs3.ui.auth.otp.resetPasswordScreen
 import com.example.dacs3.ui.auth.twofactor.twoFactorAuthScreen
@@ -39,7 +36,6 @@ import com.example.dacs3.ui.workspace.WorkspaceScreen
 import com.example.dacs3.ui.message.ConversationListScreen
 import com.example.dacs3.ui.message.WorkspaceChatScreen
 import com.example.dacs3.ui.workspace.WorkspaceViewModel
-import javax.inject.Inject
 
 @Composable
 fun AppNavigation(
@@ -370,29 +366,7 @@ fun AppNavigation(
                 navController.navigate("login")
             }
         )
-        
-        // Add Workspace Members screen route
-        composable(
-            route = Screen.WorkspaceMembers.route,
-            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
-            com.example.dacs3.ui.workspace.WorkspaceMemberScreen(
-                workspaceId = workspaceId,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-        
-        // Add Notifications screen route
-        composable(Screen.Notifications.route) {
-            com.example.dacs3.ui.notification.NotificationScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
+
         
         // Add profile screen route
         composable(Screen.Profile.route) {

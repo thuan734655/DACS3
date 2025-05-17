@@ -38,6 +38,7 @@ import com.example.dacs3.util.addFocusCleaner
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import com.example.dacs3.ui.theme.*
+import com.example.dacs3.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable

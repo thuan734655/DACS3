@@ -1,11 +1,10 @@
-package com.example.dacs3.ui.sprint
+package com.example.dacs3.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.model.Sprint
 import com.example.dacs3.data.repository.SprintRepository
 import com.example.dacs3.data.session.SessionManager
-import com.example.dacs3.data.user.UserManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,7 +28,6 @@ data class SprintUiState(
 class SprintViewModel @Inject constructor(
     private val sprintRepository: SprintRepository,
     private val sessionManager: SessionManager,
-    private val userManager: UserManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SprintUiState())

@@ -1,8 +1,7 @@
-package com.example.dacs3.ui.message
+package com.example.dacs3.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.dacs3.data.model.Conversation
 import com.example.dacs3.data.model.RealtimeMessage
 import com.example.dacs3.data.model.User
 import com.example.dacs3.data.model.Workspace
@@ -13,7 +12,6 @@ import com.example.dacs3.data.session.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.stateIn

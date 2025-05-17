@@ -1,4 +1,4 @@
-package com.example.dacs3.domain.viewmodel
+package com.example.dacs3.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
