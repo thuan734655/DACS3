@@ -4,5 +4,6 @@
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">https://dacs3-server.onrender.com</domain>
         <domain includeSubdomains="true">192.168.2.9</domain>
+        <domain includeSubdomains="true">192.168.2.6</domain>
     </domain-config>
 </network-security-config>

@@ -41,19 +41,25 @@ data class UpdateChannelRequest(
     val is_private: Boolean?
 )
 
-// AddMemberRequest is imported from CommonModels.kt
-
 // Responses
 data class ChannelResponse(
     val success: Boolean,
     val data: Channel?
 )
 
+// Thêm vào cuối file nếu chưa có
 data class ChannelListResponse(
     val success: Boolean,
     val count: Int,
     val total: Int,
     val data: List<Channel>
+)
+
+// Thêm class ChannelList
+data class ChannelList(
+    val count: Int,
+    val total: Int,
+    val channels: List<Channel>
 )
 
 // MessageResponse is imported from CommonModels.kt

@@ -14,6 +14,7 @@ import com.example.dacs3.data.repository.impl.SprintRepositoryImpl
 import com.example.dacs3.data.repository.impl.TaskRepositoryImpl
 import com.example.dacs3.data.repository.impl.UserRepositoryImpl
 import com.example.dacs3.data.repository.impl.WorkspaceRepositoryImpl
+import com.example.dacs3.di.RepositoryModule
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -65,4 +66,5 @@ abstract class RepositoryModule {
     abstract fun bindUserRepository(
         userRepositoryImpl: UserRepositoryImpl
     ): UserRepository
-} 
+
+}

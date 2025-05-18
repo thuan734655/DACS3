@@ -1,285 +1,153 @@
 package com.example.dacs3.data.repository.impl
 
-import android.util.Log
 import com.example.dacs3.data.api.ChannelApi
 import com.example.dacs3.data.local.dao.ChannelDao
 import com.example.dacs3.data.local.entity.ChannelEntity
-import com.example.dacs3.data.model.AddMemberRequest
-import com.example.dacs3.data.model.ChannelListResponse
-import com.example.dacs3.data.model.ChannelResponse
+import com.example.dacs3.data.model.Channel
+import com.example.dacs3.data.model.ChannelList
+import com.example.dacs3.data.model.ApiResponse
 import com.example.dacs3.data.model.CreateChannelRequest
-import com.example.dacs3.data.model.UpdateChannelRequest
+import com.example.dacs3.data.model.AddMemberRequest
 import com.example.dacs3.data.repository.ChannelRepository
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
 class ChannelRepositoryImpl @Inject constructor(
     private val channelDao: ChannelDao,
     private val channelApi: ChannelApi
 ) : ChannelRepository {
-    
-    private val TAG = "ChannelRepositoryImpl"
-    
-    override fun getAll(): Flow<List<ChannelEntity>> {
-        return channelDao.getAllChannels()
-    }
-    
-    override suspend fun getById(id: String): ChannelEntity? {
-        return channelDao.getChannelById(id)
-    }
-    
-    override suspend fun insert(item: ChannelEntity) {
-        channelDao.insertChannel(item)
-    }
-    
-    override suspend fun insertAll(items: List<ChannelEntity>) {
-        channelDao.insertChannels(items)
-    }
-    
-    override suspend fun update(item: ChannelEntity) {
-        channelDao.updateChannel(item)
-    }
-    
-    override suspend fun delete(item: ChannelEntity) {
-        channelDao.deleteChannel(item)
-    }
-    
-    override suspend fun deleteById(id: String) {
-        channelDao.deleteChannelById(id)
-    }
-    
-    override suspend fun deleteAll() {
-        channelDao.deleteAllChannels()
-    }
-    
-    override suspend fun sync() {
-        try {
-            val response = channelApi.getAllChannels()
-            if (response.success && response.data != null) {
-                val channels = response.data.map { ChannelEntity.fromChannel(it) }
-                channelDao.insertChannels(channels)
-                Log.d(TAG, "Successfully synced ${channels.size} channels")
-            } else {
-                Log.w(TAG, "Failed to sync channels")
-            }
+
+    override suspend fun getAllChannelsFromApi(page: Int?, limit: Int?): ApiResponse<ChannelList> {
+        return try {
+            val response = channelApi.getAllChannels(page, limit)
+            ApiResponse(
+                success = response.success,
+                data = ChannelList(response.count, response.total, response.data),
+                message = "Lấy danh sách kênh thành công"
+            )
         } catch (e: Exception) {
-            Log.e(TAG, "Error syncing channels", e)
+            ApiResponse(
+                success = false,
+                data = null,
+                message = e.message ?: "Lỗi khi lấy danh sách kênh"
+            )
         }
     }
-    
-    override fun getChannelsByWorkspaceId(workspaceId: String): Flow<List<ChannelEntity>> {
-        return channelDao.getChannelsByWorkspaceId(workspaceId)
-    }
-    
-    override fun getChannelsByCreatedBy(createdBy: String): Flow<List<ChannelEntity>> {
-        return channelDao.getChannelsByCreatedBy(createdBy)
-    }
-    
-    override suspend fun getAllChannelsFromApi(
+
+    override suspend fun getChannelsByWorkspaceFromApi(
         page: Int?,
         limit: Int?,
-        workspaceId: String?
-    ): ChannelListResponse {
+        workspaceId: String
+    ): ApiResponse<List<Channel>> {
         return try {
-            val response = channelApi.getAllChannels(page, limit, workspaceId)
-            
-            // If successful, store channels in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val channelEntities = response.data.map { ChannelEntity.fromChannel(it) }
-                    channelDao.insertChannels(channelEntities)
-                }
-            }
-            
-            response
+            val resp = channelApi.getAllChannels(page, limit, workspaceId)
+            ApiResponse(
+                success = resp.success,
+                data    = resp.data,
+                message = "Lấy danh sách kênh theo workspace thành công"
+            )
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching channels from API", e)
-            // Return empty response with success=false when API fails
-            ChannelListResponse(false, 0, 0, emptyList())
+            ApiResponse(false, emptyList(), e.message ?: "Lỗi khi lấy kênh theo workspace")
         }
     }
-    
-    override suspend fun getChannelByIdFromApi(id: String): ChannelResponse {
+    override suspend fun getChannelsByCreatedBy(userId: String): ApiResponse<List<Channel>> {
         return try {
-            val response = channelApi.getChannelById(id)
+            val response = channelApi.getAllChannels() // Thay thế apiService bằng channelApi
+            // Xử lý response để lấy các channel được tạo bởi userId
+            val filteredChannels = response.data.filter { it.created_by == userId }
             
-            // If successful, store channel in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val channelEntity = ChannelEntity.fromChannel(response.data)
-                    channelDao.insertChannel(channelEntity)
-                }
-            }
-            
-            response
+            ApiResponse(
+                success = true,
+                data = filteredChannels,
+                message = "Lấy danh sách kênh theo người tạo thành công"
+            )
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching channel from API", e)
-            // Return empty response with success=false when API fails
-            ChannelResponse(false, null)
+            ApiResponse(
+                success = false,
+                data = emptyList(),
+                message = e.message ?: "Lỗi khi lấy danh sách kênh theo người tạo"
+            )
         }
     }
-    
+
     override suspend fun createChannel(
         name: String,
         description: String?,
         workspaceId: String,
         createdBy: String,
         isPrivate: Boolean
-    ): ChannelResponse {
+    ): ApiResponse<Channel> {
+        val request = CreateChannelRequest(
+            name       = name,
+            description= description,
+            workspace_id = workspaceId,
+            created_by = createdBy,
+            is_private = isPrivate
+        )
         return try {
-            val request = CreateChannelRequest(name, description, workspaceId, createdBy, isPrivate)
-            val response = channelApi.createChannel(request)
-            
-            // If successful, store channel in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val channelEntity = ChannelEntity.fromChannel(response.data)
-                    channelDao.insertChannel(channelEntity)
-                }
-            }
-            
-            response
+            val resp = channelApi.createChannel(request)
+            ApiResponse(resp.success, resp.data, "Tạo kênh thành công")
         } catch (e: Exception) {
-            Log.e(TAG, "Error creating channel", e)
-            // Return empty response with success=false when API fails
-            ChannelResponse(false, null)
+            ApiResponse(false, null, e.message ?: "Lỗi khi tạo kênh")
         }
     }
-    
-    override suspend fun updateChannel(
-        id: String,
-        name: String?,
-        description: String?,
-        isPrivate: Boolean?
-    ): ChannelResponse {
+
+    override suspend fun addMember(channelId: String, userId: String): ApiResponse<Channel> {
         return try {
-            val request = UpdateChannelRequest(name, description, isPrivate)
-            val response = channelApi.updateChannel(id, request)
-            
-            // If successful, update channel in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val channelEntity = ChannelEntity.fromChannel(response.data)
-                    channelDao.updateChannel(channelEntity)
-                }
-            }
-            
-            response
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating channel", e)
-            // Return empty response with success=false when API fails
-            ChannelResponse(false, null)
-        }
-    }
-    
-    override suspend fun deleteChannelFromApi(id: String): Boolean {
-        return try {
-            val response = channelApi.deleteChannel(id)
-            
-            // If successful, delete channel from local database
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    channelDao.deleteChannelById(id)
-                }
-            }
-            
-            response.success
-        } catch (e: Exception) {
-            Log.e(TAG, "Error deleting channel", e)
-            false
-        }
-    }
-    
-    override suspend fun addMember(channelId: String, userId: String, role: String?): ChannelResponse {
-        return try {
-            val request = AddMemberRequest(userId, role)
+            val request = AddMemberRequest(userId)
             val response = channelApi.addMember(channelId, request)
-            
-            // If successful, update channel in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val channelEntity = ChannelEntity.fromChannel(response.data)
-                    channelDao.updateChannel(channelEntity)
-                }
-            }
-            
-            response
+            ApiResponse(
+                success = response.success,
+                data = response.data,
+                message = "Thêm thành viên vào kênh thành công"
+            )
         } catch (e: Exception) {
-            Log.e(TAG, "Error adding member to channel", e)
-            // Return empty response with success=false when API fails
-            ChannelResponse(false, null)
+            ApiResponse(
+                success = false,
+                data = null,
+                message = e.message ?: "Lỗi khi thêm thành viên vào kênh"
+            )
         }
     }
-    
-    override suspend fun removeMember(channelId: String, userId: String): ChannelResponse {
-        return try {
-            val response = channelApi.removeMember(channelId, userId)
-            
-            // If successful, update channel in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val channelEntity = ChannelEntity.fromChannel(response.data)
-                    channelDao.updateChannel(channelEntity)
-                }
-            }
-            
-            response
-        } catch (e: Exception) {
-            Log.e(TAG, "Error removing member from channel", e)
-            // Return empty response with success=false when API fails
-            ChannelResponse(false, null)
-        }
-    }
-    
-    override suspend fun joinChannel(channelId: String): ChannelResponse {
+
+    override suspend fun joinChannel(channelId: String): ApiResponse<Channel> {
         return try {
             val response = channelApi.joinChannel(channelId)
-            
-            // If successful, update channel in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val channelEntity = ChannelEntity.fromChannel(response.data)
-                    channelDao.updateChannel(channelEntity)
-                }
-            }
-            
-            response
+            ApiResponse(
+                success = response.success,
+                data = response.data,
+                message = "Tham gia kênh thành công"
+            )
         } catch (e: Exception) {
-            Log.e(TAG, "Error joining channel", e)
-            // Return empty response with success=false when API fails
-            ChannelResponse(false, null)
+            ApiResponse(
+                success = false,
+                data = null,
+                message = e.message ?: "Lỗi khi tham gia kênh"
+            )
         }
     }
-    
-    override suspend fun leaveChannel(channelId: String): Boolean {
+
+    override suspend fun leaveChannel(channelId: String): ApiResponse<Channel> {
         return try {
             val response = channelApi.leaveChannel(channelId)
-            
-            // If successful, update channel in local database
-            // Note: We're not deleting the channel locally because the user might still need to see it,
-            // even if they're no longer a member
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    val channel = channelDao.getChannelById(channelId)
-                    if (channel != null) {
-                        // Update the channel through the API to get the latest member list
-                        val updatedChannel = getChannelByIdFromApi(channelId)
-                        if (updatedChannel.success && updatedChannel.data != null) {
-                            val channelEntity = ChannelEntity.fromChannel(updatedChannel.data)
-                            channelDao.updateChannel(channelEntity)
-                        }
-                    }
-                }
-            }
-            
-            response.success
+            ApiResponse(
+                success = true,
+                data = null,
+                message = "Rời khỏi kênh thành công"
+            )
         } catch (e: Exception) {
-            Log.e(TAG, "Error leaving channel", e)
-            false
+            ApiResponse(
+                success = false,
+                data = null,
+                message = e.message ?: "Lỗi khi rời khỏi kênh"
+            )
         }
     }
-} 
+
+    override suspend fun getChannelsByWorkspaceId(workspaceId: String): Flow<List<ChannelEntity>> {
+        // Triển khai logic để lấy danh sách ChannelEntity theo workspaceId
+        // Ví dụ: return channelDao.getChannelsByWorkspaceId(workspaceId)
+        TODO("Implement this method")
+    }
+
+}

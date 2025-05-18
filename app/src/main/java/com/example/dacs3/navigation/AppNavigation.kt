@@ -3,12 +3,14 @@ package com.example.dacs3.navigation
 import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -27,6 +29,7 @@ import com.example.dacs3.ui.auth.otp.otpVerificationScreen
 import com.example.dacs3.ui.auth.otp.resetPasswordScreen
 import com.example.dacs3.ui.auth.twofactor.twoFactorAuthScreen
 import com.example.dacs3.ui.channels.ChannelsScreen
+import com.example.dacs3.ui.dashboard.DashboardScreen
 import com.example.dacs3.ui.epic.EpicScreen
 import com.example.dacs3.ui.home.HomeScreen
 import com.example.dacs3.ui.onboarding.OnboardingScreen
@@ -36,8 +39,6 @@ import com.example.dacs3.ui.sprint.SprintScreen
 import com.example.dacs3.ui.task.TaskScreen
 import com.example.dacs3.ui.welcome.WelcomeScreen
 import com.example.dacs3.ui.workspace.WorkspaceScreen
-import com.example.dacs3.ui.message.ConversationListScreen
-import com.example.dacs3.ui.message.WorkspaceChatScreen
 import com.example.dacs3.ui.workspace.WorkspaceViewModel
 import javax.inject.Inject
 
@@ -84,27 +85,7 @@ fun AppNavigation(
         
         // Add Home screen route
         composable(Screen.Home.route) {
-            HomeScreen(
-                username = "User",
-                onNavigateToWorkspaces = {
-                    navController.navigate(Screen.WorkspaceList.route)
-                },
-                onNavigateToMessages = {
-                    navController.navigate(Screen.ConversationList.route)
-                },
-                onNavigateToNotifications = {
-                    navController.navigate(Screen.Notifications.route)
-                },
-                onNavigateToProfile = {
-                    navController.navigate("profile")
-                },
-                onNavigateToMyTasks = {
-                    navController.navigate(Screen.MyTasks.route)
-                },
-                onNavigateToDailyReport = {
-                    navController.navigate(Screen.DailyReport.route)
-                }
-            )
+            HomeNavScreen(navController = navController)
         }
         
         // Add Channels screen route
@@ -154,15 +135,7 @@ fun AppNavigation(
             }
             
             // Workspace Detail Screen implementation
-            HomeScreen(
-                username = workspaceName.value,
-                onNavigateToEpics = {
-                    navController.navigate(Screen.EpicList.createRoute(workspaceId))
-                },
-                onNavigateToSprints = {
-                    navController.navigate(Screen.SprintList.createRoute(workspaceId))
-                }
-            )
+
         }
         
         // Add Epic list screen route
@@ -287,42 +260,7 @@ fun AppNavigation(
                 }
             )
         }
-        
-        // Add ConversationList screen route
-        composable(Screen.ConversationList.route) {
-            ConversationListScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onConversationSelected = { workspaceId ->
-                    navController.navigate(Screen.WorkspaceChat.createRoute(workspaceId))
-                },
-                onNavigateToHome = {
-                    navController.navigate(Screen.Home.route) {
-                        // Clear back stack up to Home
-                        popUpTo(Screen.Home.route) { inclusive = true }
-                    }
-                },
-                onNavigateToProfile = {
-                    // Navigate to Profile when implemented
-                    // For now, do nothing
-                }
-            )
-        }
-        
-        // Add Workspace Chat screen route
-        composable(
-            route = Screen.WorkspaceChat.route,
-            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
-            
-            WorkspaceChatScreen(
-                workspaceId = workspaceId,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-        
+
         // Setup OTP verification routes
         otpVerificationScreen(
             navController = navController,
@@ -406,5 +344,64 @@ fun AppNavigation(
                 }
             )
         }
+        
+        // Thêm màn hình chi tiết kênh
+        composable(
+        route = "channel_detail/{channelId}",
+        arguments = listOf(navArgument("channelId") { type = NavType.StringType })
+        ) { backStackEntry ->
+        val channelId = backStackEntry.arguments?.getString("channelId") ?: ""
+        
+        // Placeholder cho màn hình chi tiết kênh
+        Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+        ) {
+        Text("Channel Detail: $channelId")
+        }
+        }
+        
+        // Thêm màn hình tạo kênh mới
+        composable(
+        route = "create_channel/{workspaceId}",
+        arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
+        ) { backStackEntry ->
+        val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
+        
+        // Placeholder cho màn hình tạo kênh
+        Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+        ) {
+        Text("Create Channel for Workspace: $workspaceId")
+        }
+        }
+        
+        // Thêm màn hình cài đặt
+        composable("settings") {
+        // Placeholder cho màn hình cài đặt
+        Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+        ) {
+        Text("Settings Screen")
+        }
+        }
+        composable(Screen.Dashboard.route) {
+            DashboardScreen(
+                onBoardClick = { /* TODO: Điều hướng tới Board */ },
+                onSprintClick = { /* TODO: Điều hướng tới Sprint */ },
+                onEpicClick = { /* TODO: Điều hướng tới Epic */ },
+                onTaskClick = { /* TODO: Điều hướng tới Task */ },
+                onHomeClick = { navController.navigate(Screen.Home.route) },
+                onMessageClick = { navController.navigate(Screen.ConversationList.route) },
+                onDashboardClick = { /* Đã ở Dashboard, không cần điều hướng */ },
+                onProfileClick = { navController.navigate(Screen.Profile.route) },
+                onSettingsClick = { navController.navigate("settings") }
+            )
+        }
     }
-} 
+}
+
+
+

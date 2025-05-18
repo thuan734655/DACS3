@@ -62,5 +62,14 @@ sealed class Screen(val route: String) {
     }
     object Profile : Screen("profile")
     object Notifications : Screen("notifications") 
+    object DirectMessages : Screen("direct_messages")
+    object DirectChat : Screen("direct_chat/{userId}") {
+        fun createRoute(userId: String) = "direct_chat/$userId"
+    }
+    object Dashboard : Screen("dashboard")
+    object Board : Screen("board")
+    object SprintView : Screen("sprint_view")
+    object EpicView : Screen("epic_view")
+    object TaskView : Screen("task_view")
     // Add other screens as needed
-} 
+}

@@ -1,270 +1,286 @@
 package com.example.dacs3.ui.home
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.dacs3.R
+import androidx.constraintlayout.compose.ConstraintLayout
+import coil.compose.rememberAsyncImagePainter
+import com.example.dacs3.data.model.Channel
+import com.example.dacs3.data.model.Workspace
+import com.example.dacs3.data.model.User
+import com.example.dacs3.ui.components.BottomNavigationBar
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    username: String,
-    onNavigateToWorkspaces: (() -> Unit)? = null,
-    onNavigateToEpics: (() -> Unit)? = null,
-    onNavigateToSprints: (() -> Unit)? = null,
-    onNavigateToMessages: (() -> Unit)? = null,
-    onNavigateToNotifications: (() -> Unit)? = null,
-    onNavigateToProfile: (() -> Unit)? = null,
-    onNavigateToMyTasks: (() -> Unit)? = null,
-    onNavigateToDailyReport: (() -> Unit)? = null
+    user: User?,
+    workspace: Workspace?,
+    channels: List<Channel>,
+    unreadChannels: List<Channel>,
+    notification: String,
+    onChannelClick: (String) -> Unit,
+    onAddChannel: () -> Unit,
+    onNavigateToWorkspaces: () -> Unit,
+    onNotificationClick: () -> Unit,
+    onHomeClick: () -> Unit,
+    onMessageClick: () -> Unit,
+    onDashboardClick: () -> Unit,
+    onProfileClick: () -> Unit,
+    onSettingsClick: () -> Unit
 ) {
-    var selectedItem by remember { mutableStateOf(0) }
-    
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        // If we're in workspace detail mode (onNavigateToEpics and onNavigateToSprints not null)
-                        if (onNavigateToEpics != null && onNavigateToSprints != null) {
-                            Text(
-                                text = "Workspace",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Text(
-                                text = username,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                        } else {
-                            Text(text = "Hello, $username")
-                        }
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* TODO: Implement settings */ }) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings"
-                        )
-                    }
-                    IconButton(onClick = { onNavigateToNotifications?.invoke() }) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notifications"
-                        )
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                    label = { Text("Home") },
-                    selected = selectedItem == 0,
-                    onClick = { selectedItem = 0 }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Message, contentDescription = "Messages") },
-                    label = { Text("Messages") },
-                    selected = selectedItem == 1,
-                    onClick = { 
-                        selectedItem = 1
-                        onNavigateToMessages?.invoke()
-                    }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-                    label = { Text("Profile") },
-                    selected = selectedItem == 2,
-                    onClick = { 
-                        selectedItem = 2
-                        onNavigateToProfile?.invoke()
-                    }
-                )
-            }
-        }
-    ) { innerPadding ->
-        Box(
+    ConstraintLayout(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
+        val (header, channelSection, unreadSection, divider1, divider2, activitySection, bottomNav) = createRefs()
+
+        // Header
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // Feature grid
-                if (onNavigateToEpics != null && onNavigateToSprints != null) {
-                    // Workspace Detail Mode
-                    Text(
-                        text = "Manage Workspace",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        item {
-                            FeatureCard(
-                                icon = Icons.Default.FormatListBulleted,
-                                title = "Epics",
-                                onClick = onNavigateToEpics
-                            )
-                        }
-                        item {
-                            FeatureCard(
-                                icon = Icons.Default.Timer,
-                                title = "Sprints",
-                                onClick = onNavigateToSprints
-                            )
-                        }
-                        item {
-                            FeatureCard(
-                                icon = Icons.Default.Group,
-                                title = "Members",
-                                onClick = { /* TODO: Implement */ }
-                            )
-                        }
-                        item {
-                            FeatureCard(
-                                icon = Icons.Default.BarChart,
-                                title = "Reports",
-                                onClick = { /* TODO: Implement */ }
-                            )
-                        }
-                    }
-                } else {
-                    // Main Home Mode
-                    Text(
-                        text = "Quick Access",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        item {
-                            FeatureCard(
-                                icon = Icons.Default.Dashboard,
-                                title = "Workspaces",
-                                onClick = onNavigateToWorkspaces
-                            )
-                        }
-                        item {
-                            FeatureCard(
-                                icon = Icons.Default.Chat,
-                                title = "Messages",
-                                onClick = onNavigateToMessages
-                            )
-                        }
-                        item {
-                            FeatureCard(
-                                icon = Icons.Default.Assignment,
-                                title = "My Tasks",
-                                onClick = onNavigateToMyTasks
-                            )
-                        }
-                        item {
-                            FeatureCard(
-                                icon = Icons.Default.BarChart,
-                                title = "Báo cáo",
-                                onClick = onNavigateToDailyReport
-                            )
-                        }
-                    }
+                .constrainAs(header) {
+                    top.linkTo(parent.top, margin = 30.dp)
+                    start.linkTo(parent.start, margin = 16.dp)
+                    end.linkTo(parent.end, margin = 16.dp)
+                    width = androidx.constraintlayout.compose.Dimension.fillToConstraints
                 }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Recent tasks or activities
+        ) {
+            Image(
+                painter = rememberAsyncImagePainter(user?.avatar),
+                contentDescription = "User avatar",
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Recent Activities",
-                    style = MaterialTheme.typography.headlineSmall,
+                    "Hello ${user?.name ?: ""}",
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Placeholder for recent activities
-                Card(
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
+                    // Workspace name clickable
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "No recent activities",
-                            style = MaterialTheme.typography.bodyLarge
+                            workspace?.name ?: "Your Workspace",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.clickable { onNavigateToWorkspaces() }
+                        )
+                        Icon(
+                            Icons.Default.ArrowDropDown,
+                            contentDescription = "Dropdown",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    IconButton(onClick = { onNotificationClick() }) {
+                        Icon(
+                            Icons.Default.Notifications,
+                            contentDescription = "Notifications",
+                            tint = Color(0xFF673AB7)
                         )
                     }
                 }
             }
         }
-    }
-}
 
-@Composable
-fun FeatureCard(
-    icon: ImageVector,
-    title: String,
-    onClick: (() -> Unit)?
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clickable(enabled = onClick != null) { onClick?.invoke() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
+        // Channels section
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .constrainAs(channelSection) {
+                    top.linkTo(header.bottom, margin = 24.dp)
+                    start.linkTo(parent.start, margin = 16.dp)
+                    end.linkTo(parent.end, margin = 16.dp)
+                    width = androidx.constraintlayout.compose.Dimension.fillToConstraints
+                }
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Channels",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    Icons.Default.ArrowDropDown,
+                    contentDescription = "Expand channels",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            if (channels.isEmpty()) {
+                Text(
+                    "No channels",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+            } else {
+                channels.forEach { ch ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onChannelClick(ch._id) }
+                            .padding(vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "# ${ch.name}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                }
+            }
+        }
+
+        // Divider 1
+        Divider(
+            modifier = Modifier
+                .constrainAs(divider1) {
+                    top.linkTo(channelSection.bottom, margin = 12.dp)
+                    start.linkTo(parent.start, margin = 16.dp)
+                    end.linkTo(parent.end, margin = 16.dp)
+                    width = androidx.constraintlayout.compose.Dimension.fillToConstraints
+                },
+            color = Color.LightGray,
+            thickness = 1.dp
+        )
+
+        // Unread section
+        Column(
+            modifier = Modifier
+                .constrainAs(unreadSection) {
+                    top.linkTo(divider1.bottom, margin = 12.dp)
+                    start.linkTo(parent.start, margin = 16.dp)
+                    end.linkTo(parent.end, margin = 16.dp)
+                    width = androidx.constraintlayout.compose.Dimension.fillToConstraints
+                }
+        ) {
             Text(
-                text = title,
+                "Unreads",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.height(8.dp))
+            if (unreadChannels.isEmpty()) {
+                Text(
+                    "No unread",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+            } else {
+                unreadChannels.forEach { ch ->
+                    Text(
+                        "# ${ch.name}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(vertical = 6.dp)
+                    )
+                }
+            }
+
+            // Add channel button
+            Text(
+                "+ Add channel",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray,
+                modifier = Modifier
+                    .clickable { onAddChannel() }
+                    .padding(vertical = 6.dp)
             )
         }
+
+        // Divider 2
+        Divider(
+            modifier = Modifier
+                .constrainAs(divider2) {
+                    top.linkTo(unreadSection.bottom, margin = 12.dp)
+                    start.linkTo(parent.start, margin = 16.dp)
+                    end.linkTo(parent.end, margin = 16.dp)
+                    width = androidx.constraintlayout.compose.Dimension.fillToConstraints
+                },
+            color = Color.LightGray,
+            thickness = 1.dp
+        )
+
+        // Activity stream
+        Column(
+            modifier = Modifier
+                .constrainAs(activitySection) {
+                    top.linkTo(divider2.bottom, margin = 12.dp)
+                    start.linkTo(parent.start, margin = 16.dp)
+                    end.linkTo(parent.end, margin = 16.dp)
+                    width = androidx.constraintlayout.compose.Dimension.fillToConstraints
+                }
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Activity stream",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    Icons.Default.ArrowDropDown,
+                    contentDescription = "Expand activity",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(Modifier.height(24.dp))
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    if (notification.isEmpty()) "No notification!" else notification,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.Gray
+                )
+            }
+        }
+
+        // Bottom Navigation
+        BottomNavigationBar(
+            currentRoute = "home",
+            onHomeClick = onHomeClick,
+            onMessageClick = onMessageClick,
+            onDashboardClick = onDashboardClick,
+            onProfileClick = onProfileClick,
+            onSettingsClick = onSettingsClick,
+            modifier = Modifier
+                .constrainAs(bottomNav) {
+                    bottom.linkTo(parent.bottom)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    width = androidx.constraintlayout.compose.Dimension.fillToConstraints
+                }
+        )
     }
-} 
+}

@@ -64,12 +64,6 @@ object DatabaseModule {
     
     @Provides
     @Singleton
-    fun provideMessageDao(appDatabase: AppDatabase): MessageDao {
-        return appDatabase.messageDao()
-    }
-    
-    @Provides
-    @Singleton
     fun provideNotificationDao(appDatabase: AppDatabase): NotificationDao {
         return appDatabase.notificationDao()
     }

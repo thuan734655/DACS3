@@ -1,11 +1,22 @@
 package com.example.dacs3.di
 
-import com.example.dacs3.data.api.*
+import com.example.dacs3.data.api.AuthApi
+import com.example.dacs3.data.api.ChannelApi
+import com.example.dacs3.data.api.EpicApi
+import com.example.dacs3.data.api.NotificationApi
+import com.example.dacs3.data.api.OtpApi
+import com.example.dacs3.data.api.SprintApi
+import com.example.dacs3.data.api.TaskApi
+import com.example.dacs3.data.api.UserApi
+import com.example.dacs3.data.api.WorkspaceApi
 import com.example.dacs3.data.session.SessionManager
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.Interceptor                                  // ← Thêm import này
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -32,36 +43,37 @@ object NetworkModule {
         sessionManager: SessionManager
     ): OkHttpClient {
         return OkHttpClient.Builder()
-            .addInterceptor { chain ->
-                val request = sessionManager.getToken()?.let { token ->
-                    chain.request().newBuilder()
-                        .addHeader("Authorization", "Bearer $token")
-                        .build()
-                } ?: chain.request()
-                chain.proceed(request)
-            }
+            // interceptor log
             .addInterceptor(loggingInterceptor)
+            // interceptor thêm header rõ kiểu để tránh ambiguity
+            .addInterceptor(Interceptor { chain ->
+                val original = chain.request()
+                val builder = original.newBuilder()
+                sessionManager.getAuthToken()?.let { token ->
+                    builder.addHeader("Authorization", "Bearer $token")
+                }
+                val request = builder.build()
+                chain.proceed(request)
+            })
             .connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 
     @Provides
     @Singleton
-    fun provideGson(): com.google.gson.Gson {
-        return com.google.gson.GsonBuilder()
-            // Register custom type adapters for handling API response inconsistencies
-            .registerTypeAdapter(com.example.dacs3.data.model.Epic::class.java, 
-                com.example.dacs3.data.api.deserializer.EpicDeserializer())
-            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    fun provideGson(): Gson {
+        return GsonBuilder()
+            .setLenient()
             .create()
     }
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient, gson: com.google.gson.Gson): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:3000/api/")
+            .baseUrl("http://192.168.2.6:3000/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
@@ -69,85 +81,47 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideAuthApi(retrofit: Retrofit): AuthApi {
-        return retrofit.create(AuthApi::class.java)
-    }
+    fun provideAuthApi(retrofit: Retrofit): AuthApi =
+        retrofit.create(AuthApi::class.java)
 
     @Provides
     @Singleton
-    fun provideOtpApi(retrofit: Retrofit): OtpApi {
-        return retrofit.create(OtpApi::class.java)
-    }
+    fun provideOtpApi(retrofit: Retrofit): OtpApi =
+        retrofit.create(OtpApi::class.java)
 
     @Provides
     @Singleton
-    fun provideUserApi(retrofit: Retrofit): UserApi {
-        return retrofit.create(UserApi::class.java)
-    }
+    fun provideUserApi(retrofit: Retrofit): UserApi =
+        retrofit.create(UserApi::class.java)
 
     @Provides
     @Singleton
-    fun provideWorkspaceApi(retrofit: Retrofit): WorkspaceApi {
-        return retrofit.create(WorkspaceApi::class.java)
-    }
+    fun provideWorkspaceApi(retrofit: Retrofit): WorkspaceApi =
+        retrofit.create(WorkspaceApi::class.java)
 
     @Provides
     @Singleton
-    fun provideChannelApi(retrofit: Retrofit): ChannelApi {
-        return retrofit.create(ChannelApi::class.java)
-    }
+    fun provideChannelApi(retrofit: Retrofit): ChannelApi =
+        retrofit.create(ChannelApi::class.java)
 
     @Provides
     @Singleton
-    fun provideChannelMessageApi(retrofit: Retrofit): ChannelMessageApi {
-        return retrofit.create(ChannelMessageApi::class.java)
-    }
+    fun provideEpicApi(retrofit: Retrofit): EpicApi =
+        retrofit.create(EpicApi::class.java)
 
     @Provides
     @Singleton
-    fun provideDirectMessageApi(retrofit: Retrofit): DirectMessageApi {
-        return retrofit.create(DirectMessageApi::class.java)
-    }
+    fun provideNotificationApi(retrofit: Retrofit): NotificationApi =
+        retrofit.create(NotificationApi::class.java)
 
     @Provides
     @Singleton
-    fun provideMessageApi(retrofit: Retrofit): MessageApi {
-        return retrofit.create(MessageApi::class.java)
-    }
+    fun provideTaskApi(retrofit: Retrofit): TaskApi =
+        retrofit.create(TaskApi::class.java)
 
     @Provides
     @Singleton
-    fun provideTaskApi(retrofit: Retrofit): TaskApi {
-        return retrofit.create(TaskApi::class.java)
-    }
+    fun provideSprintApi(retrofit: Retrofit): SprintApi =
+        retrofit.create(SprintApi::class.java)
 
-    @Provides
-    @Singleton
-    fun provideBugApi(retrofit: Retrofit): BugApi {
-        return retrofit.create(BugApi::class.java)
-    }
-
-    @Provides
-    @Singleton
-    fun provideEpicApi(retrofit: Retrofit): EpicApi {
-        return retrofit.create(EpicApi::class.java)
-    }
-
-    @Provides
-    @Singleton
-    fun provideSprintApi(retrofit: Retrofit): SprintApi {
-        return retrofit.create(SprintApi::class.java)
-    }
-
-    @Provides
-    @Singleton
-    fun provideNotificationApi(retrofit: Retrofit): NotificationApi {
-        return retrofit.create(NotificationApi::class.java)
-    }
-
-    @Provides
-    @Singleton
-    fun provideReportDailyApi(retrofit: Retrofit): ReportDailyApi {
-        return retrofit.create(ReportDailyApi::class.java)
-    }
-} 
+}

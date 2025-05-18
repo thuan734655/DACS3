@@ -56,8 +56,8 @@ interface TaskRepository : BaseRepository<TaskEntity, String> {
     /**
      * Get task by ID from remote API
      */
-    suspend fun getTaskByIdFromApi(id: String): TaskResponse
-    
+    suspend fun getTaskById(id: String): TaskResponse
+
     /**
      * Create a new task on the remote API
      */
@@ -109,4 +109,4 @@ interface TaskRepository : BaseRepository<TaskEntity, String> {
      * Add a comment to a task
      */
     suspend fun addComment(taskId: String, content: String): CommentResponse
-} 
+}

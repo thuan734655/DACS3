@@ -32,4 +32,6 @@ interface UserRepository : BaseRepository<UserEntity, String> {
      * Delete a user on the remote API
      */
     suspend fun deleteUserFromApi(id: String): Boolean
-} 
+    
+    suspend fun searchUsersFromApi(query: String): UserListResponse
+}

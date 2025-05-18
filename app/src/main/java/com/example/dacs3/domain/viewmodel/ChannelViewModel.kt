@@ -46,18 +46,12 @@ class ChannelViewModel @Inject constructor(
             try {
                 // First, get data from local database (offline-first approach)
                 channelRepository.getChannelsByWorkspaceId(workspace._id)
-                    .catch { e ->
-                        _error.value = e.message
-                    }
-                    .collectLatest { localChannels ->
-                        _channels.value = localChannels
-                        
-                        // Select first channel if none is selected
-                        if (_selectedChannel.value == null && localChannels.isNotEmpty()) {
-                            _selectedChannel.value = localChannels.first()
+                    .catch { e -> _error.value = e.message }
+                    .collectLatest { local ->
+                        _channels.value = local
+                        if (_selectedChannel.value == null && local.isNotEmpty()) {
+                            _selectedChannel.value = local.first()
                         }
-                        
-                        // Then, if online or forced refresh, sync with remote
                         if (forceRefresh) {
                             syncWithRemote(workspace._id)
                         }
@@ -70,15 +64,17 @@ class ChannelViewModel @Inject constructor(
 
     private suspend fun syncWithRemote(workspaceId: String) {
         try {
-            val response = channelRepository.getAllChannelsFromApi(
+            val response = channelRepository.getChannelsByWorkspaceFromApi(
                 page = _currentPage.value,
                 limit = PAGE_SIZE,
                 workspaceId = workspaceId
             )
-            
+
             if (response.success) {
-                _hasMoreData.value = response.data.size >= PAGE_SIZE
-            } else {
+                val list = response.data ?: emptyList()
+                _hasMoreData.value = list.size >= PAGE_SIZE
+            }
+            else {
                 _error.value = "Failed to sync channels with server"
             }
         } catch (e: Exception) {

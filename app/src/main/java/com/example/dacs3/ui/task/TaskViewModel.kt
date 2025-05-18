@@ -49,7 +49,6 @@ class TaskViewModel @Inject constructor(
     private val sprintRepository: SprintRepository,
     private val userRepository: UserRepository,
     private val sessionManager: SessionManager,
-    private val userManager: UserManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TaskUiState())
@@ -524,4 +523,53 @@ class TaskViewModel @Inject constructor(
             }
         }
     }
+
+    fun getTaskById(taskId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                val response = taskRepository.getTaskById(taskId)
+                if (response.success && response.data != null) {
+                    _uiState.update { it.copy(isLoading = false, selectedTask = response.data) }
+                } else {
+                    _uiState.update { it.copy(isLoading = false, error = "Không thể tải thông tin công việc") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = "Lỗi: ${e.message}") }
+            }
+        }
+    }
+
+    fun getTasksByEpicId(epicId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                val response = taskRepository.getAllTasksFromApi(epicId = epicId)
+                if (response.success) {
+                    _uiState.update { it.copy(isLoading = false, tasks = response.data ?: emptyList()) }
+                } else {
+                    _uiState.update { it.copy(isLoading = false, error = "Không thể tải danh sách công việc") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = "Lỗi: ${e.message}") }
+            }
+        }
+    }
+
+    fun getAllTasks(workspaceId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                val response = taskRepository.getAllTasksFromApi(workspaceId = workspaceId)
+                if (response.success) {
+                    _uiState.update { it.copy(isLoading = false, tasks = response.data ?: emptyList()) }
+                } else {
+                    _uiState.update { it.copy(isLoading = false, error = "Không thể tải danh sách công việc") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = "Lỗi: ${e.message}") }
+            }
+        }
+    }
 }
+

@@ -28,6 +28,9 @@ data class UserResponse(
     val data: User?
 )
 
+data class ProfileResponse(val success: Boolean, val data: User?)
+data class UpdateProfileRequest(val name: String, val avatar: String?)
+
 data class UserListResponse(
     val success: Boolean,
     val count: Int,

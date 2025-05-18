@@ -169,4 +169,24 @@ class UserRepositoryImpl @Inject constructor(
             false
         }
     }
-} 
+    
+    override suspend fun searchUsersFromApi(query: String): UserListResponse {
+        return try {
+            val response = userApi.searchUsers(query)
+            
+            // Nếu thành công, lưu người dùng vào cơ sở dữ liệu cục bộ
+            if (response.success && response.data != null) {
+                withContext(Dispatchers.IO) {
+                    val userEntities = response.data.map { user -> UserEntity.fromUser(user) }
+                    userDao.insertUsers(userEntities)
+                }
+            }
+            
+            response
+        } catch (e: Exception) {
+            Log.e(TAG, "Error searching users", e)
+            // Trả về response rỗng với success=false khi API thất bại
+            UserListResponse(false, 0, 0, emptyList())
+        }
+    }
+}

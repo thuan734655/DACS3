@@ -14,7 +14,6 @@ import com.example.dacs3.data.local.entity.*
         BugEntity::class,
         ChannelEntity::class,
         EpicEntity::class,
-        MessageEntity::class,
         NotificationEntity::class,
         ReportDailyEntity::class,
         SprintEntity::class,
@@ -32,7 +31,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun bugDao(): BugDao
     abstract fun channelDao(): ChannelDao
     abstract fun epicDao(): EpicDao
-    abstract fun messageDao(): MessageDao
     abstract fun notificationDao(): NotificationDao
     abstract fun reportDailyDao(): ReportDailyDao
     abstract fun sprintDao(): SprintDao
