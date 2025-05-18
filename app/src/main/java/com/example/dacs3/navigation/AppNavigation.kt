@@ -18,20 +18,16 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.dacs3.data.session.SessionManager
 import com.example.dacs3.data.session.SessionManagerViewModel
-import com.example.dacs3.ui.auth.AuthViewModel
 import com.example.dacs3.ui.auth.ForgotPasswordScreen
 import com.example.dacs3.ui.auth.LoginScreen
 import com.example.dacs3.ui.auth.RegisterScreen
-import com.example.dacs3.ui.auth.otp.OtpScreen
 import com.example.dacs3.ui.auth.otp.otpVerificationScreen
 import com.example.dacs3.ui.auth.otp.resetPasswordScreen
 import com.example.dacs3.ui.auth.twofactor.twoFactorAuthScreen
 import com.example.dacs3.ui.channels.ChannelsScreen
 import com.example.dacs3.ui.dashboard.DashboardScreen
 import com.example.dacs3.ui.epic.EpicScreen
-import com.example.dacs3.ui.home.HomeScreen
 import com.example.dacs3.ui.onboarding.OnboardingScreen
 import com.example.dacs3.ui.profile.ProfileScreen
 import com.example.dacs3.ui.report.DailyReportScreen
@@ -40,12 +36,10 @@ import com.example.dacs3.ui.task.TaskScreen
 import com.example.dacs3.ui.welcome.WelcomeScreen
 import com.example.dacs3.ui.workspace.WorkspaceScreen
 import com.example.dacs3.ui.workspace.WorkspaceViewModel
-import javax.inject.Inject
 
 @Composable
 fun AppNavigation(
     navController: NavHostController,
-    authViewModel: AuthViewModel = hiltViewModel(),
     sessionManager: SessionManagerViewModel
 ) {
     // Determine initial destination based on if it's first time using the app
@@ -56,11 +50,7 @@ fun AppNavigation(
     } else {
         Screen.Welcome.route
     }
-    
-    // Get current user ID from AuthViewModel
-    val currentUserId = authViewModel.currentUserId.collectAsState().value
-//    val currentUser = authViewModel.currentUser.collectAsState().value
-    
+
     NavHost(navController = navController, startDestination = initialDestination) {
         composable(Screen.Onboarding.route) {
             OnboardingScreen(navController = navController)
@@ -309,19 +299,7 @@ fun AppNavigation(
             }
         )
         
-        // Add Workspace Members screen route
-        composable(
-            route = Screen.WorkspaceMembers.route,
-            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
-            com.example.dacs3.ui.workspace.WorkspaceMemberScreen(
-                workspaceId = workspaceId,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
+
         
         // Add Notifications screen route
         composable(Screen.Notifications.route) {
@@ -391,13 +369,12 @@ fun AppNavigation(
             DashboardScreen(
                 onBoardClick = { /* TODO: Điều hướng tới Board */ },
                 onSprintClick = { /* TODO: Điều hướng tới Sprint */ },
-                onEpicClick = { /* TODO: Điều hướng tới Epic */ },
+                onEpicClick = { navController.navigate("epic") },
                 onTaskClick = { /* TODO: Điều hướng tới Task */ },
                 onHomeClick = { navController.navigate(Screen.Home.route) },
                 onMessageClick = { navController.navigate(Screen.ConversationList.route) },
                 onDashboardClick = { /* Đã ở Dashboard, không cần điều hướng */ },
                 onProfileClick = { navController.navigate(Screen.Profile.route) },
-                onSettingsClick = { navController.navigate("settings") }
             )
         }
     }

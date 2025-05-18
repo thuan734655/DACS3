@@ -19,6 +19,7 @@ fun HomeNavScreen(
     HomeScreen(
         user = uiState.user,
         workspace = uiState.workspace,
+        allWorkspaces = uiState.allWorkspaces,
         channels = uiState.channels,
         unreadChannels = uiState.unreadChannels,
         notification = uiState.notification,
@@ -30,9 +31,9 @@ fun HomeNavScreen(
             // Điều hướng đến màn hình tạo kênh mới
             navController.navigate("create_channel/${uiState.workspace._id}")
         },
-        onNavigateToWorkspaces = {
-            // Điều hướng đến danh sách workspace
-            navController.navigate(Screen.WorkspaceList.route)
+        onWorkspaceSelected = { workspaceId ->
+            // Xử lý khi chọn workspace
+            viewModel.selectWorkspace(workspaceId)
         },
         onNotificationClick = {
             // Điều hướng đến màn hình thông báo
@@ -52,10 +53,6 @@ fun HomeNavScreen(
         onProfileClick = {
             // Điều hướng đến màn hình hồ sơ
             navController.navigate(Screen.Profile.route)
-        },
-        onSettingsClick = {
-            // Điều hướng đến màn hình cài đặt (nếu có)
-            navController.navigate("settings")
         }
     )
 }

@@ -5,12 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.model.User
 import com.example.dacs3.data.model.Workspace
 import com.example.dacs3.data.model.Channel
-import com.example.dacs3.data.model.WorkspaceMember
 import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.data.repository.WorkspaceRepository
 import com.example.dacs3.data.repository.ChannelRepository
 import com.example.dacs3.data.repository.NotificationRepository
 import com.example.dacs3.data.user.UserManager
+import com.example.dacs3.util.WorkspacePreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +37,7 @@ data class HomeUiState(
         channels = emptyList(),
         created_at = Date(),
     ),
+    val allWorkspaces: List<Workspace> = emptyList(),
     val channels: List<Channel> = emptyList(),
     val unreadChannels: List<Channel> = emptyList(),
     val notification: String = ""
@@ -48,7 +49,8 @@ class HomeViewModel @Inject constructor(
     private val workspaceRepository: WorkspaceRepository,
     private val channelRepository: ChannelRepository,
     private val notificationRepository: NotificationRepository,
-    private val userManager: UserManager
+    private val userManager: UserManager,
+    private val workspacePreferences: WorkspacePreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -57,13 +59,12 @@ class HomeViewModel @Inject constructor(
     val user = uiState.map { it.user }
     val workspace = uiState.map { it.workspace }
     val channels = uiState.map { it.channels }
-    val unreadChannels = uiState.map { it.unreadChannels }
     val notification = uiState.map { it.notification }
+    val allWorkspaces = uiState.map { it.allWorkspaces }
 
     init {
         loadUser()
-        loadWorkspace()
-        loadChannels()
+        loadAllWorkspaces()
         loadNotifications()
     }
 
@@ -79,11 +80,31 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun loadWorkspace() {
+    private fun loadAllWorkspaces() {
         viewModelScope.launch {
             val workspacesResponse = workspaceRepository.getAllWorkspacesFromApi()
             if (workspacesResponse.success && !workspacesResponse.data.isNullOrEmpty()) {
-                _uiState.update { it.copy(workspace = workspacesResponse.data.first()) }
+                _uiState.update { 
+                    it.copy(
+                        allWorkspaces = workspacesResponse.data,
+                    )
+                }
+                
+                // Tìm workspace đã lưu trong preferences hoặc dùng workspace đầu tiên
+                val savedWorkspaceId = workspacePreferences.getSelectedWorkspaceId()
+                if (savedWorkspaceId.isNotEmpty()) {
+                    val savedWorkspace = workspacesResponse.data.find { it._id == savedWorkspaceId }
+                    if (savedWorkspace != null) {
+                        _uiState.update { it.copy(workspace = savedWorkspace) }
+                    } else {
+                        _uiState.update { it.copy(workspace = workspacesResponse.data.first()) }
+                    }
+                } else {
+                    _uiState.update { it.copy(workspace = workspacesResponse.data.first()) }
+                }
+                
+                // Tải channels cho workspace được chọn
+                loadChannels()
             }
         }
     }
@@ -112,6 +133,20 @@ class HomeViewModel @Inject constructor(
                 _uiState.update { it.copy(notification = response.data.first().content) }
             } else {
                 _uiState.update { it.copy(notification = "") }
+            }
+        }
+    }
+
+    /**
+     * Chọn workspace và lưu selection vào preferences
+     */
+    fun selectWorkspace(workspaceId: String) {
+        viewModelScope.launch {
+            val workspace = _uiState.value.allWorkspaces.find { it._id == workspaceId }
+            if (workspace != null) {
+                _uiState.update { it.copy(workspace = workspace) }
+                workspacePreferences.saveSelectedWorkspaceId(workspaceId)
+                loadChannels() // Tải lại channels cho workspace mới
             }
         }
     }

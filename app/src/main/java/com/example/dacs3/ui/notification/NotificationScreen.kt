@@ -20,8 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dacs3.data.model.Notification
 import com.example.dacs3.ui.theme.TeamNexusPurple
-import com.example.dacs3.utils.DateTimeUtils
-import java.util.*
+import com.example.dacs3.util.DateTimeUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

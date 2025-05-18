@@ -127,8 +127,12 @@ class TaskRepositoryImpl @Inject constructor(
             TaskListResponse(false, 0, 0, emptyList())
         }
     }
-    
-    override suspend fun getTaskByIdFromApi(id: String): TaskResponse {
+
+    override suspend fun getTaskById(id: String): TaskResponse {
+        TODO("Not yet implemented")
+    }
+
+    suspend fun getTaskByIdFromApi(id: String): TaskResponse {
         return try {
             val response = taskApi.getTaskById(id)
             

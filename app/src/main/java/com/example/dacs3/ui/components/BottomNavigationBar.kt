@@ -21,7 +21,6 @@ fun BottomNavigationBar(
     onMessageClick: () -> Unit,
     onDashboardClick: () -> Unit = {},
     onProfileClick: () -> Unit,
-    onSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     NavigationBar(
@@ -46,11 +45,6 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
             selected = currentRoute == "profile",
             onClick = onProfileClick
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-            selected = currentRoute == "settings",
-            onClick = onSettingsClick
         )
     }
 }

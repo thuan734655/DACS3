@@ -36,7 +36,6 @@ fun DashboardScreen(
     onMessageClick: () -> Unit,
     onDashboardClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onSettingsClick: () -> Unit
 ) {
     ConstraintLayout(
         modifier = Modifier
@@ -83,7 +82,6 @@ fun DashboardScreen(
             onMessageClick = onMessageClick,
             onDashboardClick = onDashboardClick,
             onProfileClick = onProfileClick,
-            onSettingsClick = onSettingsClick,
             modifier = Modifier
                 .constrainAs(bottomNav) {
                     bottom.linkTo(parent.bottom)
