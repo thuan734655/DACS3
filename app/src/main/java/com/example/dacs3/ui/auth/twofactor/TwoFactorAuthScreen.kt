@@ -32,6 +32,7 @@ import com.example.dacs3.ui.theme.TeamNexusPurple
 @Composable
 fun TwoFactorAuthScreen(
     email: String,
+    password: String? = null,
     onVerificationSuccess: () -> Unit,
     onNavigateBack: () -> Unit,
     viewModel: TwoFactorAuthViewModel = hiltViewModel()
@@ -57,6 +58,10 @@ fun TwoFactorAuthScreen(
     // Set email when screen loads and request OTP
     LaunchedEffect(Unit) {
         viewModel.setEmail(email)
+        // Set password for auto-login if available
+        if (!password.isNullOrEmpty()) {
+            viewModel.enableAutoLogin(password)
+        }
         // Request OTP from server when the screen is shown
         viewModel.resendVerificationEmail()
     }

@@ -79,7 +79,6 @@ fun OtpScreen(
     // Check for verification success or 2FA requirement
     LaunchedEffect(otpState.isSuccess, otpState.isError) {
         if (otpState.isSuccess) {
-            // Ghi log để debug
             Log.d("OtpScreen", "Verification success! Action: ${otpState.action}")
             
             // Cập nhật trạng thái hiển thị thông báo thành công
@@ -93,10 +92,8 @@ fun OtpScreen(
                 }
                 "reset_password" -> {
                     Log.d("OtpScreen", "Reset password flow, redirecting to reset screen")
-                    delay(200) // Reduced delay for better UX
-                    // Chuyển trực tiếp đến trang đặt lại mật khẩu
+                    delay(200)
                     onResetPassword(email, otpValue)
-                    // Không hiển thị dialog thành công
                 }
                 else -> {
                     // Hiển thị dialog thành công cho các trường hợp khác (verification email)

@@ -170,6 +170,13 @@ class HomeViewModel @Inject constructor(
     fun createWorkspace (name: String, description: String)  {
         viewModelScope.launch {
                 val response = workspaceRepository.createWorkspace(name, description)
+                if (response.success && response.data != null) {
+                    _uiState.update {
+                        it.copy(
+                            allWorkspaces = it.allWorkspaces + response.data
+                        )
+                    }
+                }
         }
     }
 }

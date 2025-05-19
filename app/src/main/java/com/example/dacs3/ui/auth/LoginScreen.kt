@@ -81,7 +81,8 @@ fun LoginScreen(
             uiState.action == "2fa" -> {
                 Log.d("LoginScreen", "2FA required, navigating to 2FA screen with email: ${uiState.email}")
                 uiState.email?.let { email ->
-                    navController.navigate(Screen.TwoFactorAuth.createRoute(email)) {
+                    // Pass the current password to enable auto-login after OTP verification
+                    navController.navigate(Screen.TwoFactorAuth.createRoute(email, password)) {
                         // Don't clear the backstack to allow returning to login if needed
                     }
                 }

@@ -53,10 +53,6 @@ class OtpViewModel @Inject constructor(
         if (action == "2fa" || action == "reset_password") {
             setAction(action)
         }
-        
-        // Start cooldown timer on initial load to prevent immediate resend
-        lastResendTime = System.currentTimeMillis()
-        startCountdown()
     }
     
     fun verifyOtp(otp: String) {

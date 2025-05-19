@@ -31,12 +31,18 @@ class SessionManager @Inject constructor(context: Context) {
     /**
      * Save user session when they log in successfully
      */
-    fun saveUserSession(userId: String, email: String,contactumber: String,username : String, token: String) {
+    fun saveUserSession(userId: String, email: String, contactumber: String? = null, username: String? = null, token: String) {
         editor.putString(KEY_USER_ID, userId)
         editor.putString(KEY_EMAIL, email)
         editor.putString(KEY_TOKEN, token)
-        editor.putString(KEY_CONTACT_NUMBER, contactumber)
-        editor.putString(KEY_USERNAME, username)
+        contactumber?.let { editor.putString(KEY_CONTACT_NUMBER, it) }
+        username?.let { editor.putString(KEY_USERNAME, it) }
+        
+        // If username is null but we have an email, extract the username from email
+        if (username == null && email.isNotEmpty()) {
+            val extractedUsername = email.substringBefore('@')
+            editor.putString(KEY_USERNAME, extractedUsername)
+        }
 
         
         // Calculate expiration time (168 hours from now)

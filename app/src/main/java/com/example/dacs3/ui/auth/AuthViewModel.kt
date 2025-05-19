@@ -159,7 +159,7 @@ class AuthViewModel @Inject constructor(
                             it.copy(
                                 isLoading = false,
                                 isSuccess = false,
-                                isError = false, // Not an error in user flow context
+                                isError = false,
                                 action = "verify_email",
                                 email = accountName
                             )
@@ -184,7 +184,7 @@ class AuthViewModel @Inject constructor(
                     }
                 }
             } catch (e: HttpException) {
-                Log.e("AuthViewModel", "Login error (Ask Gemini)", e)
+                Log.e("AuthViewModel", "Login error", e)
                 try {
                     val errorBody = e.response()?.errorBody()
                     val errorString = errorBody?.string() ?: ""

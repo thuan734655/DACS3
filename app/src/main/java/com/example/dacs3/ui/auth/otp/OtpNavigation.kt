@@ -7,7 +7,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.dacs3.ui.auth.ResetPasswordScreen
-import com.example.dacs3.ui.auth.twofactor.TWO_FACTOR_AUTH_ROUTE
 
 const val OTP_VERIFICATION_ROUTE = "otp_verification"
 const val EMAIL_ARG = "email"
@@ -32,7 +31,6 @@ fun NavGraphBuilder.otpVerificationScreen(
     onVerificationSuccess: () -> Unit,
     onNavigateBack: () -> Unit,
     onTwoFactorRequired: (String) -> Unit = { email ->
-        // Default implementation that can be overridden
     }
 ) {
     composable(

@@ -19,8 +19,13 @@ sealed class Screen(val route: String) {
         fun createRoute(email: String) = "otp_verification/$email"
     }
     // Two Factor Authentication
-    object TwoFactorAuth : Screen("2fa_verification/{email}") {
-        fun createRoute(email: String) = "2fa_verification/$email"
+    object TwoFactorAuth : Screen("2fa_verification/{email}/{password}") {
+        fun createRoute(email: String, password: String? = null) = 
+            if (password != null) {
+                "2fa_verification/$email/$password"
+            } else {
+                "2fa_verification/$email/null"
+            }
     }
     object EpicList : Screen("epic_list/{workspaceId}") {
         fun createRoute(workspaceId: String) = "epic_list/$workspaceId"

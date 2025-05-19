@@ -29,9 +29,13 @@ class AuthRepository @Inject constructor(
                 withContext(Dispatchers.IO) {
                     response.account?.let { account ->
                         response.token?.let { token ->
-                            // Save token and user info in session manager
-                            val userId = UUID.randomUUID().toString() // Generate a temporary ID if needed
-                            sessionManager.saveUserSession(userId, account.email,account.contactNumber, account.username, token)
+                            sessionManager.saveUserSession(
+                                userId = account.userId,
+                                email = account.email,
+                                contactumber = account.contactNumber,
+                                username = account.username,
+                                token = token
+                            )
                             sessionManager.saveToken(token)
                         }
                     }
@@ -103,16 +107,6 @@ class AuthRepository @Inject constructor(
             return api.resendOtp(request)
         } catch (e: Exception) {
             Log.e("AuthRepository", "Resend OTP error", e)
-            throw e
-        }
-    }
-    
-    suspend fun verifyOtp(email: String, otp: String, deviceID: String?): VerifyOtpResponse {
-        try {
-            val request = VerifyOtpRequest(email, otp, deviceID ?: "")
-            return api.verifyOtp(request)
-        } catch (e: Exception) {
-            Log.e("AuthRepository", "Verify OTP error", e)
             throw e
         }
     }
