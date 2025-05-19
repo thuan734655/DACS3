@@ -37,11 +37,11 @@ class MyTaskViewModel @Inject constructor(
     fun loadMyTasks() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            
+
             try {
                 val userId = userManager.getCurrentUserId()
                 if (userId == null) {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
                             isLoading = false,
                             error = "User not logged in"
@@ -49,13 +49,13 @@ class MyTaskViewModel @Inject constructor(
                     }
                     return@launch
                 }
-                
+
                 // Fetch all tasks assigned to the current user
                 val response = taskRepository.getAllTasksFromApi(assignedTo = userId)
-                
+
                 if (response.success) {
                     val myTasks = response.data ?: emptyList()
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
                             isLoading = false,
                             myTasks = myTasks,
@@ -63,7 +63,7 @@ class MyTaskViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
                             isLoading = false,
                             error = "Failed to load tasks"
@@ -71,7 +71,7 @@ class MyTaskViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
                         isLoading = false,
                         error = "Error: ${e.message}"
@@ -80,7 +80,7 @@ class MyTaskViewModel @Inject constructor(
             }
         }
     }
-    
+
     /**
      * Apply filters to the task list
      */
@@ -88,10 +88,10 @@ class MyTaskViewModel @Inject constructor(
         viewModelScope.launch {
             val filteredList = _uiState.value.myTasks.filter { task ->
                 (status == null || task.status == status) &&
-                (priority == null || task.priority == priority)
+                        (priority == null || task.priority == priority)
             }
-            
-            _uiState.update { 
+
+            _uiState.update {
                 it.copy(
                     filteredTasks = filteredList,
                     selectedStatusFilter = status,
@@ -100,12 +100,12 @@ class MyTaskViewModel @Inject constructor(
             }
         }
     }
-    
+
     /**
      * Reset all filters
      */
     fun resetFilters() {
-        _uiState.update { 
+        _uiState.update {
             it.copy(
                 filteredTasks = it.myTasks,
                 selectedStatusFilter = null,
@@ -113,7 +113,7 @@ class MyTaskViewModel @Inject constructor(
             )
         }
     }
-    
+
     /**
      * Initialize the view model by loading tasks
      */

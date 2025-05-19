@@ -129,10 +129,10 @@ class TaskRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getTaskById(id: String): TaskResponse {
-        TODO("Not yet implemented")
+        return getTaskByIdFromApi(id)
     }
 
-    suspend fun getTaskByIdFromApi(id: String): TaskResponse {
+    private suspend fun getTaskByIdFromApi(id: String): TaskResponse {
         return try {
             val response = taskApi.getTaskById(id)
             

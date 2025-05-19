@@ -1,5 +1,6 @@
 package com.example.dacs3.ui.dashboard
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +25,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dacs3.ui.components.BottomNavigationBar
+import com.example.dacs3.ui.home.HomeViewModel
 
 @Composable
 fun DashboardScreen(
@@ -43,6 +46,7 @@ fun DashboardScreen(
             .background(Color(0xFFF5F5F5))
     ) {
         val (title, content, bottomNav) = createRefs()
+        val homeViewModel: HomeViewModel = hiltViewModel()
 
         // Tiêu đề
         Text(
@@ -51,7 +55,7 @@ fun DashboardScreen(
             fontWeight = FontWeight.Bold,
             modifier = Modifier
                 .constrainAs(title) {
-                    top.linkTo(parent.top, margin = 24.dp)
+                    top.linkTo(parent.top, margin = 30.dp)
                     start.linkTo(parent.start, margin = 16.dp)
                 }
         )
@@ -68,7 +72,14 @@ fun DashboardScreen(
         ) {
             DashboardItem(text = "Go to Board", onClick = onBoardClick)
             Spacer(modifier = Modifier.height(16.dp))
-            DashboardItem(text = "Go to sprint", onClick = onSprintClick)
+            DashboardItem(text = "Go to sprint", onClick = { 
+                val workspaceId = homeViewModel.uiState.value.workspace._id
+                if (workspaceId.isNotEmpty()) {
+                    onSprintClick()
+                } else {
+                    Log.d("DashboardScreen", "Workspace ID is empty")
+                }
+            })
             Spacer(modifier = Modifier.height(16.dp))
             DashboardItem(text = "Go to epic", onClick = onEpicClick)
             Spacer(modifier = Modifier.height(16.dp))

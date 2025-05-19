@@ -3,6 +3,8 @@ package com.example.dacs3.data.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.dacs3.data.model.Sprint
+import com.example.dacs3.data.model.User
+import com.example.dacs3.data.model.Workspace
 import java.util.Date
 
 @Entity(tableName = "sprints")
@@ -11,8 +13,8 @@ data class SprintEntity(
     val _id: String,
     val name: String,
     val description: String?,
-    val workspace_id: String,
-    val created_by: String,
+    val workspace_id: Workspace,
+    val created_by: User,
     val status: String,
     val start_date: Date,
     val end_date: Date,

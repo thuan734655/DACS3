@@ -37,44 +37,39 @@ class SprintViewModel @Inject constructor(
 
     fun loadSprints(workspaceId: String) {
         _uiState.update { it.copy(currentWorkspaceId = workspaceId) }
-        
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            
             try {
-                // First try to get from API
                 val response = sprintRepository.getAllSprintsFromApi(workspaceId = workspaceId)
-                
                 if (response.success) {
-                    _uiState.update { 
+                    val data = response.data.orEmpty()
+                    _uiState.update {
                         it.copy(
                             isLoading = false,
-                            sprints = response.data ?: emptyList(),
-                            filteredSprints = response.data ?: emptyList()
+                            sprints = data,
+                            filteredSprints = data
                         )
                     }
                 } else {
-                    // If API fails, fall back to locally cached data
-                    sprintRepository.getSprintsByWorkspaceId(workspaceId).collect { sprintEntities ->
-                        val sprints = sprintEntities.map { it.toSprint() }
-                        _uiState.update { 
+                    sprintRepository.getSprintsByWorkspaceId(workspaceId).collect { entities ->
+                        val list = entities.map { it.toSprint() }
+                        _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                sprints = sprints,
-                                filteredSprints = sprints
+                                sprints = list,
+                                filteredSprints = list
                             )
                         }
                     }
                 }
             } catch (e: Exception) {
-                // On exception, try to load from local database
-                sprintRepository.getSprintsByWorkspaceId(workspaceId).collect { sprintEntities ->
-                    val sprints = sprintEntities.map { it.toSprint() }
-                    _uiState.update { 
+                sprintRepository.getSprintsByWorkspaceId(workspaceId).collect { entities ->
+                    val list = entities.map { it.toSprint() }
+                    _uiState.update {
                         it.copy(
                             isLoading = false,
-                            sprints = sprints,
-                            filteredSprints = sprints,
+                            sprints = list,
+                            filteredSprints = list,
                             error = "Could not connect to server. Showing cached data."
                         )
                     }
@@ -93,10 +88,8 @@ class SprintViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null, isCreationSuccessful = false) }
-            
             try {
-                val userId = sessionManager.getUserId() ?: throw IllegalStateException("User not logged in")
-                
+                val userId = sessionManager.getUserId() ?: error("User not logged in")
                 val response = sprintRepository.createSprint(
                     name = name,
                     description = "",
@@ -106,43 +99,32 @@ class SprintViewModel @Inject constructor(
                     goal = goal,
                     status = status
                 )
-                
+
                 if (response.success && response.data != null) {
-                    // Update UI state with the new sprint
-                    val updatedSprints = _uiState.value.sprints.toMutableList()
-                    updatedSprints.add(response.data)
-                    
-                    _uiState.update { 
+                    // Build updated list and apply workspace filter correctly
+                    val updatedList = _uiState.value.sprints.toMutableList().apply { add(response.data) }
+                    val currentWs = _uiState.value.currentWorkspaceId
+                    val filtered = if (currentWs != null) {
+                        updatedList.filter { sprint -> sprint.workspace_id == currentWs }
+                    } else updatedList
+
+                    _uiState.update {
                         it.copy(
                             isLoading = false,
-                            sprints = updatedSprints,
-                            filteredSprints = updatedSprints.filter { sprint -> 
-                                sprint.workspace_id == _uiState.value.currentWorkspaceId 
-                            },
+                            sprints = updatedList,
+                            filteredSprints = filtered,
                             isCreationSuccessful = true,
                             selectedSprint = response.data
                         )
                     }
-                    
-                    // Refresh sprints list for the current workspace
-                    _uiState.value.currentWorkspaceId?.let { workspaceId ->
-                        loadSprints(workspaceId)
-                    }
+
+                    // Reload sprints from source to ensure consistency
+                    currentWs?.let { loadSprints(it) }
                 } else {
-                    _uiState.update { 
-                        it.copy(
-                            isLoading = false,
-                            error = "Failed to create sprint"
-                        )
-                    }
+                    _uiState.update { it.copy(isLoading = false, error = "Failed to create sprint") }
                 }
             } catch (e: Exception) {
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false,
-                        error = "Error: ${e.message}"
-                    )
-                }
+                _uiState.update { it.copy(isLoading = false, error = "Error: ${e.message}") }
             }
         }
     }
@@ -150,23 +132,59 @@ class SprintViewModel @Inject constructor(
     fun selectSprint(sprint: Sprint) {
         _uiState.update { it.copy(selectedSprint = sprint) }
     }
-    
+
     fun filterSprintsByStatus(status: String?) {
-        val allSprints = _uiState.value.sprints
-        val filtered = if (status == null || status == "All") {
-            allSprints
-        } else {
-            allSprints.filter { it.status == status }
+        val all = _uiState.value.sprints
+        val filtered = when {
+            status.isNullOrBlank() || status == "All" -> all
+            else -> all.filter { it.status == status }
         }
-        
         _uiState.update { it.copy(filteredSprints = filtered) }
     }
-    
+
     fun clearSelection() {
         _uiState.update { it.copy(selectedSprint = null) }
     }
-    
+
     fun resetCreationState() {
         _uiState.update { it.copy(isCreationSuccessful = false, error = null) }
     }
-} 
+
+    fun getSprintById(id: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                val response = sprintRepository.getSprintByIdFromApi(id)
+                if (response.success && response.data != null) {
+                    _uiState.update { it.copy(isLoading = false, selectedSprint = response.data) }
+                } else {
+                    val entity = sprintRepository.getById(id)
+                    if (entity != null) {
+                        _uiState.update {
+                            it.copy(isLoading = false, selectedSprint = entity.toSprint())
+                        }
+                    } else {
+                        _uiState.update { it.copy(isLoading = false, error = "Could not find sprint") }
+                    }
+                }
+            } catch (e: Exception) {
+                val entity = sprintRepository.getById(id)
+                if (entity != null) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            selectedSprint = entity.toSprint(),
+                            error = "Could not connect to server. Showing cached data."
+                        )
+                    }
+                } else {
+                    _uiState.update { it.copy(isLoading = false, error = "Error: ${e.message}") }
+                }
+            }
+        }
+    }
+
+    fun setError(errorMessage: String) {
+        _uiState.update { it.copy(error = errorMessage) }
+    }
+}

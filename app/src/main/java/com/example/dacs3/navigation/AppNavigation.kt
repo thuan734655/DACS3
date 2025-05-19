@@ -18,16 +18,21 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.dacs3.data.session.SessionManager
 import com.example.dacs3.data.session.SessionManagerViewModel
+import com.example.dacs3.ui.auth.AuthViewModel
 import com.example.dacs3.ui.auth.ForgotPasswordScreen
 import com.example.dacs3.ui.auth.LoginScreen
 import com.example.dacs3.ui.auth.RegisterScreen
+import com.example.dacs3.ui.auth.otp.OtpScreen
 import com.example.dacs3.ui.auth.otp.otpVerificationScreen
 import com.example.dacs3.ui.auth.otp.resetPasswordScreen
 import com.example.dacs3.ui.auth.twofactor.twoFactorAuthScreen
 import com.example.dacs3.ui.channels.ChannelsScreen
 import com.example.dacs3.ui.dashboard.DashboardScreen
 import com.example.dacs3.ui.epic.EpicScreen
+import com.example.dacs3.ui.home.HomeScreen
+import com.example.dacs3.ui.home.HomeViewModel
 import com.example.dacs3.ui.onboarding.OnboardingScreen
 import com.example.dacs3.ui.profile.ProfileScreen
 import com.example.dacs3.ui.report.DailyReportScreen
@@ -36,10 +41,13 @@ import com.example.dacs3.ui.task.TaskScreen
 import com.example.dacs3.ui.welcome.WelcomeScreen
 import com.example.dacs3.ui.workspace.WorkspaceScreen
 import com.example.dacs3.ui.workspace.WorkspaceViewModel
+import com.example.dacs3.util.WorkspacePreferences
+import javax.inject.Inject
 
 @Composable
 fun AppNavigation(
     navController: NavHostController,
+    authViewModel: AuthViewModel = hiltViewModel(),
     sessionManager: SessionManagerViewModel
 ) {
     // Determine initial destination based on if it's first time using the app
@@ -51,6 +59,12 @@ fun AppNavigation(
         Screen.Welcome.route
     }
 
+    val homeViewModel: HomeViewModel = hiltViewModel()
+
+    // Get current user ID from AuthViewModel
+    val currentUserId = authViewModel.currentUserId.collectAsState().value
+//    val currentUser = authViewModel.currentUser.collectAsState().value
+    
     NavHost(navController = navController, startDestination = initialDestination) {
         composable(Screen.Onboarding.route) {
             OnboardingScreen(navController = navController)
@@ -298,9 +312,7 @@ fun AppNavigation(
                 navController.navigate("login")
             }
         )
-        
 
-        
         // Add Notifications screen route
         composable(Screen.Notifications.route) {
             com.example.dacs3.ui.notification.NotificationScreen(
@@ -325,31 +337,31 @@ fun AppNavigation(
         
         // Thêm màn hình chi tiết kênh
         composable(
-        route = "channel_detail/{channelId}",
-        arguments = listOf(navArgument("channelId") { type = NavType.StringType })
+                    route = "channel_detail/{channelId}",
+                    arguments = listOf(navArgument("channelId") { type = NavType.StringType })
         ) { backStackEntry ->
-        val channelId = backStackEntry.arguments?.getString("channelId") ?: ""
+            val channelId = backStackEntry.arguments?.getString("channelId") ?: ""
         
         // Placeholder cho màn hình chi tiết kênh
-        Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
         ) {
-        Text("Channel Detail: $channelId")
-        }
+            Text("Channel Detail: $channelId")
+            }
         }
         
         // Thêm màn hình tạo kênh mới
         composable(
-        route = "create_channel/{workspaceId}",
-        arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
+                route = "create_channel/{workspaceId}",
+                arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
         ) { backStackEntry ->
-        val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
+            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
         
         // Placeholder cho màn hình tạo kênh
-        Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
         ) {
         Text("Create Channel for Workspace: $workspaceId")
         }
@@ -367,10 +379,22 @@ fun AppNavigation(
         }
         composable(Screen.Dashboard.route) {
             DashboardScreen(
-                onBoardClick = { /* TODO: Điều hướng tới Board */ },
-                onSprintClick = { /* TODO: Điều hướng tới Sprint */ },
-                onEpicClick = { navController.navigate("epic") },
-                onTaskClick = { /* TODO: Điều hướng tới Task */ },
+                onBoardClick = { 
+                    // Điều hướng tới Board
+                    navController.navigate(Screen.Board.route) 
+                },
+                onSprintClick = {
+                    val workspaceId = homeViewModel.uiState.value.workspace._id
+                    navController.navigate(Screen.SprintList.createRoute(workspaceId))
+                },
+                onEpicClick = { 
+                    val workspaceId = homeViewModel.uiState.value.workspace._id
+                    navController.navigate(Screen.EpicList.createRoute(workspaceId))
+                },
+                onTaskClick = { 
+                    val workspaceId = homeViewModel.uiState.value.workspace._id
+                    navController.navigate(Screen.WorkspaceTasks.createRoute(workspaceId))
+                },
                 onHomeClick = { navController.navigate(Screen.Home.route) },
                 onMessageClick = { navController.navigate(Screen.ConversationList.route) },
                 onDashboardClick = { /* Đã ở Dashboard, không cần điều hướng */ },

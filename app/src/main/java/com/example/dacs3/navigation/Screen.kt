@@ -71,5 +71,7 @@ sealed class Screen(val route: String) {
     object SprintView : Screen("sprint_view")
     object EpicView : Screen("epic_view")
     object TaskView : Screen("task_view")
-    // Add other screens as needed
+    object WorkspaceTasks : Screen("tasks/{workspaceId}") {
+        fun createRoute(workspaceId: String) = "tasks/$workspaceId"
+    }
 }

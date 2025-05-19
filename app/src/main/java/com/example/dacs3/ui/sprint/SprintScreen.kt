@@ -123,14 +123,18 @@ fun SprintScreen(
                 CreateSprintDialog(
                     onDismiss = { showCreateDialog = false },
                     onCreateSprint = { name, goal, startDate, endDate, status ->
-                        viewModel.createSprint(
-                            name = name,
-                            goal = goal,
-                            workspaceId = workspaceId,
-                            startDate = startDate,
-                            endDate = endDate,
-                            status = status
-                        )
+                        if (workspaceId.isEmpty()) {
+                            viewModel.setError("Không thể tạo sprint: Workspace ID không hợp lệ")
+                        } else {
+                            viewModel.createSprint(
+                                name = name,
+                                goal = goal,
+                                workspaceId = workspaceId,
+                                startDate = startDate,
+                                endDate = endDate,
+                                status = status
+                            )
+                        }
                         showCreateDialog = false
                     }
                 )
@@ -535,4 +539,4 @@ fun FilterSprintDialog(
             }
         }
     }
-} 
+}

@@ -8,8 +8,8 @@ data class Sprint(
     val _id: String,
     val name: String,
     val description: String?,
-    val workspace_id: String,
-    val created_by: String,
+    val workspace_id: Workspace,
+    val created_by: User,
     val status: String,
     val start_date: Date,
     val end_date: Date,
@@ -23,7 +23,7 @@ data class Sprint(
 data class CreateSprintRequest(
     val name: String,
     val description: String?,
-    val workspace_id: String,
+    val workspace_id: Workspace,
     val start_date: Date,
     val end_date: Date,
     val goal: String?,
@@ -59,5 +59,3 @@ data class SprintListResponse(
     val total: Int,
     val data: List<Sprint>
 )
-
-// MessageResponse is imported from CommonModels.kt
