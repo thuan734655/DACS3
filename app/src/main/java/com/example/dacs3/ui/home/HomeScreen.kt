@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowForward
@@ -28,6 +29,7 @@ import com.example.dacs3.data.model.Workspace
 import com.example.dacs3.data.model.User
 import com.example.dacs3.ui.channels.CreateChannelDialog
 import com.example.dacs3.ui.components.BottomNavigationBar
+import com.example.dacs3.ui.theme.TeamNexusPurple
 import com.example.dacs3.ui.workspace.CreateWorkspaceDialog
 import com.example.dacs3.ui.workspace.navigateToWorkspaceDetail
 import kotlinx.coroutines.launch
@@ -319,15 +321,80 @@ fun HomeScreen(
                         )
                     }
                     Spacer(Modifier.height(24.dp))
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            if (notification.isEmpty()) "No notification!" else notification,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Color.Gray
-                        )
+                    if (notification.isEmpty()) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                "No notification!",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color.Gray
+                            )
+                        }
+                    } else {
+                        // Hiển thị thông báo với dấu chấm xanh nếu chưa đọc
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Icon thông báo
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(TeamNexusPurple.copy(alpha = 0.1f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Notifications,
+                                        contentDescription = null,
+                                        tint = TeamNexusPurple,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.width(12.dp))
+                                
+                                Box(modifier = Modifier.weight(1f)) {
+                                    // Nội dung thông báo
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = notification,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        
+                                        // Dấu chấm xanh hiển thị cho thông báo chưa đọc
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(color = Color(0xFF4CAF50), shape = CircleShape)
+                                        )
+                                    }
+                                }
+                                
+                                // Nút xem thêm thông báo
+                                Icon(
+                                    imageVector = Icons.Default.ArrowForward,
+                                    contentDescription = "View all notifications",
+                                    tint = TeamNexusPurple,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -377,7 +444,6 @@ fun WorkspaceSidebar(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -398,11 +464,13 @@ fun WorkspaceSidebar(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // List of workspaces
+            val sortedWorkspaces = allWorkspaces
+                .sortedByDescending { it.created_at }
+                
             LazyColumn(
                 modifier = Modifier.weight(1f)
             ) {
-                items(allWorkspaces) { workspace ->
+                items(sortedWorkspaces) { workspace ->
                     WorkspaceItem(
                         workspace = workspace,
                         isSelected = workspace._id == currentWorkspace?._id,

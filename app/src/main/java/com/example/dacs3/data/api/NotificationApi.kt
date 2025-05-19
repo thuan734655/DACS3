@@ -13,6 +13,15 @@ interface NotificationApi {
         @Query("type") type: String? = null
     ): NotificationListResponse
 
+    // GET notifications by user ID with pagination and filtering
+    @GET("notifications/user/{userId}")
+    suspend fun getNotificationsByUserId(
+        @Path("userId") userId: String,
+        @Query("page") page: Int? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("type") type: String? = null
+    ): NotificationListResponse
+
     // GET unread notifications
     @GET("notifications/unread")
     suspend fun getUnreadNotifications(): NotificationListResponse

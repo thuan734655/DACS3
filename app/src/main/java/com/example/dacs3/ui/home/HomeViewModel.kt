@@ -187,11 +187,4 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
-
-    fun loadWorkspaceDetail(workspaceId: String) {
-        viewModelScope.launch {
-            val response = workspaceRepository.getWorkspaceByIdFromApi(workspaceId)
-
-        }
-    }
 }

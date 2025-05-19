@@ -96,16 +96,58 @@ fun NotificationScreen(
                     )
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(uiState.notifications) { notification ->
-                        NotificationItem(
-                            notification = notification,
-                            onMarkAsRead = { viewModel.markAsRead(notification._id) }
-                        )
+                Column(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(uiState.notifications) { notification ->
+                            NotificationItem(
+                                notification = notification,
+                                onMarkAsRead = { viewModel.markAsRead(notification._id) },
+                                onDelete = { viewModel.deleteNotification(notification._id) }
+                            )
+                        }
+                    }
+                    
+                    // Pagination controls
+                    if (uiState.totalPages > 1) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = { viewModel.loadPreviousPage() },
+                                enabled = uiState.page > 1
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowLeft,
+                                    contentDescription = "Previous Page"
+                                )
+                            }
+                            
+                            Text(
+                                text = "Page ${uiState.page} of ${uiState.totalPages}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                            
+                            IconButton(
+                                onClick = { viewModel.loadNextPage() },
+                                enabled = uiState.page < uiState.totalPages
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowRight,
+                                    contentDescription = "Next Page"
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -132,7 +174,8 @@ fun NotificationScreen(
 @Composable
 fun NotificationItem(
     notification: Notification,
-    onMarkAsRead: () -> Unit
+    onMarkAsRead: () -> Unit,
+    onDelete: () -> Unit = {}
 ) {
     val backgroundColor = if (!notification.is_read) {
         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
@@ -140,21 +183,21 @@ fun NotificationItem(
         MaterialTheme.colorScheme.surface
     }
     
-    val iconTint = when {
-        notification.type.contains("member") -> TeamNexusPurple
-        notification.type.contains("task") -> MaterialTheme.colorScheme.primary
-        notification.type.contains("sprint") -> Color(0xFF2E7D32) // Green
-        notification.type.contains("epic") -> Color(0xFF1565C0) // Blue
+    val iconTint = when (notification.type) {
+        "channel" -> TeamNexusPurple
+        "member" -> Color(0xFFE65100) // Orange
+        "task" -> MaterialTheme.colorScheme.primary
+        "sprint" -> Color(0xFF2E7D32) // Green
+        "epic" -> Color(0xFF1565C0) // Blue
         else -> MaterialTheme.colorScheme.primary
     }
     
-    val icon = when {
-        notification.type.contains("added") -> Icons.Default.PersonAdd
-        notification.type.contains("removed") -> Icons.Default.PersonRemove
-        notification.type.contains("role") -> Icons.Default.ManageAccounts
-        notification.type.contains("task") -> Icons.Default.Assignment
-        notification.type.contains("sprint") -> Icons.Default.Schedule
-        notification.type.contains("epic") -> Icons.Default.Category
+    val icon = when (notification.type) {
+        "channel" -> Icons.Default.Forum
+        "member" -> Icons.Default.PersonAdd
+        "task" -> Icons.Default.Assignment
+        "sprint" -> Icons.Default.Schedule
+        "epic" -> Icons.Default.Category
         else -> Icons.Default.Notifications
     }
     
@@ -191,6 +234,7 @@ fun NotificationItem(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
+                // Hiển thị nội dung thông báo
                 Text(
                     text = notification.content,
                     style = MaterialTheme.typography.bodyLarge,
@@ -201,21 +245,61 @@ fun NotificationItem(
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
-                Text(
-                    text = DateTimeUtils.formatRelativeTime(notification.created_at),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                // Hiển thị thông tin workspace
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Workspaces,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = notification.workspace_id.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = DateTimeUtils.formatRelativeTime(notification.created_at),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    // Hiển thị dấu chấm xanh khi thông báo chưa đọc
+                    if (!notification.is_read) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(color = Color(0xFF4CAF50), shape = CircleShape)
+                        )
+                    }
+                }
             }
             
-            if (!notification.is_read) {
-                Spacer(modifier = Modifier.width(8.dp))
+            Row {
+                // Nút đánh dấu đã đọc
+                if (!notification.is_read) {
+                    IconButton(onClick = onMarkAsRead) {
+                        Icon(
+                            imageVector = Icons.Default.DoneAll,
+                            contentDescription = "Mark as read",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
                 
-                IconButton(onClick = onMarkAsRead) {
+                // Nút xóa thông báo
+                IconButton(onClick = onDelete) {
                     Icon(
-                        imageVector = Icons.Default.Done,
-                        contentDescription = "Mark as Read",
-                        tint = MaterialTheme.colorScheme.primary
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete notification",
+                        tint = Color.Gray
                     )
                 }
             }

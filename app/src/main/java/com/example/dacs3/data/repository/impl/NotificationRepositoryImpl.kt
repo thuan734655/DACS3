@@ -87,7 +87,23 @@ class NotificationRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching notifications from API", e)
             // Return empty response with success=false when API fails
-            NotificationListResponse(false, 0, 0, emptyList())
+            NotificationListResponse(false, 0, 0, 0, 0, emptyList())
+        }
+    }
+    
+    override suspend fun getNotificationsByUserIdFromApi(
+        userId: String, 
+        page: Int?, 
+        limit: Int?, 
+        type: String?
+    ): NotificationListResponse {
+        return try {
+            val response = notificationApi.getNotificationsByUserId(userId, page, limit, type)
+            response
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching user notifications from API", e)
+            // Return empty response with success=false when API fails
+            NotificationListResponse(false, 0, 0, 0, 0, emptyList())
         }
     }
     
@@ -99,7 +115,7 @@ class NotificationRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching unread notifications from API", e)
             // Return empty response with success=false when API fails
-            NotificationListResponse(false, 0, 0, emptyList())
+            NotificationListResponse(false, 0, 0, 1, 0, emptyList())
         }
     }
     
@@ -158,21 +174,7 @@ class NotificationRepositoryImpl @Inject constructor(
         return try {
             val request = MarkAllAsReadRequest(workspaceId)
             val response = notificationApi.markAllAsRead(request)
-            
-            // If successful, mark all notifications as read in local database
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    // This is a simplification. In a real implementation, we should have the current user's ID
-                    // and mark all notifications for that user as read.
-                    val currentUserId = getCurrentUserId()
-                    if (workspaceId != null) {
-                        markAllAsReadByWorkspaceLocally(currentUserId, workspaceId)
-                    } else {
-                        markAllAsReadLocally(currentUserId)
-                    }
-                }
-            }
-            
+
             response.success
         } catch (e: Exception) {
             Log.e(TAG, "Error marking all notifications as read", e)
