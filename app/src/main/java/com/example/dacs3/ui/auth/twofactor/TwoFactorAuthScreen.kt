@@ -32,6 +32,7 @@ import com.example.dacs3.ui.theme.TeamNexusPurple
 @Composable
 fun TwoFactorAuthScreen(
     email: String,
+    password: String? = null,
     onVerificationSuccess: () -> Unit,
     onNavigateBack: () -> Unit,
     viewModel: TwoFactorAuthViewModel = hiltViewModel()
@@ -39,13 +40,13 @@ fun TwoFactorAuthScreen(
     val state by viewModel.state.collectAsState()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    
+
     var otpDigits by remember { mutableStateOf(List(6) { "" }) }
     val otpValue = otpDigits.joinToString("")
-    
+
     // Show success dialog when verification is successful
     var showSuccessDialog by remember { mutableStateOf(false) }
-    
+
     // Handle verification success
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
@@ -53,18 +54,22 @@ fun TwoFactorAuthScreen(
             showSuccessDialog = true
         }
     }
-    
+
     // Set email when screen loads and request OTP
     LaunchedEffect(Unit) {
         viewModel.setEmail(email)
+        // Set password for auto-login if available
+        if (!password.isNullOrEmpty()) {
+            viewModel.enableAutoLogin(password)
+        }
         // Request OTP from server when the screen is shown
         viewModel.resendVerificationEmail()
     }
-    
+
     // Show success dialog when verification is successful
     if (showSuccessDialog) {
         AlertDialog(
-            onDismissRequest = { 
+            onDismissRequest = {
                 showSuccessDialog = false
                 onVerificationSuccess()
             },
@@ -76,22 +81,22 @@ fun TwoFactorAuthScreen(
                     modifier = Modifier.size(48.dp)
                 )
             },
-            title = { 
+            title = {
                 Text(
-                    "Verification Successful", 
-                    textAlign = TextAlign.Center, 
+                    "Verification Successful",
+                    textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold
-                ) 
+                )
             },
-            text = { 
+            text = {
                 Text(
-                    "Your device has been successfully verified. You will be redirected to the home screen.", 
+                    "Your device has been successfully verified. You will be redirected to the home screen.",
                     textAlign = TextAlign.Center
-                ) 
+                )
             },
             confirmButton = {
                 Button(
-                    onClick = { 
+                    onClick = {
                         showSuccessDialog = false
                         onVerificationSuccess()
                     },
@@ -108,7 +113,7 @@ fun TwoFactorAuthScreen(
             textContentColor = MaterialTheme.colorScheme.onSurface
         )
     }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -122,30 +127,30 @@ fun TwoFactorAuthScreen(
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(80.dp)
         )
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         Text(
             text = "Two-Factor Authentication",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         Text(
             text = "We've detected a login from a new device.",
             fontSize = 16.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        
+
         Text(
             text = "We've sent an OTP code to $email.",
             fontSize = 16.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         Text(
             text = "Please check your email and enter the 6-digit verification code below.",
             fontSize = 16.sp,
@@ -153,7 +158,7 @@ fun TwoFactorAuthScreen(
             fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(bottom = 24.dp)
         )
-        
+
         // OTP Input Fields
         Row(
             modifier = Modifier
@@ -171,7 +176,7 @@ fun TwoFactorAuthScreen(
                                 set(i, newValue)
                             }
                             otpDigits = newDigits
-                            
+
                             // Auto-move focus to next field
                             if (newValue.isNotEmpty() && i < 5) {
                                 focusManager.moveFocus(FocusDirection.Next)
@@ -184,7 +189,7 @@ fun TwoFactorAuthScreen(
                 )
             }
         }
-        
+
         // Error message
         if (state.isError) {
             Card(
@@ -207,15 +212,15 @@ fun TwoFactorAuthScreen(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         // Verify button - Now verifies the entered OTP
         Button(
-            onClick = { 
+            onClick = {
                 keyboardController?.hide()
                 focusManager.clearFocus()
-                viewModel.verifyOtp(otpValue) 
+                viewModel.verifyOtp(otpValue)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -236,9 +241,9 @@ fun TwoFactorAuthScreen(
                 Text("Verify")
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         TextButton(
             onClick = { viewModel.resendVerificationEmail() },
             modifier = Modifier.padding(vertical = 8.dp)
@@ -249,7 +254,7 @@ fun TwoFactorAuthScreen(
                 fontWeight = FontWeight.Medium
             )
         }
-        
+
         TextButton(
             onClick = onNavigateBack,
             modifier = Modifier.padding(vertical = 8.dp)
@@ -271,13 +276,13 @@ fun OtpDigitInput(
     isLastField: Boolean
 ) {
     val focusManager = LocalFocusManager.current
-    
+
     val backgroundColor = if (value.isNotEmpty()) {
         MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
     } else {
         MaterialTheme.colorScheme.surface
     }
-    
+
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,

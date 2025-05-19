@@ -18,26 +18,36 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.dacs3.data.session.SessionManager
 import com.example.dacs3.data.session.SessionManagerViewModel
+import com.example.dacs3.ui.auth.AuthViewModel
 import com.example.dacs3.ui.auth.ForgotPasswordScreen
 import com.example.dacs3.ui.auth.LoginScreen
 import com.example.dacs3.ui.auth.RegisterScreen
+import com.example.dacs3.ui.auth.otp.OtpScreen
 import com.example.dacs3.ui.auth.otp.otpVerificationScreen
 import com.example.dacs3.ui.auth.otp.resetPasswordScreen
 import com.example.dacs3.ui.auth.twofactor.twoFactorAuthScreen
 import com.example.dacs3.ui.channels.ChannelsScreen
 import com.example.dacs3.ui.dashboard.DashboardScreen
 import com.example.dacs3.ui.epic.EpicScreen
+import com.example.dacs3.ui.home.HomeScreen
+import com.example.dacs3.ui.home.HomeViewModel
+import com.example.dacs3.ui.notification.NotificationScreen
 import com.example.dacs3.ui.onboarding.OnboardingScreen
 import com.example.dacs3.ui.profile.ProfileScreen
 import com.example.dacs3.ui.report.DailyReportScreen
+import com.example.dacs3.ui.sprint.CreateSprintScreen
+import com.example.dacs3.ui.sprint.SprintScreen
 import com.example.dacs3.ui.welcome.WelcomeScreen
 import com.example.dacs3.ui.workspace.WorkspaceScreen
 import com.example.dacs3.ui.workspace.WorkspaceViewModel
+import javax.inject.Inject
 
 @Composable
 fun AppNavigation(
     navController: NavHostController,
+    authViewModel: AuthViewModel = hiltViewModel(),
     sessionManager: SessionManagerViewModel
 ) {
     // Determine initial destination based on if it's first time using the app
@@ -48,7 +58,11 @@ fun AppNavigation(
     } else {
         Screen.Welcome.route
     }
-
+    
+    // Get current user ID from AuthViewModel
+    val currentUserId = authViewModel.currentUserId.collectAsState().value
+//    val currentUser = authViewModel.currentUser.collectAsState().value
+    
     NavHost(navController = navController, startDestination = initialDestination) {
         composable(Screen.Onboarding.route) {
             OnboardingScreen(navController = navController)
@@ -142,38 +156,34 @@ fun AppNavigation(
             )
         }
         
-//        // Add Epic detail screen route
-//        composable(
-//            route = Screen.EpicDetail.route,
-//            arguments = listOf(navArgument("epicId") { type = NavType.StringType })
-//        ) { backStackEntry ->
-//            val epicId = backStackEntry.arguments?.getString("epicId") ?: ""
-//
-//            TaskScreen(
-//                epicId = epicId,
-//                onNavigateBack = { navController.popBackStack() },
-//                onTaskSelected = { task ->
-//                    navController.navigate(Screen.TaskDetail.createRoute(task._id))
-//                }
-//            )
-//        }
-//
-//        // Add Sprint list screen route
-//        composable(
-//            route = Screen.SprintList.route,
-//            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
-//        ) { backStackEntry ->
-//            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
-//
-//            SprintScreen(
-//                workspaceId = workspaceId,
-//                onNavigateBack = { navController.popBackStack() },
-//                onSprintSelected = { sprint ->
-//                    // Navigate to sprint detail
-//                    navController.navigate(Screen.SprintDetail.createRoute(sprint._id))
-//                }
-//            )
-//        }
+        // Add Epic detail screen route
+        composable(
+            route = Screen.EpicDetail.route,
+            arguments = listOf(navArgument("epicId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val epicId = backStackEntry.arguments?.getString("epicId") ?: ""
+            
+        }
+        
+        // Add Sprint list screen route
+        composable(
+            route = Screen.SprintList.route,
+            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
+            
+            SprintScreen(
+                workspaceId = workspaceId,
+                onNavigateBack = { navController.popBackStack() },
+                onSprintSelected = { sprint ->
+                    // Navigate to sprint detail
+                    navController.navigate(Screen.SprintDetail.createRoute(sprint._id))
+                },
+                onCreateSprint = { wsId ->
+                    navController.navigate("create_sprint/$wsId")
+                }
+            )
+        }
         
         // Add Sprint detail screen route (placeholder for now)
         composable(
@@ -185,10 +195,10 @@ fun AppNavigation(
             // For now, just show a placeholder screen
             // This is where you'd show tasks in the sprint
             Box(
-                modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                androidx.compose.material3.Text("Sprint Detail: $sprintId")
+                Text("Sprint Detail: $sprintId")
             }
         }
         
@@ -201,10 +211,10 @@ fun AppNavigation(
             
             // For now, just show a placeholder screen
             Box(
-                modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                androidx.compose.material3.Text("Task Detail: $taskId")
+                Text("Task Detail: $taskId")
             }
         }
         
@@ -297,11 +307,12 @@ fun AppNavigation(
             }
         )
         
+        // Add Workspace Members screen route
 
         
         // Add Notifications screen route
         composable(Screen.Notifications.route) {
-            com.example.dacs3.ui.notification.NotificationScreen(
+            NotificationScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }
@@ -323,56 +334,122 @@ fun AppNavigation(
         
         // Thêm màn hình chi tiết kênh
         composable(
-        route = "channel_detail/{channelId}",
-        arguments = listOf(navArgument("channelId") { type = NavType.StringType })
+                    route = "channel_detail/{channelId}",
+                    arguments = listOf(navArgument("channelId") { type = NavType.StringType })
         ) { backStackEntry ->
         val channelId = backStackEntry.arguments?.getString("channelId") ?: ""
         
         // Placeholder cho màn hình chi tiết kênh
-        Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-        ) {
-        Text("Channel Detail: $channelId")
-        }
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+            Text("Channel Detail: $channelId")
+            }
         }
         
         // Thêm màn hình tạo kênh mới
         composable(
-        route = "create_channel/{workspaceId}",
-        arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
+                    route = "create_channel/{workspaceId}",
+                    arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
         ) { backStackEntry ->
         val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
         
         // Placeholder cho màn hình tạo kênh
-        Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-        ) {
-        Text("Create Channel for Workspace: $workspaceId")
-        }
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+            Text("Create Channel for Workspace: $workspaceId")
+            }
         }
         
         // Thêm màn hình cài đặt
         composable("settings") {
         // Placeholder cho màn hình cài đặt
-        Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-        ) {
-        Text("Settings Screen")
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+                ) {
+            Text("Settings Screen")
+            }
         }
-        }
+
+        // Add Dashboard screen route
         composable(Screen.Dashboard.route) {
+            val homeViewModel: HomeViewModel = hiltViewModel()
+            val uiState by homeViewModel.uiState.collectAsState()
+            val currentWorkspaceId = uiState.workspace._id
+
             DashboardScreen(
-                onBoardClick = { /* TODO: Điều hướng tới Board */ },
-                onSprintClick = { /* TODO: Điều hướng tới Sprint */ },
-                onEpicClick = { navController.navigate("epic") },
-                onTaskClick = { /* TODO: Điều hướng tới Task */ },
-                onHomeClick = { navController.navigate(Screen.Home.route) },
-                onMessageClick = { navController.navigate(Screen.ConversationList.route) },
-                onDashboardClick = { /* Đã ở Dashboard, không cần điều hướng */ },
-                onProfileClick = { navController.navigate(Screen.Profile.route) },
+                onBoardClick = {
+                    // Navigate to board screen
+                    navController.navigate("board")
+                },
+                onSprintClick = {
+                    // Navigate to sprint list with current workspace
+                    if (currentWorkspaceId.isNotEmpty()) {
+                        navController.navigate(Screen.SprintList.createRoute(currentWorkspaceId))
+                    }
+                },
+                onEpicClick = {
+                    // Navigate to epic list with current workspace
+                    if (currentWorkspaceId.isNotEmpty()) {
+                        navController.navigate(Screen.EpicList.createRoute(currentWorkspaceId))
+                    }
+                },
+                onTaskClick = { epicId ->
+                    navController.navigate(Screen.TaskList.createRoute(epicId))
+                },
+                onHomeClick = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                },
+                onMessageClick = {
+                    navController.navigate(Screen.ConversationList.route)
+                },
+                onDashboardClick = {
+                    // Already on dashboard
+                },
+                onProfileClick = {
+                    navController.navigate(Screen.Profile.route)
+                },
+            )
+        }
+
+        // Thêm route cho TaskScreen với workspaceId
+        composable(
+            route = "tasks/{workspaceId}",
+            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
+            
+        }
+
+        // Thêm route cho màn hình tạo task
+        composable(
+            route = "create_task/{workspaceId}",
+            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
+            
+        }
+
+        // Thêm route cho màn hình tạo Sprint
+        composable(
+            route = "create_sprint/{workspaceId}",
+            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
+            
+            CreateSprintScreen(
+                workspaceId = workspaceId,
+                onNavigateBack = { navController.popBackStack() },
+                onSprintCreated = {
+                    // Quay lại màn hình danh sách sprint sau khi tạo thành công
+                    navController.popBackStack()
+                }
             )
         }
     }

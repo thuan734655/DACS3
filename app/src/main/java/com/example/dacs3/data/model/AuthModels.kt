@@ -107,6 +107,7 @@ data class VerifyOtpResponse(
 )
 
 data class AccountInfo(
+    val userId: String,
     val username: String,
     val email: String,
     val contactNumber: String

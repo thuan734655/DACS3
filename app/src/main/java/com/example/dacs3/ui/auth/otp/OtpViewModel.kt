@@ -31,40 +31,39 @@ class OtpViewModel @Inject constructor(
 
     private val _otpState = MutableStateFlow(OtpState())
     val otpState: StateFlow<OtpState> = _otpState.asStateFlow()
-    
+
     private var countDownTimer: CountDownTimer? = null
-    
+
     // Track last resend time to enforce cooldown
     private var lastResendTime: Long = 0
-    
+
     fun setEmail(email: String, action: String? = null) {
         if (email.isBlank()) return
-        
+
         // Update email state
-        _otpState.update { 
+        _otpState.update {
             it.copy(
                 email = email,
                 remainingSeconds = 60,
                 canResend = false
             )
         }
-        
+
         // Set action if provided
         if (action == "2fa" || action == "reset_password") {
             setAction(action)
         }
-        
         // Start cooldown timer on initial load to prevent immediate resend
         lastResendTime = System.currentTimeMillis()
         startCountdown()
     }
-    
+
     fun verifyOtp(otp: String) {
         val email = _otpState.value.email
-        
+
         // Validate inputs
         if (email.isBlank()) {
-            _otpState.update { 
+            _otpState.update {
                 it.copy(
                     isError = true,
                     errorMessage = "Email address is missing"
@@ -72,22 +71,22 @@ class OtpViewModel @Inject constructor(
             }
             return
         }
-        
+
         viewModelScope.launch {
-            _otpState.update { 
+            _otpState.update {
                 it.copy(
-                    isLoading = true, 
+                    isLoading = true,
                     isError = false,
                     errorMessage = ""
                 )
             }
-            
+
             try {
                 val action = _otpState.value.action
                 val deviceId = if (action == "2fa") deviceUtils.getDeviceId() else null
-                
+
                 val response = otpRepository.verifyOtp(email, otp, deviceId)
-                
+
                 if (response.success) {
                     // If OTP is valid and action is verify_email, then call API to verify email 
                     if (action == "verify_email") {
@@ -98,8 +97,8 @@ class OtpViewModel @Inject constructor(
                         response.token?.let { token ->
                             sessionManager.saveToken(token)
                         }
-                        
-                        _otpState.update { 
+
+                        _otpState.update {
                             it.copy(
                                 isLoading = false,
                                 isSuccess = true,
@@ -108,7 +107,7 @@ class OtpViewModel @Inject constructor(
                         }
                     }
                 } else {
-                    _otpState.update { 
+                    _otpState.update {
                         it.copy(
                             isLoading = false,
                             isError = true,
@@ -117,7 +116,7 @@ class OtpViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                _otpState.update { 
+                _otpState.update {
                     it.copy(
                         isLoading = false,
                         isError = true,
@@ -127,13 +126,13 @@ class OtpViewModel @Inject constructor(
             }
         }
     }
-    
+
     // Function to call verifyEmail after OTP has been successfully verified
     private suspend fun verifyEmailAfterOtpSuccess(email: String, otp: String) {
         try {
             val response = authRepository.verifyEmail(email, otp)
             if (response.success) {
-                _otpState.update { 
+                _otpState.update {
                     it.copy(
                         isLoading = false,
                         isSuccess = true,
@@ -142,7 +141,7 @@ class OtpViewModel @Inject constructor(
                     )
                 }
             } else {
-                _otpState.update { 
+                _otpState.update {
                     it.copy(
                         isLoading = false,
                         isError = true,
@@ -151,7 +150,7 @@ class OtpViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            _otpState.update { 
+            _otpState.update {
                 it.copy(
                     isLoading = false,
                     isError = true,
@@ -160,11 +159,11 @@ class OtpViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun resendOtp() {
         val email = _otpState.value.email
         if (email.isBlank()) {
-            _otpState.update { 
+            _otpState.update {
                 it.copy(
                     isError = true,
                     errorMessage = "Email address is missing"
@@ -172,20 +171,20 @@ class OtpViewModel @Inject constructor(
             }
             return
         }
-        
+
         // Allow resending immediately for 2FA, regardless of timer
         val is2fa = _otpState.value.action == "2fa"
-        
+
         // Check if enough time has passed since last resend (60 seconds)
         val currentTime = System.currentTimeMillis()
         val elapsedTime = currentTime - lastResendTime
-        
+
         // Strict enforcement: Don't allow resend until full 60 seconds have passed
         if (!is2fa && elapsedTime < 60000) {
             // Calculate remaining seconds and update UI
             val remainingMs = 60000 - elapsedTime
             val remainingSec = (remainingMs / 1000).toInt() + 1 // Round up
-            
+
             _otpState.update {
                 it.copy(
                     canResend = false,
@@ -194,38 +193,38 @@ class OtpViewModel @Inject constructor(
             }
             return
         }
-        
+
         // Cancel any existing timer
         countDownTimer?.cancel()
-        
+
         // Update resend timestamp immediately
         lastResendTime = currentTime
-        
+
         // Enforce cooldown immediately
-        _otpState.update { 
+        _otpState.update {
             it.copy(
                 canResend = false,
                 remainingSeconds = 60
             )
         }
-        
+
         // Start the countdown
         startCountdown()
-        
+
         viewModelScope.launch {
-            _otpState.update { 
+            _otpState.update {
                 it.copy(
-                    isLoading = true, 
+                    isLoading = true,
                     isError = false // Always reset error on resend
                 )
             }
-            
+
             try {
                 val isVerification = _otpState.value.action == "verify_email"
                 val response = otpRepository.resendOtp(email, isVerification)
-                
+
                 if (response.success) {
-                    _otpState.update { 
+                    _otpState.update {
                         it.copy(
                             isLoading = false,
                             isError = false,
@@ -233,7 +232,7 @@ class OtpViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    _otpState.update { 
+                    _otpState.update {
                         it.copy(
                             isLoading = false,
                             errorMessage = response.message
@@ -242,7 +241,7 @@ class OtpViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                _otpState.update { 
+                _otpState.update {
                     it.copy(
                         isLoading = false,
                         isError = true,
@@ -252,29 +251,29 @@ class OtpViewModel @Inject constructor(
             }
         }
     }
-    
+
     private fun startCountdown() {
         // Cancel any existing timer
         countDownTimer?.cancel()
-        
+
         countDownTimer = object : CountDownTimer(60000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val secondsRemaining = (millisUntilFinished / 1000).toInt()
-                _otpState.update { 
+                _otpState.update {
                     it.copy(
                         remainingSeconds = secondsRemaining,
                         canResend = false // Always ensure canResend is false during countdown
                     )
                 }
             }
-            
+
             override fun onFinish() {
                 // Calculate time since last resend
                 val timeSinceResend = System.currentTimeMillis() - lastResendTime
-                
+
                 // Only allow resend if full 60 seconds have passed
                 if (timeSinceResend >= 60000) {
-                    _otpState.update { 
+                    _otpState.update {
                         it.copy(
                             remainingSeconds = 0,
                             canResend = true
@@ -289,7 +288,7 @@ class OtpViewModel @Inject constructor(
                             canResend = false
                         )
                     }
-                    
+
                     // Start new timer with remaining time
                     countDownTimer?.cancel()
                     countDownTimer = object : CountDownTimer(remainingMs, 1000) {
@@ -302,7 +301,7 @@ class OtpViewModel @Inject constructor(
                                 )
                             }
                         }
-                        
+
                         override fun onFinish() {
                             _otpState.update {
                                 it.copy(
@@ -316,22 +315,22 @@ class OtpViewModel @Inject constructor(
             }
         }.start()
     }
-    
+
     fun clearError() {
-        _otpState.update { 
+        _otpState.update {
             it.copy(
-                isError = false, 
+                isError = false,
                 errorMessage = ""
             )
         }
     }
-    
+
     private fun setAction(action: String) {
-        _otpState.update { 
+        _otpState.update {
             it.copy(action = action)
         }
     }
-    
+
     fun verifyEmail(email: String, otp: String) {
         viewModelScope.launch {
             _otpState.update { it.copy(isLoading = true, isError = false, errorMessage = "") }
@@ -347,7 +346,7 @@ class OtpViewModel @Inject constructor(
             }
         }
     }
-    
+
     override fun onCleared() {
         super.onCleared()
         countDownTimer?.cancel()

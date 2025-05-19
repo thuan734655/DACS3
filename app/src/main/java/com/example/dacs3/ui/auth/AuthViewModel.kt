@@ -44,7 +44,7 @@ class AuthViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
-    
+
     // Create a state for the current user ID
     private val _currentUserId = MutableStateFlow<String?>(null)
     val currentUserId: StateFlow<String?> = _currentUserId.asStateFlow()
@@ -52,7 +52,7 @@ class AuthViewModel @Inject constructor(
     init {
         // Check if already logged in from SessionManager
         if (sessionManager.isLoggedIn()) {
-            _uiState.update { 
+            _uiState.update {
                 it.copy(
                     isSuccess = true,
                     action = "login_success",
@@ -71,9 +71,9 @@ class AuthViewModel @Inject constructor(
             try {
                 val request = RegisterRequest(username, email, contactNumber, password)
                 val response = authRepository.register(request)
-                
+
                 if (response.success) {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
                             isLoading = false,
                             isSuccess = true,
@@ -82,20 +82,20 @@ class AuthViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
-                            isLoading = false, 
-                            isError = true, 
+                            isLoading = false,
+                            isError = true,
                             errorMessage = response.message
                         )
                     }
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Register error", e)
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
-                        isLoading = false, 
-                        isError = true, 
+                        isLoading = false,
+                        isError = true,
                         errorMessage = "Registration failed: ${e.message}"
                     )
                 }
@@ -108,20 +108,20 @@ class AuthViewModel @Inject constructor(
             try {
                 val errorString = it.string()
                 Log.d("AuthViewModel", "Error response: $errorString")
-                
+
                 // Check if errorString is empty
                 if (errorString.isBlank()) {
                     return "Unknown server error"
                 }
-                
+
                 try {
                     val jsonObject = JSONObject(errorString)
                     val message = jsonObject.optString("message", null)
-                    
+
                     return when {
-                        message.contains("duplicate key error") && message.contains("username") -> 
+                        message.contains("duplicate key error") && message.contains("username") ->
                             "Username already exists. Please choose another username."
-                        message.contains("duplicate key error") && message.contains("email") -> 
+                        message.contains("duplicate key error") && message.contains("email") ->
                             "Email already registered. Please use another email."
                         message.contains("Invalid credentials") ->
                             "Invalid email or password. Please try again."
@@ -144,28 +144,28 @@ class AuthViewModel @Inject constructor(
     fun login(accountName: String, password: String, isEmail: Boolean, deviceId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, isError = false, errorMessage = "", action = null) }
-            
+
             try {
                 val type = if (isEmail) "E" else "S"
                 val request = LoginRequest(accountName, password, type, deviceId)
                 val response = authRepository.login(request)
-                
+
                 if (response.success) {
                     handleLoginResponse(response)
                 } else {
                     // Check for specific actions in the response
                     if (response.action == "verify_email") {
-                        _uiState.update { 
+                        _uiState.update {
                             it.copy(
                                 isLoading = false,
                                 isSuccess = false,
-                                isError = false, // Not an error in user flow context
+                                isError = false,
                                 action = "verify_email",
                                 email = accountName
                             )
                         }
                     } else if (response.action == "2fa") {
-                        _uiState.update { 
+                        _uiState.update {
                             it.copy(
                                 isLoading = false,
                                 isSuccess = false,
@@ -174,32 +174,32 @@ class AuthViewModel @Inject constructor(
                             )
                         }
                     } else {
-                        _uiState.update { 
+                        _uiState.update {
                             it.copy(
-                                isLoading = false, 
-                                isError = true, 
+                                isLoading = false,
+                                isError = true,
                                 errorMessage = response.message ?: "Login failed"
                             )
                         }
                     }
                 }
             } catch (e: HttpException) {
-                Log.e("AuthViewModel", "Login error (Ask Gemini)", e)
+                Log.e("AuthViewModel", "Login error", e)
                 try {
                     val errorBody = e.response()?.errorBody()
                     val errorString = errorBody?.string() ?: ""
                     Log.d("AuthViewModel", "Error response body: $errorString")
-                    
+
                     try {
                         val jsonObject = JSONObject(errorString)
                         val message = jsonObject.optString("message", "")
                         val action = jsonObject.optString("action", null)
-                        
+
                         if (action == "2fa") {
                             // This is a 2FA request, not a real error
                             val data = jsonObject.optJSONObject("data")
                             val email = data?.optString("email", accountName) ?: accountName
-                            
+
                             _uiState.update {
                                 it.copy(
                                     isLoading = false,
@@ -237,10 +237,10 @@ class AuthViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Login error", e)
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
-                        isLoading = false, 
-                        isError = true, 
+                        isLoading = false,
+                        isError = true,
                         errorMessage = "Login failed: ${e.message}"
                     )
                 }
@@ -252,7 +252,7 @@ class AuthViewModel @Inject constructor(
         if (response.success && response.token != null) {
             // Extract user information from response
             val email = response.account?.email ?: ""
-            
+
             // Extract userId from JWT token or generate one
             val userId = try {
                 val payload = response.token.split(".")[1]
@@ -267,8 +267,8 @@ class AuthViewModel @Inject constructor(
 
             // Set current user ID
             _currentUserId.value = userId
-            
-            _uiState.update { 
+
+            _uiState.update {
                 it.copy(
                     isLoading = false,
                     isSuccess = true,
@@ -303,12 +303,12 @@ class AuthViewModel @Inject constructor(
     fun forgotPassword(email: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, isError = false, errorMessage = "") }
-            
+
             try {
                 val response = authRepository.forgotPassword(email)
-                
+
                 if (response.success) {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
                             isLoading = false,
                             isSuccess = true,
@@ -317,10 +317,10 @@ class AuthViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
-                            isLoading = false, 
-                            isError = true, 
+                            isLoading = false,
+                            isError = true,
                             errorMessage = response.message ?: "Failed to send reset code"
                         )
                     }
@@ -330,11 +330,11 @@ class AuthViewModel @Inject constructor(
                 try {
                     val errorBody = e.response()?.errorBody()
                     val errorString = errorBody?.string() ?: ""
-                    
+
                     try {
                         val jsonObject = JSONObject(errorString)
                         val message = jsonObject.optString("message", "")
-                        
+
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -362,26 +362,26 @@ class AuthViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Forgot password error", e)
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
-                        isLoading = false, 
-                        isError = true, 
+                        isLoading = false,
+                        isError = true,
                         errorMessage = "Password reset request failed: ${e.message}"
                     )
                 }
             }
         }
     }
-    
+
     fun resetPassword(email: String, password: String, otp: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, isError = false, errorMessage = "") }
-            
+
             try {
                 val response = authRepository.resetPassword(email, password, otp)
-                
+
                 if (response.success) {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
                             isLoading = false,
                             isSuccess = true,
@@ -390,10 +390,10 @@ class AuthViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
-                            isLoading = false, 
-                            isError = true, 
+                            isLoading = false,
+                            isError = true,
                             errorMessage = response.message ?: "Failed to reset password"
                         )
                     }
@@ -403,11 +403,11 @@ class AuthViewModel @Inject constructor(
                 try {
                     val errorBody = e.response()?.errorBody()
                     val errorString = errorBody?.string() ?: ""
-                    
+
                     try {
                         val jsonObject = JSONObject(errorString)
                         val message = jsonObject.optString("message", "")
-                        
+
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -435,10 +435,10 @@ class AuthViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Reset password error", e)
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
-                        isLoading = false, 
-                        isError = true, 
+                        isLoading = false,
+                        isError = true,
                         errorMessage = "Password reset failed: ${e.message}"
                     )
                 }
@@ -449,12 +449,12 @@ class AuthViewModel @Inject constructor(
     fun resendOtp(email: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, isError = false, errorMessage = "") }
-            
+
             try {
                 val response = authRepository.resendOtp(email, true)
-                
+
                 if (response.success) {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
                             isLoading = false,
                             isSuccess = true,
@@ -462,20 +462,20 @@ class AuthViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
-                            isLoading = false, 
-                            isError = true, 
+                            isLoading = false,
+                            isError = true,
                             errorMessage = response.message
                         )
                     }
                 }
             } catch (e: Exception) {
                 Log.e("AuthViewModel", "Resend OTP error", e)
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
-                        isLoading = false, 
-                        isError = true, 
+                        isLoading = false,
+                        isError = true,
                         errorMessage = "Failed to resend verification code: ${e.message}"
                     )
                 }
@@ -489,7 +489,7 @@ class AuthViewModel @Inject constructor(
             try {
                 Log.d("AuthViewModel", "Requesting verification OTP for: $email")
                 val response = authRepository.resendOtp(email, true)
-                
+
                 if (response.success) {
                     Log.d("AuthViewModel", "Verification OTP sent successfully")
                 } else {

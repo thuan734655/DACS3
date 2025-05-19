@@ -7,7 +7,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.dacs3.ui.auth.ResetPasswordScreen
-import com.example.dacs3.ui.auth.twofactor.TWO_FACTOR_AUTH_ROUTE
 
 const val OTP_VERIFICATION_ROUTE = "otp_verification"
 const val EMAIL_ARG = "email"
@@ -32,15 +31,14 @@ fun NavGraphBuilder.otpVerificationScreen(
     onVerificationSuccess: () -> Unit,
     onNavigateBack: () -> Unit,
     onTwoFactorRequired: (String) -> Unit = { email ->
-        // Default implementation that can be overridden
     }
 ) {
     composable(
         route = "$OTP_VERIFICATION_ROUTE/{$EMAIL_ARG}?$ACTION_ARG={$ACTION_ARG}",
         arguments = listOf(
             navArgument(EMAIL_ARG) { type = NavType.StringType },
-            navArgument(ACTION_ARG) { 
-                type = NavType.StringType 
+            navArgument(ACTION_ARG) {
+                type = NavType.StringType
                 nullable = true
                 defaultValue = null
             }
@@ -48,9 +46,9 @@ fun NavGraphBuilder.otpVerificationScreen(
     ) { entry ->
         val email = entry.arguments?.getString(EMAIL_ARG) ?: ""
         val action = entry.arguments?.getString(ACTION_ARG)
-        
+
         Log.d("OtpNavigation", "Loading OTP screen with email: $email, action: $action")
-        
+
         OtpScreen(
             email = email,
             action = action,
@@ -81,7 +79,7 @@ fun NavGraphBuilder.resetPasswordScreen(
     ) { entry ->
         val email = entry.arguments?.getString(EMAIL_ARG) ?: ""
         val otp = entry.arguments?.getString("otp") ?: ""
-        
+
         ResetPasswordScreen(
             email = email,
             otp = otp,

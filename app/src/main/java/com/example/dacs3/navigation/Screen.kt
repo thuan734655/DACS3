@@ -10,7 +10,7 @@ sealed class Screen(val route: String) {
     object WorkspaceDetail : Screen("workspace_detail/{workspaceId}") {
         fun createRoute(workspaceId: String) = "workspace_detail/$workspaceId"
     }
-    object ConversationList : Screen("conversations") 
+    object ConversationList : Screen("conversations")
     object WorkspaceChat : Screen("workspace_chat/{workspaceId}") {
         fun createRoute(workspaceId: String) = "workspace_chat/$workspaceId"
     }
@@ -19,8 +19,13 @@ sealed class Screen(val route: String) {
         fun createRoute(email: String) = "otp_verification/$email"
     }
     // Two Factor Authentication
-    object TwoFactorAuth : Screen("2fa_verification/{email}") {
-        fun createRoute(email: String) = "2fa_verification/$email"
+    object TwoFactorAuth : Screen("2fa_verification/{email}/{password}") {
+        fun createRoute(email: String, password: String? = null) =
+            if (password != null) {
+                "2fa_verification/$email/$password"
+            } else {
+                "2fa_verification/$email/null"
+            }
     }
     object EpicList : Screen("epic_list/{workspaceId}") {
         fun createRoute(workspaceId: String) = "epic_list/$workspaceId"
@@ -61,7 +66,7 @@ sealed class Screen(val route: String) {
         fun createRoute(workspaceId: String) = "workspace_members/$workspaceId"
     }
     object Profile : Screen("profile")
-    object Notifications : Screen("notifications") 
+    object Notifications : Screen("notifications")
     object DirectMessages : Screen("direct_messages")
     object DirectChat : Screen("direct_chat/{userId}") {
         fun createRoute(userId: String) = "direct_chat/$userId"

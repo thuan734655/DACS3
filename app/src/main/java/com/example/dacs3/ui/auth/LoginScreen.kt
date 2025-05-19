@@ -60,11 +60,11 @@ fun LoginScreen(
     val focusManager = LocalFocusManager.current
     @OptIn(ExperimentalComposeUiApi::class)
     val keyboardController = LocalSoftwareKeyboardController.current
-    
+
     // Focus requesters for better keyboard management
     val emailFocusRequester = remember { FocusRequester() }
     val passwordFocusRequester = remember { FocusRequester() }
-    
+
     // Focus on email field initially
     LaunchedEffect(Unit) {
         emailFocusRequester.requestFocus()
@@ -81,7 +81,8 @@ fun LoginScreen(
             uiState.action == "2fa" -> {
                 Log.d("LoginScreen", "2FA required, navigating to 2FA screen with email: ${uiState.email}")
                 uiState.email?.let { email ->
-                    navController.navigate(Screen.TwoFactorAuth.createRoute(email)) {
+                    // Pass the current password to enable auto-login after OTP verification
+                    navController.navigate(Screen.TwoFactorAuth.createRoute(email, password)) {
                         // Don't clear the backstack to allow returning to login if needed
                     }
                 }
@@ -104,7 +105,7 @@ fun LoginScreen(
         GradientMiddle,
         GradientEnd
     )
-    
+
     val shimmerBrush = remember {
         Brush.linearGradient(
             colors = shimmerColors,
@@ -112,7 +113,7 @@ fun LoginScreen(
             end = androidx.compose.ui.geometry.Offset(900f, 900f)
         )
     }
-    
+
     // Update shimmer animation
     var shimmerTranslation by remember { mutableStateOf(0f) }
     LaunchedEffect(isLoading) {
@@ -128,7 +129,7 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundGrey)
-            .run { 
+            .run {
                 @OptIn(ExperimentalComposeUiApi::class)
                 addFocusCleaner(focusManager, keyboardController)
             },
@@ -157,12 +158,12 @@ fun LoginScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
-            
+
             // Email field
             OutlinedTextField(
                 value = email,
-                onValueChange = { 
-                    email = it 
+                onValueChange = {
+                    email = it
                     if (showError) showError = false
                 },
                 label = { Text("Email") },
@@ -190,12 +191,12 @@ fun LoginScreen(
                     imeAction = ImeAction.Next
                 )
             )
-            
+
             // Password field
             OutlinedTextField(
                 value = password,
-                onValueChange = { 
-                    password = it 
+                onValueChange = {
+                    password = it
                     if (showError) showError = false
                 },
                 label = { Text("Password") },
@@ -233,7 +234,7 @@ fun LoginScreen(
                     imeAction = ImeAction.Done
                 )
             )
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -247,15 +248,15 @@ fun LoginScreen(
                     color = TeamNexusPurple,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.clickable { 
+                    modifier = Modifier.clickable {
                         // Hide keyboard when clicking on forgot password
                         keyboardController?.hide()
                         focusManager.clearFocus()
-                        navController.navigate("forgot_password") 
+                        navController.navigate("forgot_password")
                     }
                 )
             }
-            
+
             AnimatedVisibility(
                 visible = showError,
                 enter = fadeIn() + expandVertically(),
@@ -266,7 +267,7 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (errorMessage.contains("verify your email", ignoreCase = true)) 
+                        containerColor = if (errorMessage.contains("verify your email", ignoreCase = true))
                             ErrorBackground else ErrorBackground // Amber 100 for verify email (warning)
                     ),
                     shape = RoundedCornerShape(8.dp)
@@ -282,7 +283,7 @@ fun LoginScreen(
                             fontSize = 14.sp,
                             modifier = Modifier.weight(1f)
                         )
-                        
+
                         if (errorMessage.contains("verify your email", ignoreCase = true)) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
@@ -304,14 +305,14 @@ fun LoginScreen(
                     }
                 }
             }
-            
+
             Button(
                 onClick = {
                     if (email.isNotBlank() && password.isNotBlank()) {
                         // Dismiss keyboard when login button is clicked
                         keyboardController?.hide()
                         focusManager.clearFocus()
-                        
+
                         // Determine if input is email or phone
                         val isEmail = email.contains("@")
                         // Get a device ID directly from settings
@@ -321,7 +322,7 @@ fun LoginScreen(
                         )
                         // Log the device ID for debugging
                         Log.d("LoginScreen", "Using direct Android ID for login: $deviceId")
-                        
+
                         // Call login without remember me parameter
                         viewModel.login(email, password, isEmail, deviceId)
                     } else {
@@ -348,7 +349,7 @@ fun LoginScreen(
                 }
             }
         }
-        
+
         // Loading overlay with shimmer effect
         if (isLoading) {
             Box(
@@ -377,7 +378,7 @@ fun LoginScreen(
                                 strokeWidth = 4.dp,
                                 modifier = Modifier.size(48.dp)
                             )
-                            
+
                             // Shimmer overlay
                             Box(
                                 modifier = Modifier
@@ -386,11 +387,11 @@ fun LoginScreen(
                                         brush = Brush.linearGradient(
                                             colors = shimmerColors,
                                             start = androidx.compose.ui.geometry.Offset(
-                                                shimmerTranslation - 900f, 
+                                                shimmerTranslation - 900f,
                                                 shimmerTranslation - 900f
                                             ),
                                             end = androidx.compose.ui.geometry.Offset(
-                                                shimmerTranslation, 
+                                                shimmerTranslation,
                                                 shimmerTranslation
                                             )
                                         ),
@@ -399,19 +400,19 @@ fun LoginScreen(
                                     )
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.height(12.dp))
-                Text(
+                        Text(
                             text = "Signing in...",
                             color = DarkGrey,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
-                )
+                        )
                     }
                 }
             }
         }
-        
+
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)

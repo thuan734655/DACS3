@@ -23,15 +23,19 @@ class AuthRepository @Inject constructor(
     suspend fun login(request: LoginRequest): LoginResponse {
         try {
             val response = api.login(request)
-            
+
             // If login successful, save to Room database
             if (response.success) {
                 withContext(Dispatchers.IO) {
                     response.account?.let { account ->
                         response.token?.let { token ->
-                            // Save token and user info in session manager
-                            val userId = UUID.randomUUID().toString() // Generate a temporary ID if needed
-                            sessionManager.saveUserSession(userId, account.email,account.contactNumber, account.username, token)
+                            sessionManager.saveUserSession(
+                                userId = account.userId,
+                                email = account.email,
+                                contactumber = account.contactNumber,
+                                username = account.username,
+                                token = token
+                            )
                             sessionManager.saveToken(token)
                         }
                     }
@@ -43,16 +47,16 @@ class AuthRepository @Inject constructor(
             throw e
         }
     }
-    
+
     suspend fun register(request: RegisterRequest): RegisterResponse {
         try {
             val response = api.register(request)
-            
+
             // If registration successful, save to Room database
             if (response.success) {
                 withContext(Dispatchers.IO) {
                     response.account?.let { account ->
-                            Log.d("AuthRepository", "Successfully saved user data locally")
+                        Log.d("AuthRepository", "Successfully saved user data locally")
                     }
                 }
             }
@@ -62,7 +66,7 @@ class AuthRepository @Inject constructor(
             throw e
         }
     }
-    
+
     suspend fun forgotPassword(email: String): ForgotPasswordResponse {
         try {
             val request = ForgotPasswordRequest(email)
@@ -72,47 +76,37 @@ class AuthRepository @Inject constructor(
             throw e
         }
     }
-    
+
     suspend fun resetPassword(email: String, password: String, otp: String): ResetPasswordResponse {
         try {
             val request = ResetPasswordRequest(email, password, otp)
             val response = api.resetPassword(request)
-            
+
             return response
         } catch (e: Exception) {
             Log.e("AuthRepository", "Reset password error", e)
             throw e
         }
     }
-    
+
     suspend fun verifyEmail(email: String, otp: String): VerifyEmailResponse {
         try {
             val request = VerifyEmailRequest(email, otp)
             val response = api.verifyEmail(request)
-            
+
             return response
         } catch (e: Exception) {
             Log.e("AuthRepository", "Verify email error", e)
             throw e
         }
     }
-    
+
     suspend fun resendOtp(email: String, forVerification: Boolean = true): ResendOtpResponse {
         try {
             val request = ResendOtpRequest(email, forVerification)
             return api.resendOtp(request)
         } catch (e: Exception) {
             Log.e("AuthRepository", "Resend OTP error", e)
-            throw e
-        }
-    }
-    
-    suspend fun verifyOtp(email: String, otp: String, deviceID: String?): VerifyOtpResponse {
-        try {
-            val request = VerifyOtpRequest(email, otp, deviceID ?: "")
-            return api.verifyOtp(request)
-        } catch (e: Exception) {
-            Log.e("AuthRepository", "Verify OTP error", e)
             throw e
         }
     }

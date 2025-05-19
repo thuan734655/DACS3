@@ -18,20 +18,24 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dacs3.ui.components.BottomNavigationBar
+import com.example.dacs3.ui.epic.EpicViewModel
 
 @Composable
 fun DashboardScreen(
     onBoardClick: () -> Unit,
     onSprintClick: () -> Unit,
     onEpicClick: () -> Unit,
-    onTaskClick: () -> Unit,
+    onTaskClick: (String) -> Unit,
     onHomeClick: () -> Unit,
     onMessageClick: () -> Unit,
     onDashboardClick: () -> Unit,
@@ -43,6 +47,9 @@ fun DashboardScreen(
             .background(Color(0xFFF5F5F5))
     ) {
         val (title, content, bottomNav) = createRefs()
+        val epicViewModel: EpicViewModel = hiltViewModel()
+        val epicUiState by epicViewModel.uiState.collectAsState()
+        val selectedEpicId = epicUiState.selectedEpic?._id
 
         // Tiêu đề
         Text(
@@ -51,7 +58,7 @@ fun DashboardScreen(
             fontWeight = FontWeight.Bold,
             modifier = Modifier
                 .constrainAs(title) {
-                    top.linkTo(parent.top, margin = 24.dp)
+                    top.linkTo(parent.top, margin = 40.dp)
                     start.linkTo(parent.start, margin = 16.dp)
                 }
         )
@@ -72,7 +79,11 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(16.dp))
             DashboardItem(text = "Go to epic", onClick = onEpicClick)
             Spacer(modifier = Modifier.height(16.dp))
-            DashboardItem(text = "Go to task", onClick = onTaskClick)
+            DashboardItem(text = "Go to task",
+                onClick = {
+                selectedEpicId?.let { onTaskClick(it) }
+                }
+            )
         }
 
         // Bottom Navigation

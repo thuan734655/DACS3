@@ -87,12 +87,12 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val workspacesResponse = workspaceRepository.getAllWorkspacesFromApi()
             if (workspacesResponse.success && !workspacesResponse.data.isNullOrEmpty()) {
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
                         allWorkspaces = workspacesResponse.data,
                     )
                 }
-                
+
                 // Tìm workspace đã lưu trong preferences hoặc dùng workspace đầu tiên
                 val savedWorkspaceId = workspacePreferences.getSelectedWorkspaceId()
                 if (savedWorkspaceId.isNotEmpty()) {
@@ -117,7 +117,7 @@ class HomeViewModel @Inject constructor(
             if (workspaceId.isNotEmpty()) {
                 val response = channelRepository.getChannelsByWorkspaceFromApi(workspaceId = workspaceId)
                 if (response.success) {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
                             channels = response.data ?: emptyList(),
                             unreadChannels = (response.data ?: emptyList()).filter { channel -> /* logic xác định unread */ false }
@@ -169,7 +169,14 @@ class HomeViewModel @Inject constructor(
     }
     fun createWorkspace (name: String, description: String)  {
         viewModelScope.launch {
-                val response = workspaceRepository.createWorkspace(name, description)
+            val response = workspaceRepository.createWorkspace(name, description)
+            if (response.success && response.data != null) {
+                _uiState.update {
+                    it.copy(
+                        allWorkspaces = it.allWorkspaces + response.data
+                    )
+                }
+            }
         }
     }
 }

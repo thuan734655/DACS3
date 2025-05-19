@@ -12,10 +12,10 @@ import java.util.Date
  */
 @Singleton
 class SessionManager @Inject constructor(context: Context) {
-    
+
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val editor = prefs.edit()
-    
+
     companion object {
         private const val PREFS_NAME = "dacs3_prefs"
         private const val KEY_USER_ID = "user_id"
@@ -27,50 +27,56 @@ class SessionManager @Inject constructor(context: Context) {
         private const val KEY_CONTACT_NUMBER = "contact_number"
         private const val KEY_USERNAME = "username"
     }
-    
+
     /**
      * Save user session when they log in successfully
      */
-    fun saveUserSession(userId: String, email: String,contactumber: String,username : String, token: String) {
+    fun saveUserSession(userId: String, email: String, contactumber: String? = null, username: String? = null, token: String) {
         editor.putString(KEY_USER_ID, userId)
         editor.putString(KEY_EMAIL, email)
         editor.putString(KEY_TOKEN, token)
-        editor.putString(KEY_CONTACT_NUMBER, contactumber)
-        editor.putString(KEY_USERNAME, username)
+        contactumber?.let { editor.putString(KEY_CONTACT_NUMBER, it) }
+        username?.let { editor.putString(KEY_USERNAME, it) }
 
-        
+        // If username is null but we have an email, extract the username from email
+        if (username == null && email.isNotEmpty()) {
+            val extractedUsername = email.substringBefore('@')
+            editor.putString(KEY_USERNAME, extractedUsername)
+        }
+
+
         // Calculate expiration time (168 hours from now)
         val expiryTime = System.currentTimeMillis() + (168 * 60 * 60 * 1000)
         editor.putLong(KEY_TOKEN_EXPIRY, expiryTime)
-        
+
         editor.putBoolean(KEY_IS_LOGGED_IN, true)
         editor.apply()
-        
+
         Log.d("SessionManager", "Saved user session with token expiry: ${Date(expiryTime)}")
     }
-    
+
     /**
      * Check if user is logged in with a valid token
      */
     fun isLoggedIn(): Boolean {
         val isLoggedIn = prefs.getBoolean(KEY_IS_LOGGED_IN, false)
         if (!isLoggedIn) return false
-        
+
         // Check if token exists and is not expired
         val token = prefs.getString(KEY_TOKEN, null)
         val tokenExpiryTime = prefs.getLong(KEY_TOKEN_EXPIRY, 0)
         val currentTime = System.currentTimeMillis()
-        
+
         // If token is missing or expired, clear session and return false
         if (token == null || currentTime > tokenExpiryTime) {
             Log.d("SessionManager", "Token expired or missing. Clearing session.")
             clearSession()
             return false
         }
-        
+
         return true
     }
-    
+
     /**
      * Get remaining time until token expires (in milliseconds)
      */
@@ -81,21 +87,21 @@ class SessionManager @Inject constructor(context: Context) {
             tokenExpiryTime - currentTime
         } else 0
     }
-    
+
     /**
      * Get logged in user id
      */
     fun getUserId(): String? {
         return prefs.getString(KEY_USER_ID, null)
     }
-    
+
     /**
      * Get logged in user email
      */
     fun getUserEmail(): String? {
         return prefs.getString(KEY_EMAIL, null)
     }
-    
+
     /**
      * Clear session details
      */
@@ -107,14 +113,14 @@ class SessionManager @Inject constructor(context: Context) {
         editor.putBoolean(KEY_IS_LOGGED_IN, false)
         editor.apply()
     }
-    
+
     fun saveAuthToken(token: String) {
         editor.putString(KEY_TOKEN, token)
-        
+
         // Calculate expiration time (168 hours from now)
         val expiryTime = System.currentTimeMillis() + (168 * 60 * 60 * 1000)
         editor.putLong(KEY_TOKEN_EXPIRY, expiryTime)
-        
+
         editor.apply()
     }
 
@@ -122,18 +128,18 @@ class SessionManager @Inject constructor(context: Context) {
         val token = prefs.getString(KEY_TOKEN, null)
         val tokenExpiryTime = prefs.getLong(KEY_TOKEN_EXPIRY, 0)
         val currentTime = System.currentTimeMillis()
-        
+
         // Return null if token is expired
         return if (token != null && currentTime <= tokenExpiryTime) {
             token
         } else null
     }
-    
+
     // Alias methods for saveAuthToken and getAuthToken
     fun saveToken(token: String) {
         saveAuthToken(token)
     }
-    
+
     fun getToken(): String? {
         return getAuthToken()
     }

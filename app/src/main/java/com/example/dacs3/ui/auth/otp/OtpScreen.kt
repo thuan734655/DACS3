@@ -46,26 +46,26 @@ fun OtpScreen(
     val otpState by viewModel.otpState.collectAsState()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    
+
     var otpDigits by remember { mutableStateOf(List(6) { "" }) }
     val otpValue = otpDigits.joinToString("")
-    
+
     // Trạng thái để theo dõi việc hiển thị thông báo thành công
     var showSuccessMessage by remember { mutableStateOf(false) }
     // Trạng thái để kiểm soát hiển thị dialog thành công
     var showSuccessDialog by remember { mutableStateOf(false) }
-    
+
     // Variable to control 2FA dialog display
     var showTwoFactorAuthDialog by remember { mutableStateOf(false) }
-    
+
     // Thêm biến để kiểm soát dialog resend OTP
     var showResendDialog by remember { mutableStateOf(false) }
     var resendMessage by remember { mutableStateOf("") }
-    
+
     // Set email and action when screen loads
     LaunchedEffect(email, action) {
         viewModel.setEmail(email, action)
-        
+
         // Nếu là 2FA, tự động request OTP khi màn hình hiển thị
         if (action == "2fa") {
             Log.d("OtpScreen", "Auto requesting OTP for 2FA authentication")
@@ -75,16 +75,15 @@ fun OtpScreen(
             showResendDialog = true
         }
     }
-    
+
     // Check for verification success or 2FA requirement
     LaunchedEffect(otpState.isSuccess, otpState.isError) {
         if (otpState.isSuccess) {
-            // Ghi log để debug
             Log.d("OtpScreen", "Verification success! Action: ${otpState.action}")
-            
+
             // Cập nhật trạng thái hiển thị thông báo thành công
             showSuccessMessage = true
-            
+
             // Handle navigation based on action
             when (otpState.action) {
                 "2fa" -> {
@@ -93,10 +92,8 @@ fun OtpScreen(
                 }
                 "reset_password" -> {
                     Log.d("OtpScreen", "Reset password flow, redirecting to reset screen")
-                    delay(200) // Reduced delay for better UX
-                    // Chuyển trực tiếp đến trang đặt lại mật khẩu
+                    delay(200)
                     onResetPassword(email, otpValue)
-                    // Không hiển thị dialog thành công
                 }
                 else -> {
                     // Hiển thị dialog thành công cho các trường hợp khác (verification email)
@@ -106,12 +103,12 @@ fun OtpScreen(
             }
         } else if (otpState.isError) {
             Log.d("OtpScreen", "Verification error: ${otpState.errorMessage}")
-            
+
             // Check if error message actually indicates success
             if (otpState.errorMessage.contains("success", ignoreCase = true)) {
                 Log.d("OtpScreen", "Success message detected in error response")
                 showSuccessMessage = true
-                
+
                 // Nếu là reset_password, chuyển đến trang đặt lại mật khẩu
                 if (otpState.action == "reset_password") {
                     delay(200) // Reduced delay
@@ -122,11 +119,11 @@ fun OtpScreen(
             }
         }
     }
-    
+
     // Success dialog for email verification
     if (showSuccessDialog) {
         AlertDialog(
-            onDismissRequest = { 
+            onDismissRequest = {
                 showSuccessDialog = false
                 onVerificationSuccess()
             },
@@ -138,14 +135,14 @@ fun OtpScreen(
                     modifier = Modifier.size(48.dp)
                 )
             },
-            title = { 
+            title = {
                 Text(
-                    "Verification Successful", 
-                    textAlign = TextAlign.Center, 
+                    "Verification Successful",
+                    textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold
-                ) 
+                )
             },
-            text = { 
+            text = {
                 Text(
                     text = when(otpState.action) {
                         "reset_password" -> "OTP has been verified successfully. Please set your new password."
@@ -153,11 +150,11 @@ fun OtpScreen(
                         else -> "OTP has been verified successfully. You will be redirected to the home screen."
                     },
                     textAlign = TextAlign.Center
-                ) 
+                )
             },
             confirmButton = {
                 Button(
-                    onClick = { 
+                    onClick = {
                         showSuccessDialog = false
                         if (otpState.action == "reset_password") {
                             onResetPassword(email, otpValue)
@@ -178,11 +175,11 @@ fun OtpScreen(
             textContentColor = MaterialTheme.colorScheme.onSurface
         )
     }
-    
+
     // Thêm dialog thông báo resend OTP thành công
     if (showResendDialog) {
         AlertDialog(
-            onDismissRequest = { 
+            onDismissRequest = {
                 showResendDialog = false
             },
             icon = {
@@ -193,22 +190,22 @@ fun OtpScreen(
                     modifier = Modifier.size(48.dp)
                 )
             },
-            title = { 
+            title = {
                 Text(
-                    "OTP Resent", 
-                    textAlign = TextAlign.Center, 
+                    "OTP Resent",
+                    textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold
-                ) 
+                )
             },
-            text = { 
+            text = {
                 Text(
                     text = resendMessage.ifEmpty { "OTP has been resent to your email. Please check your inbox." },
                     textAlign = TextAlign.Center
-                ) 
+                )
             },
             confirmButton = {
                 Button(
-                    onClick = { 
+                    onClick = {
                         showResendDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -224,7 +221,7 @@ fun OtpScreen(
             textContentColor = MaterialTheme.colorScheme.onSurface
         )
     }
-    
+
     // Show 2FA dialog when needed
     if (showTwoFactorAuthDialog) {
         AlertDialog(
@@ -240,14 +237,14 @@ fun OtpScreen(
                     modifier = Modifier.size(48.dp)
                 )
             },
-            title = { 
+            title = {
                 Text(
-                    "New Device Authentication", 
-                    textAlign = TextAlign.Center, 
+                    "New Device Authentication",
+                    textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold
-                ) 
+                )
             },
-            text = { 
+            text = {
                 Text(
                     "You are logging in from a new device. Please check your email to confirm login.",
                     textAlign = TextAlign.Center
@@ -275,7 +272,7 @@ fun OtpScreen(
             textContentColor = MaterialTheme.colorScheme.onSurface
         )
     }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -293,7 +290,7 @@ fun OtpScreen(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 48.dp, bottom = 16.dp)
         )
-        
+
         // Instruction text
         Text(
             text = "Enter the 6-digit code sent to",
@@ -301,7 +298,7 @@ fun OtpScreen(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 4.dp)
         )
-        
+
         // Email display
         Text(
             text = email,
@@ -311,7 +308,7 @@ fun OtpScreen(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 32.dp)
         )
-        
+
         // OTP Input Fields
         Row(
             modifier = Modifier
@@ -329,14 +326,14 @@ fun OtpScreen(
                                 set(i, newValue)
                             }
                             otpDigits = newDigits
-                            
+
                             // Auto-move focus to next field
                             if (newValue.isNotEmpty() && i < 5) {
                                 focusManager.moveFocus(FocusDirection.Next)
                             } else if (newValue.isEmpty() && i > 0) {
                                 focusManager.moveFocus(FocusDirection.Previous)
                             }
-                            
+
                             // If all digits are filled, verify OTP or email
                             val allDigitsFilled = otpDigits.all { it.isNotEmpty() }
                             if (allDigitsFilled) {
@@ -351,7 +348,7 @@ fun OtpScreen(
                 )
             }
         }
-        
+
         // Success message - sử dụng biến showSuccessMessage hoặc otpState.isSuccess
         AnimatedVisibility(visible = showSuccessMessage || otpState.isSuccess) {
             Card(
@@ -375,7 +372,7 @@ fun OtpScreen(
                 }
             }
         }
-        
+
         // Error message - đảm bảo không hiển thị khi đã thành công
         AnimatedVisibility(visible = otpState.isError && !(showSuccessMessage || otpState.isSuccess) && !otpState.errorMessage.contains("success", ignoreCase = true)) {
             Text(
@@ -388,9 +385,9 @@ fun OtpScreen(
                     .fillMaxWidth()
             )
         }
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         // Verify button
         Button(
             onClick = {
@@ -424,9 +421,9 @@ fun OtpScreen(
                 Text("Verify")
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Resend OTP section - hide when verification is successful
         AnimatedVisibility(visible = !(showSuccessMessage || otpState.isSuccess)) {
             Column(
@@ -439,12 +436,12 @@ fun OtpScreen(
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 if (otpState.canResend) {
                     Button(
-                        onClick = { 
+                        onClick = {
                             if (otpState.canResend) { // Double-check before proceeding
                                 viewModel.resendOtp()
                                 // Hiển thị dialog resend thành công
@@ -502,13 +499,13 @@ fun OtpDigitInput(
     isLastField: Boolean
 ) {
     val focusManager = LocalFocusManager.current
-    
+
     val backgroundColor = if (value.isNotEmpty()) {
         MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
     } else {
         MaterialTheme.colorScheme.surface
     }
-    
+
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
