@@ -20,11 +20,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.dacs3.data.model.Channel
 import com.example.dacs3.data.model.Workspace
 import com.example.dacs3.data.model.User
 import com.example.dacs3.ui.components.BottomNavigationBar
+// Add this import
+import com.example.dacs3.ui.workspace.CreateWorkspaceDialog
 import kotlinx.coroutines.launch
 
 @Composable
@@ -43,9 +46,11 @@ fun HomeScreen(
     onMessageClick: () -> Unit,
     onDashboardClick: () -> Unit,
     onProfileClick: () -> Unit,
+    oncreateWorkspaceClick: (title :String, description: String) -> Unit,
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var showDialog by remember { mutableStateOf(false) }
     
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -60,6 +65,12 @@ fun HomeScreen(
                     }
                 },
                 onClose = {
+                    scope.launch {
+                        drawerState.close()
+                    }
+                },
+                onCreateWorkspace = { name, description ->
+                    oncreateWorkspaceClick(name, description)
                     scope.launch {
                         drawerState.close()
                     }
@@ -312,6 +323,15 @@ fun HomeScreen(
                             width = androidx.constraintlayout.compose.Dimension.fillToConstraints
                         }
                 )
+                if (showDialog) {
+                    CreateWorkspaceDialog(
+                        onDismiss = { showDialog = false },
+                        onCreateWorkspace = { name, description ->
+                            oncreateWorkspaceClick(name, description)
+                            showDialog = false
+                        }
+                    )
+                }
             }
         }
     )
@@ -322,25 +342,22 @@ fun WorkspaceSidebar(
     currentWorkspace: Workspace?,
     allWorkspaces: List<Workspace>,
     onWorkspaceSelected: (String) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onCreateWorkspace: (name: String, description: String) -> Unit
 ) {
-    ModalDrawerSheet(
-        modifier = Modifier
-            .fillMaxHeight()
-            .width(280.dp)
-    ) {
+    var showCreateDialog by remember { mutableStateOf(false) }
+
+    ModalDrawerSheet {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // Header with close button
+            // Header
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     "Your Workspaces",
@@ -354,12 +371,13 @@ fun WorkspaceSidebar(
                     )
                 }
             }
-            
-            Divider()
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // List of workspaces
-            LazyColumn {
+            LazyColumn(
+                modifier = Modifier.weight(1f)
+            ) {
                 items(allWorkspaces) { workspace ->
                     WorkspaceItem(
                         workspace = workspace,
@@ -368,15 +386,27 @@ fun WorkspaceSidebar(
                     )
                 }
             }
-            
-            // Add workspace button at bottom
-            Spacer(modifier = Modifier.weight(1f))
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Create workspace button
             OutlinedButton(
-                onClick = { /* Add functionality to create new workspace */ },
+                onClick = { showCreateDialog = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("+ Create New Workspace")
             }
+        }
+
+        // Create workspace dialog
+        if (showCreateDialog) {
+            CreateWorkspaceDialog(
+                onDismiss = { showCreateDialog = false },
+                onCreateWorkspace = { name, description ->
+                    onCreateWorkspace(name, description)
+                    showCreateDialog = false
+                }
+            )
         }
     }
 }

@@ -229,57 +229,77 @@ fun CreateWorkspaceDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 2.dp,
+            modifier = Modifier.fillMaxWidth(0.95f)
         ) {
             Column(
                 modifier = Modifier
-                    .padding(20.dp)
+                    .padding(24.dp)
                     .fillMaxWidth()
             ) {
+                // Header
                 Text(
-                    text = "Create Workspace",
-                    style = MaterialTheme.typography.headlineSmall
+                    text = "Create New Workspace",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                TextField(
+                // Name field
+                OutlinedTextField(
                     value = name,
                     onValueChange = { 
                         name = it
-                        nameError = if (it.isBlank()) "Name cannot be empty" else null
+                        nameError = when {
+                            it.isBlank() -> "Name is required"
+                            it.length < 3 -> "Name must be at least 3 characters"
+                            else -> null
+                        }
                     },
                     label = { Text("Workspace Name*") },
+                    placeholder = { Text("Enter workspace name") },
                     modifier = Modifier.fillMaxWidth(),
                     isError = nameError != null,
-                    supportingText = {
-                        nameError?.let {
-                            Text(
-                                text = it,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
+                    supportingText = nameError?.let { { Text(it) } },
+                    singleLine = true,
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        errorBorderColor = MaterialTheme.colorScheme.error
+                    )
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                TextField(
+                // Description field
+                OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Description") },
+                    placeholder = { Text("Enter workspace description") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 3
+                    minLines = 3,
+                    maxLines = 5,
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary
+                    )
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
+                // Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    ) {
                         Text("Cancel")
                     }
                     
@@ -287,17 +307,21 @@ fun CreateWorkspaceDialog(
                     
                     Button(
                         onClick = { 
-                            if (name.isBlank()) {
-                                nameError = "Name cannot be empty"
-                            } else {
-                                onCreateWorkspace(name, description)
+                            when {
+                                name.isBlank() -> nameError = "Name is required"
+                                name.length < 3 -> nameError = "Name must be at least 3 characters"
+                                else -> onCreateWorkspace(name.trim(), description.trim())
                             }
-                        }
+                        },
+                        enabled = name.isNotBlank() && nameError == null,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
                     ) {
-                        Text("Create")
+                        Text("Create Workspace")
                     }
                 }
             }
         }
     }
-} 
+}

@@ -9,6 +9,8 @@ import com.example.dacs3.data.api.SprintApi
 import com.example.dacs3.data.api.TaskApi
 import com.example.dacs3.data.api.UserApi
 import com.example.dacs3.data.api.WorkspaceApi
+import com.example.dacs3.data.api.deserializer.WorkspaceDeserializer
+import com.example.dacs3.data.model.Workspace
 import com.example.dacs3.data.session.SessionManager
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -66,6 +68,7 @@ object NetworkModule {
     fun provideGson(): Gson {
         return GsonBuilder()
             .setLenient()
+            .registerTypeAdapter(Workspace::class.java, WorkspaceDeserializer())
             .create()
     }
 

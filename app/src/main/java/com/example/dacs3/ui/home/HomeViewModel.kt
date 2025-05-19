@@ -9,6 +9,8 @@ import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.data.repository.WorkspaceRepository
 import com.example.dacs3.data.repository.ChannelRepository
 import com.example.dacs3.data.repository.NotificationRepository
+import com.example.dacs3.data.repository.impl.ChannelRepositoryImpl
+import com.example.dacs3.data.repository.impl.WorkspaceRepositoryImpl
 import com.example.dacs3.data.user.UserManager
 import com.example.dacs3.util.WorkspacePreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -46,8 +48,8 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val workspaceRepository: WorkspaceRepository,
-    private val channelRepository: ChannelRepository,
+    private val workspaceRepository: WorkspaceRepositoryImpl,
+    private val channelRepository: ChannelRepositoryImpl,
     private val notificationRepository: NotificationRepository,
     private val userManager: UserManager,
     private val workspacePreferences: WorkspacePreferences
@@ -148,6 +150,11 @@ class HomeViewModel @Inject constructor(
                 workspacePreferences.saveSelectedWorkspaceId(workspaceId)
                 loadChannels() // Tải lại channels cho workspace mới
             }
+        }
+    }
+    fun createWorkspace (name: String, description: String)  {
+        viewModelScope.launch {
+                val response = workspaceRepository.createWorkspace(name, description)
         }
     }
 }

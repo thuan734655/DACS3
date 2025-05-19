@@ -10,7 +10,8 @@ interface ChannelRepository {
     // lấy toàn bộ (danh sách có paging)
     suspend fun getAllChannelsFromApi(
         page: Int? = null,
-        limit: Int? = null
+        limit: Int? = null,
+        workspaceId: String
     ): ApiResponse<ChannelList>
 
     suspend fun getChannelsByWorkspaceFromApi(

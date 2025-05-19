@@ -17,9 +17,9 @@ class ChannelRepositoryImpl @Inject constructor(
     private val channelApi: ChannelApi
 ) : ChannelRepository {
 
-    override suspend fun getAllChannelsFromApi(page: Int?, limit: Int?): ApiResponse<ChannelList> {
+    override suspend fun getAllChannelsFromApi(page: Int?, limit: Int?, workspaceId: String): ApiResponse<ChannelList> {
         return try {
-            val response = channelApi.getAllChannels(page, limit)
+            val response = channelApi.getAllChannels(page, limit, workspaceId)
             ApiResponse(
                 success = response.success,
                 data = ChannelList(response.count, response.total, response.data),

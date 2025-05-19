@@ -54,5 +54,9 @@ fun HomeNavScreen(
             // Điều hướng đến màn hình hồ sơ
             navController.navigate(Screen.Profile.route)
         }
+        ,
+        oncreateWorkspaceClick = { name, description ->
+            viewModel.createWorkspace(name, description)
+        }
     )
 }
