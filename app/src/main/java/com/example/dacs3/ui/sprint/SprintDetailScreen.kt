@@ -1,5 +1,6 @@
 package com.example.dacs3.ui.sprint
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,13 +13,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.dacs3.data.model.Task
+import com.example.dacs3.navigation.Screen
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -26,8 +31,9 @@ import java.util.*
 @Composable
 fun SprintDetailScreen(
     sprintId: String,
+    viewModel: SprintViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    viewModel: SprintViewModel = hiltViewModel()
+    navController: NavController
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -40,9 +46,20 @@ fun SprintDetailScreen(
     // Format date
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     
+    val context = LocalContext.current
+    
+    // Load sprint details when the screen is first displayed
     LaunchedEffect(sprintId) {
-        // Load sprint information and its tasks
         viewModel.loadSprintDetail(sprintId)
+    }
+    
+    // Handle deletion success
+    LaunchedEffect(uiState.isDeletionSuccessful) {
+        if (uiState.isDeletionSuccessful) {
+            Toast.makeText(context, "Sprint deleted successfully", Toast.LENGTH_SHORT).show()
+            viewModel.resetDeletionState()
+            onNavigateBack()
+        }
     }
     
     Scaffold(
@@ -55,11 +72,27 @@ fun SprintDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showEditDialog = true }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    // Edit button
+                    IconButton(onClick = {
+                        sprintId?.let { id ->
+                            navController.navigate(Screen.EditSprint.createRoute(id))
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Sprint"
+                        )
                     }
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    
+                    // Delete button
+                    IconButton(onClick = {
+                        showDeleteDialog = true
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Sprint",
+                            tint = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             )
@@ -277,7 +310,7 @@ fun SprintDetailScreen(
                 }
             }
             
-            // Display error if any
+            // Error message
             uiState.error?.let { error ->
                 Snackbar(
                     modifier = Modifier
@@ -286,6 +319,33 @@ fun SprintDetailScreen(
                 ) {
                     Text(error)
                 }
+            }
+            
+            // Delete confirmation dialog
+            if (showDeleteDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteDialog = false },
+                    title = { Text("Delete Sprint") },
+                    text = { Text("Are you sure you want to delete this sprint? This action cannot be undone.") },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                sprintId?.let { id ->
+                                    viewModel.deleteSprint(id)
+                                }
+                                showDeleteDialog = false
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text("Delete")
+                        }
+                    },
+                    dismissButton = {
+                        OutlinedButton(onClick = { showDeleteDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
             }
         }
     }

@@ -41,19 +41,13 @@ fun SprintScreen(
     onCreateSprint: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val context = androidx.compose.ui.platform.LocalContext.current
-    
-    // Lấy WorkspacePreferences thông qua context
-    val workspacePreferencesObject = remember { 
-        com.example.dacs3.util.WorkspacePreferences(context)
-    }
 
-    // Sử dụng workspaceId từ WorkspacePreferences hoặc từ tham số được truyền vào
+    // Sử dụng workspaceId từ tham số được truyền vào ban đầu
     val selectedWorkspaceId = remember { mutableStateOf(workspaceId) }
     
-    // Kiểm tra workspaceId mới từ WorkspacePreferences
+    // Kiểm tra workspaceId mới từ WorkspacePreferences thông qua ViewModel
     LaunchedEffect(Unit) {
-        val savedWorkspaceId = workspacePreferencesObject.getSelectedWorkspaceId()
+        val savedWorkspaceId = viewModel.getSavedWorkspaceId()
         android.util.Log.d("SprintScreen", "Loaded workspaceId from preferences: $savedWorkspaceId")
         if (savedWorkspaceId.isNotEmpty()) {
             selectedWorkspaceId.value = savedWorkspaceId

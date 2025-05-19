@@ -51,6 +51,9 @@ sealed class Screen(val route: String) {
     object SprintDetail : Screen("sprint_detail/{sprintId}") {
         fun createRoute(sprintId: String) = "sprint_detail/$sprintId"
     }
+    object EditSprint : Screen("edit_sprint/{sprintId}") {
+        fun createRoute(sprintId: String) = "edit_sprint/$sprintId"
+    }
     object CreateSprint : Screen("create_sprint/{workspaceId}") {
         fun createRoute(workspaceId: String) = "create_sprint/$workspaceId"
     }

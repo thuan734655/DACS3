@@ -23,7 +23,10 @@ data class SprintUiState(
     val expandedSprintIds: Set<String> = emptySet(),
     val error: String? = null,
     val workspaceId: String = "",
-    val isCreationSuccessful: Boolean = false
+    val isCreationSuccessful: Boolean = false,
+    val isUpdateSuccessful: Boolean = false,
+    val isDeletionSuccessful: Boolean = false,
+    val activeSprintCount: Int = 0
 )
 
 @HiltViewModel
@@ -203,9 +206,19 @@ class SprintViewModel @Inject constructor(
         _uiState.update { it.copy(isCreationSuccessful = false) }
     }
     
+    fun resetUpdateState() {
+        _uiState.update { it.copy(isUpdateSuccessful = false) }
+    }
+    
+    fun resetDeletionState() {
+        _uiState.update { it.copy(isDeletionSuccessful = false) }
+    }
+    
     fun updateSprintStatus(sprintId: String, status: String) {
         viewModelScope.launch {
             try {
+                _uiState.update { it.copy(isLoading = true, error = null) }
+                
                 val response = sprintRepository.updateSprint(
                     id = sprintId,
                     status = status,
@@ -223,12 +236,121 @@ class SprintViewModel @Inject constructor(
                     }
                     
                     _uiState.update { 
-                        it.copy(sprints = updatedSprints)
+                        it.copy(
+                            sprints = updatedSprints,
+                            isLoading = false,
+                            isUpdateSuccessful = true
+                        )
+                    }
+                } else {
+                    _uiState.update { 
+                        it.copy(
+                            error = "Không thể cập nhật trạng thái sprint",
+                            isLoading = false
+                        )
                     }
                 }
             } catch (e: Exception) {
                 _uiState.update { 
-                    it.copy(error = "Lỗi cập nhật trạng thái sprint: ${e.message}")
+                    it.copy(
+                        error = "Lỗi cập nhật trạng thái sprint: ${e.message}",
+                        isLoading = false
+                    )
+                }
+            }
+        }
+    }
+
+    fun deleteSprint(sprintId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            
+            try {
+                val success = sprintRepository.deleteSprintFromApi(sprintId)
+                
+                if (success) {
+                    // Xóa sprint khỏi danh sách
+                    val updatedSprints = _uiState.value.sprints.filter { it._id != sprintId }
+                    // Xóa tasks của sprint
+                    val updatedSprintTasks = _uiState.value.sprintTasks.toMutableMap()
+                    updatedSprintTasks.remove(sprintId)
+                    
+                    _uiState.update { 
+                        it.copy(
+                            sprints = updatedSprints,
+                            sprintTasks = updatedSprintTasks,
+                            isLoading = false,
+                            isDeletionSuccessful = true
+                        )
+                    }
+                } else {
+                    _uiState.update { 
+                        it.copy(
+                            error = "Không thể xóa sprint",
+                            isLoading = false
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { 
+                    it.copy(
+                        error = "Lỗi xóa sprint: ${e.message}",
+                        isLoading = false
+                    )
+                }
+            }
+        }
+    }
+
+    fun updateSprint(
+        id: String,
+        name: String,
+        description: String,
+        startDate: Date,
+        endDate: Date,
+        goal: String
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+                
+            try {
+                val response = sprintRepository.updateSprint(
+                    id = id,
+                    name = name,
+                    description = description,
+                    startDate = startDate,
+                    endDate = endDate,
+                    goal = goal,
+                    status = null
+                )
+                        
+                if (response.success && response.data != null) {
+                    // Cập nhật sprint trong danh sách
+                    val updatedSprints = _uiState.value.sprints.map { 
+                        if (it._id == id) response.data else it 
+                    }
+                            
+                    _uiState.update { 
+                        it.copy(
+                            sprints = updatedSprints,
+                            isLoading = false,
+                            isUpdateSuccessful = true
+                        )
+                    }
+                } else {
+                    _uiState.update { 
+                        it.copy(
+                            error = "Không thể cập nhật sprint",
+                            isLoading = false
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { 
+                    it.copy(
+                        error = "Lỗi: ${e.message}",
+                        isLoading = false
+                    )
                 }
             }
         }
@@ -237,22 +359,22 @@ class SprintViewModel @Inject constructor(
     fun loadSprintDetail(sprintId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            
+                
             try {
                 // Tải thông tin chi tiết của sprint
                 val response = sprintRepository.getSprintByIdFromApi(sprintId)
-                
+                        
                 if (response.success && response.data != null) {
                     // Cập nhật sprint trong danh sách nếu đã có
                     val updatedSprints = _uiState.value.sprints.toMutableList()
                     val existingIndex = updatedSprints.indexOfFirst { it._id == sprintId }
-                    
+                        
                     if (existingIndex >= 0) {
                         updatedSprints[existingIndex] = response.data
                     } else {
                         updatedSprints.add(response.data)
                     }
-                    
+                        
                     _uiState.update { 
                         it.copy(
                             sprints = updatedSprints,
@@ -281,37 +403,58 @@ class SprintViewModel @Inject constructor(
         }
     }
 
-    fun deleteSprint(sprintId: String) {
+// Hàm để thêm task vào sprint
+    fun addTaskToSprint(sprintId: String, taskId: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            
             try {
-                val success = sprintRepository.deleteSprintFromApi(sprintId)  // Sử dụng phương thức đã tồn tại
-                
-                if (success) {
-                    // Xóa sprint khỏi danh sách
-                    val updatedSprints = _uiState.value.sprints.filter { it._id != sprintId }
-                    
+                val response = sprintRepository.addItemsToSprint(sprintId, listOf(taskId))
+                if (response.success && response.data != null) {
+                    // Cập nhật sprint
+                    val updatedSprints = _uiState.value.sprints.map { 
+                        if (it._id == sprintId) response.data else it 
+                    }
+                            
+                    _uiState.update { 
+                        it.copy(sprints = updatedSprints)
+                    }
+                            
+                    // Tải lại tasks
+                    loadTasksForSprint(sprintId)
+                }
+            } catch (e: Exception) {
+                _uiState.update { 
+                    it.copy(error = "Lỗi thêm task vào sprint: ${e.message}")
+                }
+            }
+        }
+    }
+
+    // Hàm để xóa task khỏi sprint
+    fun removeTaskFromSprint(sprintId: String, taskId: String) {
+        viewModelScope.launch {
+            try {
+                val response = sprintRepository.removeItemsFromSprint(sprintId, listOf(taskId))
+                if (response.success && response.data != null) {
+                    // Cập nhật sprint
+                    val updatedSprints = _uiState.value.sprints.map { 
+                        if (it._id == sprintId) response.data else it 
+                    }
+                            
+                    // Cập nhật danh sách tasks
+                    val updatedTasks = _uiState.value.sprintTasks[sprintId]?.filter { it._id != taskId } ?: emptyList()
+                    val updatedSprintTasks = _uiState.value.sprintTasks.toMutableMap()
+                    updatedSprintTasks[sprintId] = updatedTasks
+                            
                     _uiState.update { 
                         it.copy(
                             sprints = updatedSprints,
-                            isLoading = false
-                        )
-                    }
-                } else {
-                    _uiState.update { 
-                        it.copy(
-                            error = "Không thể xóa sprint",
-                            isLoading = false
+                            sprintTasks = updatedSprintTasks
                         )
                     }
                 }
             } catch (e: Exception) {
                 _uiState.update { 
-                    it.copy(
-                        error = "Lỗi: ${e.message}",
-                        isLoading = false
-                    )
+                    it.copy(error = "Lỗi xóa task khỏi sprint: ${e.message}")
                 }
             }
         }

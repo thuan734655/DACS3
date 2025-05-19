@@ -62,23 +62,37 @@ interface SprintRepository : BaseRepository<SprintEntity, String> {
     ): SprintResponse
     
     /**
-     * Update a sprint on the remote API
+     * Update a sprint
      */
     suspend fun updateSprint(
         id: String,
-        name: String?,
-        description: String?,
-        startDate: Date?,
-        endDate: Date?,
-        goal: String?,
-        status: String?
+        name: String? = null,
+        description: String? = null,
+        startDate: Date? = null,
+        endDate: Date? = null,
+        goal: String? = null,
+        status: String? = null
     ): SprintResponse
+    
+    /**
+     * Add items (tasks) to a sprint
+     */
+    suspend fun addItemsToSprint(sprintId: String, itemIds: List<String>): SprintResponse
+    
+    /**
+     * Remove items (tasks) from a sprint
+     */
+    suspend fun removeItemsFromSprint(sprintId: String, itemIds: List<String>): SprintResponse
+    
+    /**
+     * Get active sprints for the current date
+     */
+    suspend fun getActiveSprintsFromApi(workspaceId: String): SprintListResponse
     
     /**
      * Delete a sprint on the remote API
      */
     suspend fun deleteSprintFromApi(id: String): Boolean
-    
     /**
      * Add items (tasks) to a sprint
      */

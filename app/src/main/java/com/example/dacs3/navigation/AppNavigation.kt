@@ -34,6 +34,7 @@ import com.example.dacs3.ui.onboarding.OnboardingScreen
 import com.example.dacs3.ui.profile.ProfileScreen
 import com.example.dacs3.ui.report.DailyReportScreen
 import com.example.dacs3.ui.sprint.CreateSprintScreen
+import com.example.dacs3.ui.sprint.EditSprintScreen
 import com.example.dacs3.ui.sprint.SprintScreen
 import com.example.dacs3.ui.welcome.WelcomeScreen
 import com.example.dacs3.ui.workspace.WorkspaceScreen
@@ -166,13 +167,27 @@ fun AppNavigation(
         
         // Add Sprint detail screen route
         composable(
-            route = "sprint_detail/{sprintId}",
+            route = Screen.SprintDetail.route,
             arguments = listOf(navArgument("sprintId") { type = NavType.StringType })
         ) { backStackEntry ->
             val sprintId = backStackEntry.arguments?.getString("sprintId") ?: ""
             
             // Use the real SprintDetailScreen component
             com.example.dacs3.ui.sprint.SprintDetailScreen(
+                sprintId = sprintId,
+                onNavigateBack = { navController.popBackStack() },
+                navController = navController
+            )
+        }
+        
+        // Add EditSprint screen route
+        composable(
+            route = Screen.EditSprint.route,
+            arguments = listOf(navArgument("sprintId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sprintId = backStackEntry.arguments?.getString("sprintId") ?: ""
+            
+            EditSprintScreen(
                 sprintId = sprintId,
                 onNavigateBack = { navController.popBackStack() }
             )
@@ -191,6 +206,19 @@ fun AppNavigation(
                 onSprintCreated = {
                     navController.popBackStack()
                 }
+            )
+        }
+        
+        // Add EditSprint screen route
+        composable(
+            route = Screen.EditSprint.route,
+            arguments = listOf(navArgument("sprintId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sprintId = backStackEntry.arguments?.getString("sprintId") ?: ""
+            
+            EditSprintScreen(
+                sprintId = sprintId,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
         

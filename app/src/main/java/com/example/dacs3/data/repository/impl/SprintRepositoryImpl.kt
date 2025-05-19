@@ -178,9 +178,7 @@ class SprintRepositoryImpl @Inject constructor(
     
     override suspend fun addItems(sprintId: String, tasks: List<String>?): SprintResponse {
         return try {
-            val request = AddItemsRequest(tasks)
-            val response = sprintApi.addItems(sprintId, request)
-
+            val response = sprintApi.addItems(sprintId, AddItemsRequest(tasks))
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error adding items to sprint", e)
@@ -191,9 +189,7 @@ class SprintRepositoryImpl @Inject constructor(
     
     override suspend fun removeItems(sprintId: String, tasks: List<String>?): SprintResponse {
         return try {
-            val request = RemoveItemsRequest(tasks)
-            val response = sprintApi.removeItems(sprintId, request)
-
+            val response = sprintApi.removeItems(sprintId, RemoveItemsRequest(tasks))
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error removing items from sprint", e)
@@ -201,4 +197,33 @@ class SprintRepositoryImpl @Inject constructor(
             SprintResponse(false, null)
         }
     }
-} 
+    
+    override suspend fun addItemsToSprint(sprintId: String, itemIds: List<String>): SprintResponse {
+        return addItems(sprintId, itemIds)
+    }
+    
+    override suspend fun removeItemsFromSprint(sprintId: String, itemIds: List<String>): SprintResponse {
+        return removeItems(sprintId, itemIds)
+    }
+    
+    override suspend fun getActiveSprintsFromApi(workspaceId: String): SprintListResponse {
+        return try {
+            val currentDate = Date()
+            val response = sprintApi.getAllSprints(workspaceId = workspaceId, status = "In Progress")
+            
+            if (response.success) {
+                // Lọc các sprints có thời gian hoạt động bao gồm ngày hiện tại
+                val activeSprints = response.data.filter { sprint ->
+                    sprint.start_date.before(currentDate) && sprint.end_date.after(currentDate) && sprint.status == "In Progress"
+                }
+                SprintListResponse(true, activeSprints.size, activeSprints.size, activeSprints)
+            } else {
+                response
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching active sprints from API", e)
+            // Return empty response with success=false when API fails
+            SprintListResponse(false, 0, 0, emptyList())
+        }
+    }
+}

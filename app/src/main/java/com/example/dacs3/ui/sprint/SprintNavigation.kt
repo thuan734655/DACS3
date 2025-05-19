@@ -39,7 +39,7 @@ fun NavGraphBuilder.sprintScreen(
             }
         )
     }
-    
+
     composable(
         route = "create_sprint/{workspaceId}",
         arguments = listOf(
@@ -53,7 +53,7 @@ fun NavGraphBuilder.sprintScreen(
             onSprintCreated = { navController.popBackStack() }
         )
     }
-    
+
     composable(
         route = "sprint_detail/{sprintId}",
         arguments = listOf(
@@ -63,7 +63,8 @@ fun NavGraphBuilder.sprintScreen(
         val sprintId = backStackEntry.arguments?.getString("sprintId") ?: ""
         SprintDetailScreen(
             sprintId = sprintId,
-            onNavigateBack = { navController.popBackStack() }
+            onNavigateBack = { navController.popBackStack() },
+            navController = navController
         )
     }
 }
