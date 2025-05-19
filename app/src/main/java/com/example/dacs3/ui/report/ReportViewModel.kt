@@ -79,7 +79,7 @@ class ReportViewModel @Inject constructor(
                             try {
                                 val workspaceResponse = workspaceRepository.getWorkspaceByIdFromApi(task.workspace_id)
                                 if (workspaceResponse.success && workspaceResponse.data != null) {
-                                    workspaceNames[task.workspace_id] = workspaceResponse.data.name
+                                    workspaceNames[task.workspace_id] = workspaceResponse.data.workspace.name
                                 }
                             } catch (e: Exception) {
                                 // Ignore workspace loading errors

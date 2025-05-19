@@ -12,6 +12,7 @@ import com.example.dacs3.data.repository.NotificationRepository
 import com.example.dacs3.data.repository.impl.ChannelRepositoryImpl
 import com.example.dacs3.data.repository.impl.WorkspaceRepositoryImpl
 import com.example.dacs3.data.user.UserManager
+
 import com.example.dacs3.util.WorkspacePreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -87,12 +88,12 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val workspacesResponse = workspaceRepository.getAllWorkspacesFromApi()
             if (workspacesResponse.success && !workspacesResponse.data.isNullOrEmpty()) {
-                _uiState.update { 
+                _uiState.update {
                     it.copy(
                         allWorkspaces = workspacesResponse.data,
                     )
                 }
-                
+
                 // Tìm workspace đã lưu trong preferences hoặc dùng workspace đầu tiên
                 val savedWorkspaceId = workspacePreferences.getSelectedWorkspaceId()
                 if (savedWorkspaceId.isNotEmpty()) {
@@ -115,12 +116,14 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val workspaceId = _uiState.value.workspace._id
             if (workspaceId.isNotEmpty()) {
-                val response = channelRepository.getChannelsByWorkspaceFromApi(workspaceId = workspaceId)
+                val response =
+                    channelRepository.getChannelsByWorkspaceFromApi(workspaceId = workspaceId)
                 if (response.success) {
-                    _uiState.update { 
+                    _uiState.update {
                         it.copy(
                             channels = response.data ?: emptyList(),
-                            unreadChannels = (response.data ?: emptyList()).filter { channel -> /* logic xác định unread */ false }
+                            unreadChannels = (response.data
+                                ?: emptyList()).filter { channel -> /* logic xác định unread */ false }
                         )
                     }
                 }
@@ -139,24 +142,28 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Chọn workspace và lưu selection vào preferences
-     */
     fun selectWorkspace(workspaceId: String) {
         viewModelScope.launch {
             val workspace = _uiState.value.allWorkspaces.find { it._id == workspaceId }
             if (workspace != null) {
                 _uiState.update { it.copy(workspace = workspace) }
                 workspacePreferences.saveSelectedWorkspaceId(workspaceId)
-                loadChannels() // Tải lại channels cho workspace mới
+                loadChannels()
             }
         }
     }
+
     fun createChannel(name: String, description: String, isPrivate: Boolean) {
         viewModelScope.launch {
             val workspaceId = workspacePreferences.getSelectedWorkspaceId()
             val createdBy = userManager.getCurrentUserId() ?: ""
-            val response = channelRepository.createChannel(name, description,workspaceId, createdBy,isPrivate)
+            val response = channelRepository.createChannel(
+                name,
+                description,
+                workspaceId,
+                createdBy,
+                isPrivate
+            )
             if (response.success && response.data != null) {
                 _uiState.update {
                     it.copy(
@@ -167,16 +174,24 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
-    fun createWorkspace (name: String, description: String)  {
+
+    fun createWorkspace(name: String, description: String) {
         viewModelScope.launch {
-                val response = workspaceRepository.createWorkspace(name, description)
-                if (response.success && response.data != null) {
-                    _uiState.update {
-                        it.copy(
-                            allWorkspaces = it.allWorkspaces + response.data
-                        )
-                    }
+            val response = workspaceRepository.createWorkspace(name, description)
+            if (response.success && response.data != null) {
+                _uiState.update {
+                    it.copy(
+                        allWorkspaces = it.allWorkspaces + response.data.workspace
+                    )
                 }
+            }
+        }
+    }
+
+    fun loadWorkspaceDetail(workspaceId: String) {
+        viewModelScope.launch {
+            val response = workspaceRepository.getWorkspaceByIdFromApi(workspaceId)
+
         }
     }
 }

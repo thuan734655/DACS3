@@ -3,10 +3,14 @@ package com.example.dacs3.ui.workspace
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dacs3.data.model.Workspace
+import com.example.dacs3.data.model.WorkspaceDetailData
 import com.example.dacs3.data.model.WorkspaceResponse
 import com.example.dacs3.data.repository.WorkspaceRepository
+import com.example.dacs3.data.repository.impl.WorkspaceRepositoryImpl
 import com.example.dacs3.data.session.SessionManager
 import com.example.dacs3.data.user.UserManager
+import com.example.dacs3.util.WorkspacePreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,17 +21,18 @@ import javax.inject.Inject
 
 data class WorkspaceUiState(
     val isLoading: Boolean = false,
-    val workspaces: List<com.example.dacs3.data.model.Workspace> = emptyList(),
+    val workspaces: List<Workspace> = emptyList(),
     val error: String? = null,
     val isCreationSuccessful: Boolean = false,
-    val selectedWorkspace: com.example.dacs3.data.model.Workspace? = null
+    val selectedWorkspace: Workspace? = null,
+    val workspaceDetail: WorkspaceDetailData? = null
 )
 
 @HiltViewModel
 class WorkspaceViewModel @Inject constructor(
-    private val workspaceRepository: WorkspaceRepository,
+    private val workspaceRepository: WorkspaceRepositoryImpl,
     private val sessionManager: SessionManager,
-    private val userManager: UserManager
+    private val workspacePreferences: WorkspacePreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WorkspaceUiState())
@@ -43,13 +48,16 @@ class WorkspaceViewModel @Inject constructor(
             
             try {
                 // First try to get from API
-                val response = workspaceRepository.getAllWorkspacesFromApi()
+                val workspace_id = workspacePreferences.getSelectedWorkspaceId()
+                val response = workspaceRepository.getWorkspaceByIdFromApi(workspace_id)
                 
-                if (response.success) {
+                if (response.success && response.data != null) {
+                    // Extract workspaces list from the response
+                    val workspacesList = response.data.workspace
                     _uiState.update { 
                         it.copy(
                             isLoading = false,
-                            workspaces = response.data ?: emptyList()
+                            workspaces = listOf(workspacesList)
                         )
                     }
                 }
@@ -73,15 +81,17 @@ class WorkspaceViewModel @Inject constructor(
                 
                 if (response.success && response.data != null) {
                     // Update UI state with the new workspace
+                    val newWorkspace = response.data.workspace
                     val updatedWorkspaces = _uiState.value.workspaces.toMutableList()
-                    updatedWorkspaces.add(response.data)
+                    updatedWorkspaces.add(newWorkspace)
                     
                     _uiState.update { 
                         it.copy(
                             isLoading = false,
                             workspaces = updatedWorkspaces,
                             isCreationSuccessful = true,
-                            selectedWorkspace = response.data
+                            selectedWorkspace = newWorkspace,
+                            workspaceDetail = response.data
                         )
                     }
                     
@@ -106,7 +116,7 @@ class WorkspaceViewModel @Inject constructor(
         }
     }
 
-    fun selectWorkspace(workspace: com.example.dacs3.data.model.Workspace) {
+    fun selectWorkspace(workspace: Workspace) {
         _uiState.update { it.copy(selectedWorkspace = workspace) }
     }
     
@@ -129,7 +139,8 @@ class WorkspaceViewModel @Inject constructor(
                     _uiState.update { 
                         it.copy(
                             isLoading = false,
-                            selectedWorkspace = response.data
+                            selectedWorkspace = response.data.workspace,
+                            workspaceDetail = response.data
                         )
                     }
                 } else {

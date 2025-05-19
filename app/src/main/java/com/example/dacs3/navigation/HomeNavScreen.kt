@@ -7,6 +7,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.dacs3.ui.home.HomeScreen
 import com.example.dacs3.ui.home.HomeViewModel
+import com.example.dacs3.ui.workspace.navigateToWorkspaceDetail
 
 @Composable
 fun HomeNavScreen(
@@ -31,8 +32,10 @@ fun HomeNavScreen(
             navController.navigate("create_channel/${uiState.workspace._id}")
         },
         onWorkspaceSelected = { workspaceId ->
-            // Xử lý khi chọn workspace
             viewModel.selectWorkspace(workspaceId)
+        },
+        onWorkspaceDetailClick = { workspaceId ->
+            navController.navigateToWorkspaceDetail(workspaceId)
         },
         onNotificationClick = {
             // Điều hướng đến màn hình thông báo
@@ -52,8 +55,7 @@ fun HomeNavScreen(
         onProfileClick = {
             // Điều hướng đến màn hình hồ sơ
             navController.navigate(Screen.Profile.route)
-        }
-        ,
+        },
         oncreateWorkspaceClick = { name, description ->
             viewModel.createWorkspace(name, description)
         },

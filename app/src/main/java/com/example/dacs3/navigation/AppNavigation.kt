@@ -34,6 +34,8 @@ import com.example.dacs3.ui.report.DailyReportScreen
 import com.example.dacs3.ui.welcome.WelcomeScreen
 import com.example.dacs3.ui.workspace.WorkspaceScreen
 import com.example.dacs3.ui.workspace.WorkspaceViewModel
+import com.example.dacs3.ui.workspace.WorkspaceDetailScreen
+import com.example.dacs3.ui.workspace.workspaceDetailScreen
 
 @Composable
 fun AppNavigation(
@@ -99,32 +101,7 @@ fun AppNavigation(
         }
         
         // Add workspace detail screen route
-        composable(
-            route = Screen.WorkspaceDetail.route,
-            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
-            
-            // Get workspace name
-            val workspaceName = remember { mutableStateOf("Workspace") }
-            val workspaceViewModel: WorkspaceViewModel = hiltViewModel()
-            
-            LaunchedEffect(workspaceId) {
-                workspaceViewModel.getWorkspaceById(workspaceId)
-            }
-            
-            val workspaceState by workspaceViewModel.uiState.collectAsState()
-            
-            // Update workspace name when loaded
-            LaunchedEffect(workspaceState.selectedWorkspace) {
-                workspaceState.selectedWorkspace?.let {
-                    workspaceName.value = it.name
-                }
-            }
-            
-            // Workspace Detail Screen implementation
-
-        }
+        workspaceDetailScreen(navController)
         
         // Add Epic list screen route
         composable(

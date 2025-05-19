@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
@@ -27,8 +28,8 @@ import com.example.dacs3.data.model.Workspace
 import com.example.dacs3.data.model.User
 import com.example.dacs3.ui.channels.CreateChannelDialog
 import com.example.dacs3.ui.components.BottomNavigationBar
-// Add this import
 import com.example.dacs3.ui.workspace.CreateWorkspaceDialog
+import com.example.dacs3.ui.workspace.navigateToWorkspaceDetail
 import kotlinx.coroutines.launch
 
 @Composable
@@ -43,6 +44,7 @@ fun HomeScreen(
     onAddChannel: () -> Unit,
     onclickCreateChannel: (name:String, description:String, isPrivate:Boolean) -> Unit,
     onWorkspaceSelected: (String) -> Unit,
+    onWorkspaceDetailClick: (String) -> Unit,
     onNotificationClick: () -> Unit,
     onHomeClick: () -> Unit,
     onMessageClick: () -> Unit,
@@ -73,6 +75,12 @@ fun HomeScreen(
                 },
                 onCreateWorkspace = { name, description ->
                     oncreateWorkspaceClick(name, description)
+                    scope.launch {
+                        drawerState.close()
+                    }
+                },
+                onWorkspaceDetailClick = { workspaceId ->
+                    onWorkspaceDetailClick(workspaceId)
                     scope.launch {
                         drawerState.close()
                     }
@@ -332,7 +340,7 @@ fun HomeScreen(
                     onProfileClick = onProfileClick,
                     modifier = Modifier
                         .constrainAs(bottomNav) {
-                            bottom.linkTo(parent.bottom)
+                            bottom.linkTo(parent.bottom, margin = -50.dp)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
                             width = androidx.constraintlayout.compose.Dimension.fillToConstraints
@@ -358,7 +366,8 @@ fun WorkspaceSidebar(
     allWorkspaces: List<Workspace>,
     onWorkspaceSelected: (String) -> Unit,
     onClose: () -> Unit,
-    onCreateWorkspace: (name: String, description: String) -> Unit
+    onCreateWorkspace: (name: String, description: String) -> Unit,
+    onWorkspaceDetailClick: (String) -> Unit = {}
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
 
@@ -397,7 +406,8 @@ fun WorkspaceSidebar(
                     WorkspaceItem(
                         workspace = workspace,
                         isSelected = workspace._id == currentWorkspace?._id,
-                        onClick = { onWorkspaceSelected(workspace._id) }
+                        onClick = { onWorkspaceSelected(workspace._id) },
+                        onDetailClick = { onWorkspaceDetailClick(workspace._id) }
                     )
                 }
             }
@@ -430,7 +440,8 @@ fun WorkspaceSidebar(
 fun WorkspaceItem(
     workspace: Workspace,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDetailClick: () -> Unit
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -458,7 +469,7 @@ fun WorkspaceItem(
         Spacer(modifier = Modifier.width(12.dp))
         
         // Workspace name
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = workspace.name,
                 style = MaterialTheme.typography.bodyLarge,
@@ -474,6 +485,18 @@ fun WorkspaceItem(
                     )
                 }
             }
+        }
+        
+        // Arrow icon to navigate to workspace detail
+        IconButton(
+            onClick = onDetailClick,
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowForward,
+                contentDescription = "Go to workspace detail",
+                tint = Color(0xFF673AB7)
+            )
         }
     }
 }

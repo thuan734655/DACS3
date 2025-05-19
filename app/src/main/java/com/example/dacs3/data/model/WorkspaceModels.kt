@@ -3,6 +3,7 @@ package com.example.dacs3.data.model
 import java.util.Date
 import com.example.dacs3.data.model.MessageResponse
 import com.example.dacs3.data.model.AddMemberRequest
+import com.example.dacs3.data.model.Notification
 
 // Models
 data class Workspace(
@@ -39,9 +40,26 @@ data class UpdateMemberRoleRequest(
 )
 
 // Responses
+data class WorkspaceDetailData(
+    val workspace: Workspace,
+    val notifications: List<Notification>?,
+    val counts: WorkspaceCounts?
+)
+
+data class WorkspaceCounts(
+    val epics: Int,
+    val tasks: Int,
+    val sprints: Int,
+    val bugs: Int,
+    val members: Int
+)
+
+// Using Notification class from NotificationModels.kt
+
+// Responses
 data class WorkspaceResponse(
     val success: Boolean,
-    val data: Workspace?
+    val data: WorkspaceDetailData?
 )
 
 data class WorkspaceListResponse(
