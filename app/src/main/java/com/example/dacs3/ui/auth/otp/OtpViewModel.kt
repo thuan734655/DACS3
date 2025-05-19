@@ -5,6 +5,7 @@ import android.os.CountDownTimer
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dacs3.data.model.LoginRequest
 import com.example.dacs3.data.model.OtpState
 import com.example.dacs3.data.repository.AuthRepository
 import com.example.dacs3.data.repository.OtpRepository
@@ -37,22 +38,29 @@ class OtpViewModel @Inject constructor(
     // Track last resend time to enforce cooldown
     private var lastResendTime: Long = 0
     
-    fun setEmail(email: String, action: String? = null) {
+    fun setEmail(email: String, action: String? = null, password: String? = null) {
         if (email.isBlank()) return
         
-        // Update email state
+        Log.d("OtpViewModel", "Setting email: $email, action: $action, password provided: ${!password.isNullOrBlank()}")
+        
+        // Update email state with the provided password for auto-login after verification
         _otpState.update { 
             it.copy(
                 email = email,
+                password = password ?: "",
                 remainingSeconds = 60,
-                canResend = false
+                canResend = false,
+                isSuccess = false,
+                isAutoLoginSuccessful = false
             )
         }
         
         // Set action if provided
-        if (action == "2fa" || action == "reset_password") {
+        if (action == "2fa" || action == "reset_password" || action == "verify_email") {
             setAction(action)
+            Log.d("OtpViewModel", "Action set to: $action")
         }
+        
         // Start cooldown timer on initial load to prevent immediate resend
         lastResendTime = System.currentTimeMillis()
         startCountdown()
@@ -130,14 +138,20 @@ class OtpViewModel @Inject constructor(
     // Function to call verifyEmail after OTP has been successfully verified
     private suspend fun verifyEmailAfterOtpSuccess(email: String, otp: String) {
         try {
+            Log.d("OtpViewModel", "Verifying email after OTP success for: $email")
             val response = authRepository.verifyEmail(email, otp)
+            Log.d("OtpViewModel", "Email verification response: $response")
+            
             if (response.success) {
+                // Instead of auto-login, just mark email as verified and redirect to login
+                Log.d("OtpViewModel", "Email verified successfully, will redirect to login screen")
+                
                 _otpState.update { 
                     it.copy(
                         isLoading = false,
                         isSuccess = true,
                         errorMessage = "",
-                        action = "email_verified"
+                        action = "redirect_to_login"
                     )
                 }
             } else {
@@ -347,8 +361,90 @@ class OtpViewModel @Inject constructor(
         }
     }
     
+    // Function to perform automatic login after successful OTP verification
+    private suspend fun performAutoLogin(email: String, password: String) {
+        try {
+            // Log the auto-login attempt for debugging
+            Log.d("OtpViewModel", "Attempting auto-login for $email with password length: ${password.length}")
+
+            // Update state to show we're attempting login
+            _otpState.update { 
+                it.copy(isLoading = true, errorMessage = "Logging in automatically...")
+            }
+            
+            // Get device ID for login request
+            val deviceId = deviceUtils.getDeviceId() ?: ""
+            Log.d("OtpViewModel", "Device ID for login: $deviceId")
+            
+            val loginRequest = LoginRequest(
+                accountName = email,
+                password = password,
+                type = "E",  // "E" for email login type
+                deviceID = deviceId
+            )
+            
+            Log.d("OtpViewModel", "Sending login request with email: $email")
+            val loginResponse = authRepository.login(loginRequest)
+            
+            // Log detailed response information for debugging
+            Log.d("OtpViewModel", "Login response success: ${loginResponse.success}")
+            Log.d("OtpViewModel", "Login response message: ${loginResponse.message}")
+            Log.d("OtpViewModel", "Login response token: ${loginResponse.token?.take(10)}...")
+            Log.d("OtpViewModel", "Login response account: ${loginResponse.account?.username}")
+            
+            if (loginResponse.success) {
+                // Token is saved in AuthRepository.login method
+                // Let's double check that it's saved correctly
+                loginResponse.token?.let { token ->
+                    Log.d("OtpViewModel", "Login successful, token received and saved")
+                    
+                    // No need to save token here, it's already saved in AuthRepository.login
+                    // Just log to confirm token was received
+                    if (token.isNotBlank()) {
+                        Log.d("OtpViewModel", "Token is valid and non-empty")
+                    } else {
+                        Log.e("OtpViewModel", "Token is empty despite successful login")
+                    }
+                }
+                
+                _otpState.update { 
+                    it.copy(
+                        isLoading = false,
+                        isSuccess = true,
+                        isAutoLoginSuccessful = true,
+                        errorMessage = "",
+                        action = "email_verified_and_logged_in"
+                    )
+                }
+                Log.d("OtpViewModel", "Auto-login successful, state updated")
+            } else {
+                // Login failed, but email verification was successful
+                Log.e("OtpViewModel", "Auto-login failed: ${loginResponse.message}")
+                _otpState.update { 
+                    it.copy(
+                        isLoading = false,
+                        isSuccess = true,
+                        errorMessage = "Auto-login failed: ${loginResponse.message}",
+                        action = "email_verified"
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            // Exception during login, but email verification was successful
+            Log.e("OtpViewModel", "Error during auto-login", e)
+            _otpState.update { 
+                it.copy(
+                    isLoading = false,
+                    isSuccess = true,
+                    errorMessage = "",
+                    action = "email_verified"
+                )
+            }
+        }
+    }
+    
     override fun onCleared() {
         super.onCleared()
         countDownTimer?.cancel()
     }
-} 
+}

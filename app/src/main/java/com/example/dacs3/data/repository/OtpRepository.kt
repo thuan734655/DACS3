@@ -24,6 +24,7 @@ class OtpRepository @Inject constructor(
             val request = VerifyOtpRequest(email, otp, deviceId ?: "")
             Log.d("OtpRepository", "Sending OTP verification request: $request")
             val response = otpApi.verifyOtp(request)
+
             
             response
         } catch (e: Exception) {
@@ -42,7 +43,19 @@ class OtpRepository @Inject constructor(
     }
     
     private suspend fun updateEmailVerification(email: String, isVerified: Boolean) {
-        // If needed, we can use sessionManager to update user information
-        // This is a placeholder for future implementation
+        try {
+            // Log the action for debugging purposes
+            Log.d("OtpRepository", "Updating email verification status for $email to $isVerified")
+            
+            // This could involve updating the local database or making an API call
+            // For now, we'll just log it since the auto-login process doesn't require this step
+            // to be fully implemented
+            
+            // No implementation is needed right now as we're using the OTP verification response
+            // to trigger the auto-login directly in the OtpViewModel
+        } catch (e: Exception) {
+            Log.e("OtpRepository", "Error updating email verification", e)
+            // Don't throw the exception to prevent app crashes
+        }
     }
 }

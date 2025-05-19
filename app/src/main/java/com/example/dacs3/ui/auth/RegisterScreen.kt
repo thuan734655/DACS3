@@ -98,6 +98,26 @@ fun RegisterScreen(
         usernameFocusRequester.requestFocus()
     }
     
+    // Monitor AuthViewModel state for success and navigate accordingly
+    LaunchedEffect(uiState.isSuccess, uiState.action) {
+        if (uiState.isSuccess) {
+            when (uiState.action) {
+                "verify_email" -> {
+                    // Navigate to OTP verification with saved password for auto-login
+                    val email = uiState.email
+                    val savedPassword = uiState.password
+                    if (email != null) {
+                        navController.navigateToOtpVerification(
+                            email = email,
+                            action = "verify_email",
+                            password = savedPassword
+                        )
+                    }
+                }
+            }
+        }
+    }
+    
     // Shimmer animation for loading state
     val shimmerColors = listOf(
         GradientStart, 
@@ -117,12 +137,7 @@ fun RegisterScreen(
 
     LaunchedEffect(uiState) {
         when {
-            uiState.isSuccess && uiState.action == "verify_email" -> {
-                // Navigate to OTP verification screen with the registered email and action
-                val registeredEmail = uiState.email ?: email
-                navController.navigateToOtpVerification(registeredEmail, "verify_email")
-            }
-            uiState.isSuccess -> {
+            uiState.isSuccess && uiState.action != "verify_email" -> {
                 // This should not happen in Register flow, but just in case
                 navController.navigate("login") {
                     popUpTo("welcome") { inclusive = true }

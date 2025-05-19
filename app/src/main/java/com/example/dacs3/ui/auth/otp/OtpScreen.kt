@@ -40,7 +40,10 @@ fun OtpScreen(
     onNavigateBack: () -> Unit,
     onTwoFactorAuthRequired: (String) -> Unit = {},
     onResetPassword: (String, String) -> Unit = { _, _ -> },
+    onRedirectToLogin: () -> Unit = {},
     action: String? = null,
+    password: String? = null,
+    navController: androidx.navigation.NavController,
     viewModel: OtpViewModel = hiltViewModel()
 ) {
     val otpState by viewModel.otpState.collectAsState()
@@ -62,9 +65,10 @@ fun OtpScreen(
     var showResendDialog by remember { mutableStateOf(false) }
     var resendMessage by remember { mutableStateOf("") }
     
-    // Set email and action when screen loads
-    LaunchedEffect(email, action) {
-        viewModel.setEmail(email, action)
+    // Set email, action, and password when screen loads
+    LaunchedEffect(email, action, password) {
+        Log.d("OtpNavigation", "Loading OTP screen with email: $email, action: $action, password: ${if (password.isNullOrEmpty()) "not provided" else "provided"}")
+        viewModel.setEmail(email, action, password)
         
         // Nếu là 2FA, tự động request OTP khi màn hình hiển thị
         if (action == "2fa") {
@@ -77,7 +81,7 @@ fun OtpScreen(
     }
     
     // Check for verification success or 2FA requirement
-    LaunchedEffect(otpState.isSuccess, otpState.isError) {
+    LaunchedEffect(otpState.isSuccess, otpState.isError, otpState.isAutoLoginSuccessful, otpState.action) {
         if (otpState.isSuccess) {
             Log.d("OtpScreen", "Verification success! Action: ${otpState.action}")
             
@@ -86,6 +90,11 @@ fun OtpScreen(
             
             // Handle navigation based on action
             when (otpState.action) {
+                "redirect_to_login" -> {
+                    // Show success dialog first, then redirect to login in the dialog's dismiss handler
+                    Log.d("OtpScreen", "Email verified, will redirect to login screen after showing dialog")
+                    showSuccessDialog = true
+                }
                 "2fa" -> {
                     Log.d("OtpScreen", "2FA required, redirecting to 2FA screen")
                     onTwoFactorAuthRequired(email)
@@ -125,7 +134,14 @@ fun OtpScreen(
         AlertDialog(
             onDismissRequest = { 
                 showSuccessDialog = false
-                onVerificationSuccess()
+                // Check if we need to redirect to login or home
+                if (otpState.action == "redirect_to_login") {
+                    // Use the provided callback to navigate to login
+                    Log.d("OtpScreen", "Email verified, redirecting to login")
+                    onRedirectToLogin()
+                } else {
+                    onVerificationSuccess()
+                }
             },
             icon = {
                 Icon(
@@ -145,6 +161,7 @@ fun OtpScreen(
             text = { 
                 Text(
                     text = when(otpState.action) {
+                        "redirect_to_login" -> "Your email has been verified successfully. You will be redirected to the login screen."
                         "reset_password" -> "OTP has been verified successfully. Please set your new password."
                         "email_verified" -> "Your email has been verified successfully. You will be redirected to the home screen."
                         else -> "OTP has been verified successfully. You will be redirected to the home screen."

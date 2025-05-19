@@ -230,9 +230,9 @@ fun AppNavigation(
         otpVerificationScreen(
             navController = navController,
             onVerificationSuccess = {
-                // After successful OTP verification, navigate to home screen
-                Log.d("AppNavigation", "Email verification success, navigating to home screen")
-                navController.navigate(Screen.Home.route) {
+                // After successful OTP verification, navigate to home screen (for non-email verification)
+                Log.d("AppNavigation", "OTP verification success (non-email), navigating to home screen")
+                navController.navigate(Screen.Login.route) {
                     // Don't clear too much back stack
                     popUpTo(Screen.OtpVerification.route) { inclusive = true }
                 }
@@ -245,6 +245,13 @@ fun AppNavigation(
                 navController.navigate(Screen.TwoFactorAuth.createRoute(email)) {
                     // Clear back stack up to OTP screen to prevent returning to it
                     popUpTo(Screen.OtpVerification.createRoute(email)) { inclusive = true }
+                }
+            },
+            // Thêm callback để chuyển đến trang Login sau xác thực email
+            onRedirectToLogin = {
+                Log.d("AppNavigation", "Email verification success, redirecting to login screen")
+                navController.navigate(Screen.Login.route) {
+                    popUpTo(Screen.Welcome.route) { inclusive = true }
                 }
             }
         )
