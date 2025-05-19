@@ -27,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dacs3.data.model.Sprint
 import com.example.dacs3.data.model.Task
 import com.example.dacs3.data.model.UserInfo
+import com.example.dacs3.util.WorkspacePreferences
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -40,9 +41,29 @@ fun SprintScreen(
     onCreateSprint: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
     
-    LaunchedEffect(workspaceId) {
-        viewModel.setWorkspaceId(workspaceId)
+    // Lấy WorkspacePreferences thông qua context
+    val workspacePreferencesObject = remember { 
+        com.example.dacs3.util.WorkspacePreferences(context)
+    }
+
+    // Sử dụng workspaceId từ WorkspacePreferences hoặc từ tham số được truyền vào
+    val selectedWorkspaceId = remember { mutableStateOf(workspaceId) }
+    
+    // Kiểm tra workspaceId mới từ WorkspacePreferences
+    LaunchedEffect(Unit) {
+        val savedWorkspaceId = workspacePreferencesObject.getSelectedWorkspaceId()
+        android.util.Log.d("SprintScreen", "Loaded workspaceId from preferences: $savedWorkspaceId")
+        if (savedWorkspaceId.isNotEmpty()) {
+            selectedWorkspaceId.value = savedWorkspaceId
+        }
+    }
+    
+    // Cập nhật SprintViewModel với workspaceId mới nhất
+    LaunchedEffect(selectedWorkspaceId.value) {
+        android.util.Log.d("SprintScreen", "Setting workspaceId in ViewModel: ${selectedWorkspaceId.value}")
+        viewModel.setWorkspaceId(selectedWorkspaceId.value)
     }
     
     Scaffold(

@@ -118,6 +118,9 @@ class WorkspaceViewModel @Inject constructor(
 
     fun selectWorkspace(workspace: Workspace) {
         _uiState.update { it.copy(selectedWorkspace = workspace) }
+        // Lưu workspaceId vào SharedPreferences khi chọn workspace mới
+        workspacePreferences.saveSelectedWorkspaceId(workspace._id)
+        android.util.Log.d("WorkspaceViewModel", "Saved workspace ID to preferences: ${workspace._id}")
     }
     
     fun clearSelection() {

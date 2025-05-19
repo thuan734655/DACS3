@@ -6,6 +6,7 @@ import com.example.dacs3.data.model.Sprint
 import com.example.dacs3.data.model.Task
 import com.example.dacs3.data.repository.SprintRepository
 import com.example.dacs3.data.repository.TaskRepository
+import com.example.dacs3.util.WorkspacePreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,35 +29,69 @@ data class SprintUiState(
 @HiltViewModel
 class SprintViewModel @Inject constructor(
     private val sprintRepository: SprintRepository,
-    private val taskRepository: TaskRepository
+    private val taskRepository: TaskRepository,
+    private val workspacePreferences: WorkspacePreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SprintUiState())
     val uiState: StateFlow<SprintUiState> = _uiState.asStateFlow()
 
     fun setWorkspaceId(workspaceId: String) {
-        _uiState.update { it.copy(workspaceId = workspaceId) }
+        android.util.Log.d("SprintViewModel", "setWorkspaceId CALLED with workspaceId=$workspaceId")
+        // Save the new workspaceId to preferences (in case it's coming from route params)
+        workspacePreferences.saveSelectedWorkspaceId(workspaceId)
+        
+        // Clear existing sprints and reset state before loading new workspace data
+        _uiState.update { 
+            it.copy(
+                workspaceId = workspaceId,
+                sprints = emptyList(),
+                sprintTasks = emptyMap(),
+                expandedSprintIds = emptySet(),
+                error = null,
+                isLoading = true
+            ) 
+        }
         loadSprints(workspaceId)
+    }
+    
+    /**
+     * Get the workspaceId stored in preferences
+     * If not found, returns empty string
+     */
+    fun getSavedWorkspaceId(): String {
+        val savedId = workspacePreferences.getSelectedWorkspaceId()
+        android.util.Log.d("SprintViewModel", "getSavedWorkspaceId returning: $savedId")
+        return savedId
     }
 
     fun loadSprints(workspaceId: String) {
+        android.util.Log.d("SprintViewModel", "loadSprints CALLED with workspaceId=$workspaceId")
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            // Set loading state but don't reset sprints again (already handled in setWorkspaceId)
+            if (!_uiState.value.isLoading) {
+                _uiState.update { it.copy(isLoading = true, error = null) }
+            }
             
             try {
                 val response = sprintRepository.getAllSprintsFromApi(
                     workspaceId = workspaceId
                 )
+                android.util.Log.d("SprintViewModel", "API response: success=${response.success}, count=${response.count}, total=${response.total}, data=${response.data.map { it._id + ":" + it.name }}")
                 
                 if (response.success) {
+                    // Clear any existing sprints and sprint tasks first to prevent mixing data
+                    // from different workspaces
                     _uiState.update { 
                         it.copy(
                             sprints = response.data,
+                            sprintTasks = emptyMap(),  // Clear all tasks for previous sprints
                             isLoading = false
                         )
                     }
+                    android.util.Log.d("SprintViewModel", "Updated sprints in state: ${response.data.map { it._id + ":" + it.name }}")
                     
-                    // Tải task cho mỗi sprint
+                    // Tải task cho mỗi sprint mới
                     response.data.forEach { sprint ->
                         loadTasksForSprint(sprint._id)
                     }
@@ -69,6 +104,7 @@ class SprintViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("SprintViewModel", "Exception in loadSprints: ${e.message}")
                 _uiState.update { 
                     it.copy(
                         error = "Lỗi: ${e.message}",
