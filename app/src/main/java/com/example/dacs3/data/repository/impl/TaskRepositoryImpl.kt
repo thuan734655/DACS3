@@ -27,74 +27,63 @@ class TaskRepositoryImpl @Inject constructor(
     private val TAG = "TaskRepositoryImpl"
     
     override fun getAll(): Flow<List<TaskEntity>> {
-        return taskDao.getAllTasks()
+        TODO()
     }
     
     override suspend fun getById(id: String): TaskEntity? {
-        return taskDao.getTaskById(id)
+        TODO()
     }
     
     override suspend fun insert(item: TaskEntity) {
-        taskDao.insertTask(item)
+        TODO()
     }
     
     override suspend fun insertAll(items: List<TaskEntity>) {
-        taskDao.insertTasks(items)
+        TODO()
     }
     
     override suspend fun update(item: TaskEntity) {
-        taskDao.updateTask(item)
+        TODO()
     }
     
     override suspend fun delete(item: TaskEntity) {
-        taskDao.deleteTask(item)
+        TODO()
     }
     
     override suspend fun deleteById(id: String) {
-        taskDao.deleteTaskById(id)
+        TODO()
     }
     
     override suspend fun deleteAll() {
-        taskDao.deleteAllTasks()
+        TODO()
     }
     
     override suspend fun sync() {
-        try {
-            val response = taskApi.getAllTasks()
-            if (response.success && response.data != null) {
-                val tasks = response.data.map { TaskEntity.fromTask(it) }
-                taskDao.insertTasks(tasks)
-                Log.d(TAG, "Successfully synced ${tasks.size} tasks")
-            } else {
-                Log.w(TAG, "Failed to sync tasks")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error syncing tasks", e)
-        }
+        TODO()
     }
     
     override fun getTasksByWorkspaceId(workspaceId: String): Flow<List<TaskEntity>> {
-        return taskDao.getTasksByWorkspaceId(workspaceId)
+        TODO()
     }
     
     override fun getTasksByEpicId(epicId: String): Flow<List<TaskEntity>> {
-        return taskDao.getTasksByEpicId(epicId)
+        TODO()
     }
     
     override fun getTasksByStatus(status: String): Flow<List<TaskEntity>> {
-        return taskDao.getTasksByStatus(status)
+        TODO()
     }
     
     override fun getTasksByAssignedTo(assignedTo: String): Flow<List<TaskEntity>> {
-        return taskDao.getTasksByAssignedTo(assignedTo)
+        TODO()
     }
     
     override fun getTasksBySprintId(sprintId: String): Flow<List<TaskEntity>> {
-        return taskDao.getTasksBySprintId(sprintId)
+        TODO()
     }
     
     override fun getTasksByPriority(priority: String): Flow<List<TaskEntity>> {
-        return taskDao.getTasksByPriority(priority)
+        TODO()
     }
     
     override suspend fun getAllTasksFromApi(
@@ -111,15 +100,7 @@ class TaskRepositoryImpl @Inject constructor(
             val response = taskApi.getAllTasks(
                 page, limit, workspaceId, epicId, status, assignedTo, sprintId, priority
             )
-            
-            // If successful, store tasks in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val taskEntities = response.data.map { TaskEntity.fromTask(it) }
-                    taskDao.insertTasks(taskEntities)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching tasks from API", e)
@@ -135,15 +116,7 @@ class TaskRepositoryImpl @Inject constructor(
     suspend fun getTaskByIdFromApi(id: String): TaskResponse {
         return try {
             val response = taskApi.getTaskById(id)
-            
-            // If successful, store task in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val taskEntity = TaskEntity.fromTask(response.data)
-                    taskDao.insertTask(taskEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching task from API", e)
@@ -172,15 +145,6 @@ class TaskRepositoryImpl @Inject constructor(
                 estimatedHours, spentHours, startDate, dueDate, sprintId
             )
             val response = taskApi.createTask(request)
-            
-            // If successful, store task in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val taskEntity = TaskEntity.fromTask(response.data)
-                    taskDao.insertTask(taskEntity)
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error creating task", e)
@@ -210,15 +174,7 @@ class TaskRepositoryImpl @Inject constructor(
                 estimatedHours, spentHours, startDate, dueDate, completedDate, sprintId
             )
             val response = taskApi.updateTask(id, request)
-            
-            // If successful, update task in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val taskEntity = TaskEntity.fromTask(response.data)
-                    taskDao.updateTask(taskEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error updating task", e)
@@ -230,14 +186,7 @@ class TaskRepositoryImpl @Inject constructor(
     override suspend fun deleteTaskFromApi(id: String): Boolean {
         return try {
             val response = taskApi.deleteTask(id)
-            
-            // If successful, delete task from local database
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    taskDao.deleteTaskById(id)
-                }
-            }
-            
+
             response.success
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting task", e)
@@ -246,52 +195,13 @@ class TaskRepositoryImpl @Inject constructor(
     }
     
     override suspend fun deleteTask(id: String): TaskResponse {
-        return try {
-            // First get the task to return it in the response
-            val task = taskDao.getTaskById(id)
-            
-            val success = deleteTaskFromApi(id)
-            if (success) {
-                // Create a successful response with the deleted task data
-                return TaskResponse(
-                    success = true,
-                    data = task?.let { task.toTask() }
-                )
-            } else {
-                // Create a failure response
-                return TaskResponse(
-                    success = false,
-                    data = null
-                )
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in deleteTask", e)
-            // Return empty response with success=false when operation fails
-            return TaskResponse(false, null)
-        }
+        TODO()
     }
     
     override suspend fun addComment(taskId: String, content: String): CommentResponse {
         return try {
             val request = AddCommentRequest(content)
             val response = taskApi.addComment(taskId, request)
-            
-            // If successful, update task in local database with the new comment
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    // Get the current task
-                    val task = taskDao.getTaskById(taskId)
-                    
-                    // If the task exists locally, update it
-                    if (task != null) {
-                        val updatedTask = getTaskByIdFromApi(taskId)
-                        if (updatedTask.success && updatedTask.data != null) {
-                            val taskEntity = TaskEntity.fromTask(updatedTask.data)
-                            taskDao.updateTask(taskEntity)
-                        }
-                    }
-                }
-            }
             
             response
         } catch (e: Exception) {

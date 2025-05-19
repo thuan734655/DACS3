@@ -9,8 +9,8 @@ class SessionManagerViewModel @Inject constructor(
     val sessionManager: SessionManager
 ) : ViewModel() {
     
-    fun saveUserSession(userId: String, email: String, token: String) {
-        sessionManager.saveUserSession(userId, email, token)
+    fun saveUserSession(userId: String, email: String,contactumber: String,username : String, token: String) {
+        sessionManager.saveUserSession(userId, email,contactumber,username, token)
     }
 
     fun isLoggedIn(): Boolean {

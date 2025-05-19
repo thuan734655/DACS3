@@ -1,5 +1,6 @@
 package com.example.dacs3.ui.epic
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.model.Epic
@@ -54,32 +55,9 @@ class EpicViewModel @Inject constructor(
                             filteredEpics = response.data ?: emptyList()
                         )
                     }
-                } else {
-                    // If API fails, fall back to locally cached data
-                    epicRepository.getEpicsByWorkspaceId(workspaceId).collect { epicEntities ->
-                        val epics = epicEntities.map { it.toEpic() }
-                        _uiState.update { 
-                            it.copy(
-                                isLoading = false,
-                                epics = epics,
-                                filteredEpics = epics
-                            )
-                        }
-                    }
                 }
             } catch (e: Exception) {
-                // On exception, try to load from local database
-                epicRepository.getEpicsByWorkspaceId(workspaceId).collect { epicEntities ->
-                    val epics = epicEntities.map { it.toEpic() }
-                    _uiState.update { 
-                        it.copy(
-                            isLoading = false,
-                            epics = epics,
-                            filteredEpics = epics,
-                            error = "Could not connect to server. Showing cached data."
-                        )
-                    }
-                }
+                Log.d("EpicViewModel", "Error fetching epics from API: ${e.message}")
             }
         }
     }

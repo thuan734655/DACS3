@@ -41,62 +41,11 @@ class NotificationViewModel @Inject constructor(
     private val PAGE_SIZE = 20
 
     fun fetchAllNotifications(forceRefresh: Boolean = false) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-
-            try {
-                // First, get data from local database (offline-first approach)
-                notificationRepository.getAll()
-                    .catch { e ->
-                        _error.value = e.message
-                    }
-                    .collectLatest { localNotifications ->
-                        _notifications.value = localNotifications.sortedByDescending { it.created_at }
-                        
-                        // Get unread notifications
-                        notificationRepository.getUnreadNotifications()
-                            .catch { e ->
-                                _error.value = e.message
-                            }
-                            .collectLatest { unread ->
-                                _unreadNotifications.value = unread.sortedByDescending { it.created_at }
-                            }
-                        
-                        // Then, if online or forced refresh, sync with remote
-                        if (forceRefresh) {
-                            syncWithRemote()
-                        }
-                    }
-            } finally {
-                _isLoading.value = false
-            }
-        }
+        TODO()
     }
 
     fun fetchWorkspaceNotifications(workspaceId: String, forceRefresh: Boolean = false) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-
-            try {
-                // First, get data from local database (offline-first approach)
-                notificationRepository.getNotificationsByWorkspaceId(workspaceId)
-                    .catch { e ->
-                        _error.value = e.message
-                    }
-                    .collectLatest { localNotifications ->
-                        _workspaceNotifications.value = localNotifications.sortedByDescending { it.created_at }
-                        
-                        // Then, if online or forced refresh, sync with remote
-                        if (forceRefresh) {
-                            syncWorkspaceNotificationsWithRemote(workspaceId)
-                        }
-                    }
-            } finally {
-                _isLoading.value = false
-            }
-        }
+        TODO()
     }
 
     private suspend fun syncWithRemote() {

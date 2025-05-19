@@ -22,67 +22,48 @@ class WorkspaceRepositoryImpl @Inject constructor(
     private val TAG = "WorkspaceRepositoryImpl"
     
     override fun getAll(): Flow<List<WorkspaceEntity>> {
-        return workspaceDao.getAllWorkspaces()
+        TODO()
     }
     
     override suspend fun getById(id: String): WorkspaceEntity? {
-        return workspaceDao.getWorkspaceById(id)
+        TODO()
     }
     
     override suspend fun insert(item: WorkspaceEntity) {
-        workspaceDao.insertWorkspace(item)
+        TODO()
     }
     
     override suspend fun insertAll(items: List<WorkspaceEntity>) {
-        workspaceDao.insertWorkspaces(items)
+        TODO()
     }
     
     override suspend fun update(item: WorkspaceEntity) {
-        workspaceDao.updateWorkspace(item)
+        TODO()
     }
     
     override suspend fun delete(item: WorkspaceEntity) {
-        workspaceDao.deleteWorkspace(item)
+        TODO()
     }
     
     override suspend fun deleteById(id: String) {
-        workspaceDao.deleteWorkspaceById(id)
+        TODO()
     }
     
     override suspend fun deleteAll() {
-        workspaceDao.deleteAllWorkspaces()
+        TODO()
     }
     
     override suspend fun sync() {
-        try {
-            val response = workspaceApi.getAllWorkspaces()
-            if (response.success && response.data != null) {
-                val workspaces = response.data.map { WorkspaceEntity.fromWorkspace(it) }
-                workspaceDao.insertWorkspaces(workspaces)
-                Log.d(TAG, "Successfully synced ${workspaces.size} workspaces")
-            } else {
-                Log.w(TAG, "Failed to sync workspaces")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error syncing workspaces", e)
-        }
+        TODO()
     }
     
     override fun getWorkspacesByUserId(userId: String): Flow<List<WorkspaceEntity>> {
-        return workspaceDao.getWorkspacesByUserId(userId)
+        TODO()
     }
     
     override suspend fun getAllWorkspacesFromApi(page: Int?, limit: Int?): WorkspaceListResponse {
         return try {
             val response = workspaceApi.getAllWorkspaces(page, limit)
-            
-            // If successful, store workspaces in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val workspaceEntities = response.data.map { WorkspaceEntity.fromWorkspace(it) }
-                    workspaceDao.insertWorkspaces(workspaceEntities)
-                }
-            }
             
             response
         } catch (e: Exception) {
@@ -96,14 +77,6 @@ class WorkspaceRepositoryImpl @Inject constructor(
         return try {
             val response = workspaceApi.getAllWorkspacesByUserId(userId, page, limit)
             
-            // If successful, store workspaces in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val workspaceEntities = response.data.map { WorkspaceEntity.fromWorkspace(it) }
-                    workspaceDao.insertWorkspaces(workspaceEntities)
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching workspaces by user ID from API", e)
@@ -115,15 +88,6 @@ class WorkspaceRepositoryImpl @Inject constructor(
     override suspend fun getWorkspaceByIdFromApi(id: String): WorkspaceResponse {
         return try {
             val response = workspaceApi.getWorkspaceById(id)
-            
-            // If successful, store workspace in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val workspaceEntity = WorkspaceEntity.fromWorkspace(response.data)
-                    workspaceDao.insertWorkspace(workspaceEntity)
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching workspace from API", e)
@@ -136,15 +100,7 @@ class WorkspaceRepositoryImpl @Inject constructor(
         return try {
             val request = CreateWorkspaceRequest(name, description)
             val response = workspaceApi.createWorkspace(request)
-            
-            // If successful, store workspace in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val workspaceEntity = WorkspaceEntity.fromWorkspace(response.data)
-                    workspaceDao.insertWorkspace(workspaceEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error creating workspace", e)
@@ -157,15 +113,7 @@ class WorkspaceRepositoryImpl @Inject constructor(
         return try {
             val request = UpdateWorkspaceRequest(name, description)
             val response = workspaceApi.updateWorkspace(id, request)
-            
-            // If successful, update workspace in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val workspaceEntity = WorkspaceEntity.fromWorkspace(response.data)
-                    workspaceDao.updateWorkspace(workspaceEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error updating workspace", e)
@@ -177,14 +125,7 @@ class WorkspaceRepositoryImpl @Inject constructor(
     override suspend fun deleteWorkspaceFromApi(id: String): Boolean {
         return try {
             val response = workspaceApi.deleteWorkspace(id)
-            
-            // If successful, delete workspace from local database
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    workspaceDao.deleteWorkspaceById(id)
-                }
-            }
-            
+
             response.success
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting workspace", e)
@@ -196,15 +137,7 @@ class WorkspaceRepositoryImpl @Inject constructor(
         return try {
             val request = AddMemberRequest(userId, role)
             val response = workspaceApi.addMember(workspaceId, request)
-            
-            // If successful, update workspace in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val workspaceEntity = WorkspaceEntity.fromWorkspace(response.data)
-                    workspaceDao.updateWorkspace(workspaceEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error adding member to workspace", e)
@@ -216,15 +149,7 @@ class WorkspaceRepositoryImpl @Inject constructor(
     override suspend fun removeMember(workspaceId: String, userId: String): WorkspaceResponse {
         return try {
             val response = workspaceApi.removeMember(workspaceId, userId)
-            
-            // If successful, update workspace in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val workspaceEntity = WorkspaceEntity.fromWorkspace(response.data)
-                    workspaceDao.updateWorkspace(workspaceEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error removing member from workspace", e)
@@ -236,15 +161,7 @@ class WorkspaceRepositoryImpl @Inject constructor(
     override suspend fun joinWorkspace(workspaceId: String): WorkspaceResponse {
         return try {
             val response = workspaceApi.joinWorkspace(workspaceId)
-            
-            // If successful, update workspace in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val workspaceEntity = WorkspaceEntity.fromWorkspace(response.data)
-                    workspaceDao.insertWorkspace(workspaceEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error joining workspace", e)

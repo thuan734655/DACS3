@@ -118,10 +118,7 @@ class ChannelViewModel @Inject constructor(
                 if (response.success && response.data != null) {
                     // Force refresh to get the new channel
                     refreshChannels(workspaceId)
-                    // Select the newly created channel
-                    response.data?.let {
-                        selectChannel(ChannelEntity.fromChannel(it))
-                    }
+
                 } else {
                     _error.value = "Failed to create channel"
                 }

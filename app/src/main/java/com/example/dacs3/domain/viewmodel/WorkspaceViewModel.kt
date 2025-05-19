@@ -112,30 +112,7 @@ class WorkspaceViewModel @Inject constructor(
 
     fun createWorkspace(name: String, description: String?) {
         viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            
-            try {
-                val response = workspaceRepository.createWorkspace(name, description)
-                
-                if (response.success && response.data != null) {
-                    // Force refresh to get the new workspace
-                    _currentPage.value = 1 // Reset pagination
-                    fetchWorkspaces(true)
-                    
-                    // Select the newly created workspace
-                    response.data?.let { 
-                        val workspaceEntity = WorkspaceEntity.fromWorkspace(it)
-                        selectWorkspace(workspaceEntity)
-                    }
-                } else {
-                    _error.value = "Failed to create workspace"
-                    _isLoading.value = false
-                }
-            } catch (e: Exception) {
-                _error.value = "Error creating workspace: ${e.message}"
-                _isLoading.value = false
-            }
+            val response = workspaceRepository.createWorkspace(name, description)
         }
     }
 

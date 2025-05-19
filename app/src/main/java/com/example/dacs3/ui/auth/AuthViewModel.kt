@@ -264,10 +264,7 @@ class AuthViewModel @Inject constructor(
                 Log.e("AuthViewModel", "Error extracting user ID from token", e)
                 UUID.randomUUID().toString()
             }
-            
-            // Save complete user session
-            sessionManager.saveUserSession(userId, email, response.token)
-            
+
             // Set current user ID
             _currentUserId.value = userId
             

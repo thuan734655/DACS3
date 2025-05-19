@@ -24,64 +24,45 @@ class UserRepositoryImpl @Inject constructor(
     private val TAG = "UserRepositoryImpl"
     
     override fun getAll(): Flow<List<UserEntity>> {
-        return userDao.getAllUsers()
+        TODO()
     }
     
     override suspend fun getById(id: String): UserEntity? {
-        return userDao.getUserById(id)
+        TODO()
     }
     
     override suspend fun insert(item: UserEntity) {
-        userDao.insertUser(item)
+        TODO()
     }
     
     override suspend fun insertAll(items: List<UserEntity>) {
-        userDao.insertUsers(items)
+        TODO()
     }
     
     override suspend fun update(item: UserEntity) {
-        userDao.updateUser(item)
+        TODO()
     }
     
     override suspend fun delete(item: UserEntity) {
-        userDao.deleteUser(item)
+        TODO()
     }
     
     override suspend fun deleteById(id: String) {
-        userDao.deleteUserById(id)
+        TODO()
     }
     
     override suspend fun deleteAll() {
-        userDao.deleteAllUsers()
+        TODO()
     }
     
     override suspend fun sync() {
-        try {
-            val response = userApi.getAllUsers()
-            if (response.success && response.data != null) {
-                val users = response.data.map { UserEntity.fromUser(it) }
-                userDao.insertUsers(users)
-                Log.d(TAG, "Successfully synced ${users.size} users")
-            } else {
-                Log.w(TAG, "Failed to sync users")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error syncing users", e)
-        }
+        TODO()
     }
     
     override suspend fun getAllUsersFromApi(page: Int?, limit: Int?): UserListResponse {
         return try {
             val response = userApi.getAllUsers(page, limit)
-            
-            // If successful, store users in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val userEntities = response.data.map { UserEntity.fromUser(it) }
-                    userDao.insertUsers(userEntities)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching users from API", e)
@@ -93,15 +74,7 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun getUserByIdFromApi(id: String): UserResponse {
         return try {
             val response = userApi.getUserById(id)
-            
-            // If successful, store user in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val userEntity = UserEntity.fromUser(response.data)
-                    userDao.insertUser(userEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching user from API", e)
@@ -114,15 +87,7 @@ class UserRepositoryImpl @Inject constructor(
         return try {
             val request = CreateUserRequest(name, avatar)
             val response = userApi.createUser(request)
-            
-            // If successful, store user in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val userEntity = UserEntity.fromUser(response.data)
-                    userDao.insertUser(userEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error creating user", e)
@@ -135,15 +100,7 @@ class UserRepositoryImpl @Inject constructor(
         return try {
             val request = UpdateUserRequest(name, avatar)
             val response = userApi.updateUser(id, request)
-            
-            // If successful, update user in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val userEntity = UserEntity.fromUser(response.data)
-                    userDao.updateUser(userEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error updating user", e)
@@ -155,14 +112,7 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun deleteUserFromApi(id: String): Boolean {
         return try {
             val response = userApi.deleteUser(id)
-            
-            // If successful, delete user from local database
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    userDao.deleteUserById(id)
-                }
-            }
-            
+
             response.success
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting user", e)
@@ -173,14 +123,6 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun searchUsersFromApi(query: String): UserListResponse {
         return try {
             val response = userApi.searchUsers(query)
-            
-            // Nếu thành công, lưu người dùng vào cơ sở dữ liệu cục bộ
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val userEntities = response.data.map { user -> UserEntity.fromUser(user) }
-                    userDao.insertUsers(userEntities)
-                }
-            }
             
             response
         } catch (e: Exception) {
