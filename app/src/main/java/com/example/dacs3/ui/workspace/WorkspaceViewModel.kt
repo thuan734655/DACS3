@@ -1,5 +1,6 @@
 package com.example.dacs3.ui.workspace
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.model.WorkspaceResponse
@@ -51,30 +52,9 @@ class WorkspaceViewModel @Inject constructor(
                             workspaces = response.data ?: emptyList()
                         )
                     }
-                } else {
-                    // If API fails, fall back to locally cached data
-                    workspaceRepository.getAll().collect { workspaceEntities ->
-                        val workspaces = workspaceEntities.map { it.toWorkspace() }
-                        _uiState.update { 
-                            it.copy(
-                                isLoading = false,
-                                workspaces = workspaces
-                            )
-                        }
-                    }
                 }
             } catch (e: Exception) {
-                // On exception, try to load from local database
-                workspaceRepository.getAll().collect { workspaceEntities ->
-                    val workspaces = workspaceEntities.map { it.toWorkspace() }
-                    _uiState.update { 
-                        it.copy(
-                            isLoading = false,
-                            workspaces = workspaces,
-                            error = "Could not connect to server. Showing cached data."
-                        )
-                    }
-                }
+                Log.d("WorkspaceViewModel", "Error loading workspaces from API")
             }
         }
     }

@@ -46,12 +46,6 @@ class OtpRepository @Inject constructor(
     }
     
     private suspend fun updateEmailVerification(email: String, isVerified: Boolean) {
-        withContext(Dispatchers.IO) {
-            try {
-                accountDao.updateEmailVerification(email, isVerified)
-            } catch (e: Exception) {
-                Log.e("OtpRepository", "Error updating email verification", e)
-            }
-        }
+   TODO()
     }
 } 

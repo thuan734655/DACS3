@@ -26,70 +26,59 @@ class BugRepositoryImpl @Inject constructor(
     private val TAG = "BugRepositoryImpl"
     
     override fun getAll(): Flow<List<BugEntity>> {
-        return bugDao.getAllBugs()
+        TODO()
     }
     
     override suspend fun getById(id: String): BugEntity? {
-        return bugDao.getBugById(id)
+        TODO()
     }
     
     override suspend fun insert(item: BugEntity) {
-        bugDao.insertBug(item)
+        TODO()
     }
     
     override suspend fun insertAll(items: List<BugEntity>) {
-        bugDao.insertBugs(items)
+        TODO()
     }
     
     override suspend fun update(item: BugEntity) {
-        bugDao.updateBug(item)
+        TODO()
     }
     
     override suspend fun delete(item: BugEntity) {
-        bugDao.deleteBug(item)
+        TODO()
     }
     
     override suspend fun deleteById(id: String) {
-        bugDao.deleteBugById(id)
+        TODO()
     }
     
     override suspend fun deleteAll() {
-        bugDao.deleteAllBugs()
+        TODO()
     }
     
     override suspend fun sync() {
-        try {
-            val response = bugApi.getAllBugs()
-            if (response.success && response.data != null) {
-                val bugs = response.data.map { BugEntity.fromBug(it) }
-                bugDao.insertBugs(bugs)
-                Log.d(TAG, "Successfully synced ${bugs.size} bugs")
-            } else {
-                Log.w(TAG, "Failed to sync bugs")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error syncing bugs", e)
-        }
+        TODO()
     }
     
     override fun getBugsByWorkspaceId(workspaceId: String): Flow<List<BugEntity>> {
-        return bugDao.getBugsByWorkspaceId(workspaceId)
+        TODO()
     }
     
     override fun getBugsByTaskId(taskId: String): Flow<List<BugEntity>> {
-        return bugDao.getBugsByTaskId(taskId)
+        TODO()
     }
     
     override fun getBugsByReportedBy(reportedBy: String): Flow<List<BugEntity>> {
-        return bugDao.getBugsByReportedBy(reportedBy)
+        TODO()
     }
     
     override fun getBugsByAssignedTo(assignedTo: String): Flow<List<BugEntity>> {
-        return bugDao.getBugsByAssignedTo(assignedTo)
+        TODO()
     }
     
     override fun getBugsByStatus(status: String): Flow<List<BugEntity>> {
-        return bugDao.getBugsByStatus(status)
+        TODO()
     }
     
     override suspend fun getAllBugsFromApi(
@@ -106,15 +95,6 @@ class BugRepositoryImpl @Inject constructor(
             val response = bugApi.getAllBugs(
                 page, limit, workspaceId, taskId, reportedBy, assignedTo, status, severity
             )
-            
-            // If successful, store bugs in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val bugEntities = response.data.map { BugEntity.fromBug(it) }
-                    bugDao.insertBugs(bugEntities)
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching bugs from API", e)
@@ -126,14 +106,6 @@ class BugRepositoryImpl @Inject constructor(
     override suspend fun getBugByIdFromApi(id: String): BugResponse {
         return try {
             val response = bugApi.getBugById(id)
-            
-            // If successful, store bug in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val bugEntity = BugEntity.fromBug(response.data)
-                    bugDao.insertBug(bugEntity)
-                }
-            }
             
             response
         } catch (e: Exception) {
@@ -162,14 +134,6 @@ class BugRepositoryImpl @Inject constructor(
             )
             val response = bugApi.createBug(request)
             
-            // If successful, store bug in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val bugEntity = BugEntity.fromBug(response.data)
-                    bugDao.insertBug(bugEntity)
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error creating bug", e)
@@ -196,15 +160,6 @@ class BugRepositoryImpl @Inject constructor(
                 stepsToReproduce, expectedBehavior, actualBehavior
             )
             val response = bugApi.updateBug(id, request)
-            
-            // If successful, update bug in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val bugEntity = BugEntity.fromBug(response.data)
-                    bugDao.updateBug(bugEntity)
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error updating bug", e)
@@ -216,14 +171,7 @@ class BugRepositoryImpl @Inject constructor(
     override suspend fun deleteBugFromApi(id: String): Boolean {
         return try {
             val response = bugApi.deleteBug(id)
-            
-            // If successful, delete bug from local database
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    bugDao.deleteBugById(id)
-                }
-            }
-            
+
             response.success
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting bug", e)
@@ -235,24 +183,6 @@ class BugRepositoryImpl @Inject constructor(
         return try {
             val request = AddCommentRequest(content)
             val response = bugApi.addComment(bugId, request)
-            
-            // If successful, update bug in local database with the new comment
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    // Get the current bug
-                    val bug = bugDao.getBugById(bugId)
-                    
-                    // If the bug exists locally, update it
-                    if (bug != null) {
-                        val updatedBug = getBugByIdFromApi(bugId)
-                        if (updatedBug.success && updatedBug.data != null) {
-                            val bugEntity = BugEntity.fromBug(updatedBug.data)
-                            bugDao.updateBug(bugEntity)
-                        }
-                    }
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error adding comment to bug", e)

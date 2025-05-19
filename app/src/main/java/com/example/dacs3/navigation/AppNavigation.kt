@@ -31,8 +31,6 @@ import com.example.dacs3.ui.epic.EpicScreen
 import com.example.dacs3.ui.onboarding.OnboardingScreen
 import com.example.dacs3.ui.profile.ProfileScreen
 import com.example.dacs3.ui.report.DailyReportScreen
-import com.example.dacs3.ui.sprint.SprintScreen
-import com.example.dacs3.ui.task.TaskScreen
 import com.example.dacs3.ui.welcome.WelcomeScreen
 import com.example.dacs3.ui.workspace.WorkspaceScreen
 import com.example.dacs3.ui.workspace.WorkspaceViewModel
@@ -144,38 +142,38 @@ fun AppNavigation(
             )
         }
         
-        // Add Epic detail screen route
-        composable(
-            route = Screen.EpicDetail.route,
-            arguments = listOf(navArgument("epicId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val epicId = backStackEntry.arguments?.getString("epicId") ?: ""
-            
-            TaskScreen(
-                epicId = epicId,
-                onNavigateBack = { navController.popBackStack() },
-                onTaskSelected = { task ->
-                    navController.navigate(Screen.TaskDetail.createRoute(task._id))
-                }
-            )
-        }
-        
-        // Add Sprint list screen route
-        composable(
-            route = Screen.SprintList.route,
-            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
-            
-            SprintScreen(
-                workspaceId = workspaceId,
-                onNavigateBack = { navController.popBackStack() },
-                onSprintSelected = { sprint ->
-                    // Navigate to sprint detail
-                    navController.navigate(Screen.SprintDetail.createRoute(sprint._id))
-                }
-            )
-        }
+//        // Add Epic detail screen route
+//        composable(
+//            route = Screen.EpicDetail.route,
+//            arguments = listOf(navArgument("epicId") { type = NavType.StringType })
+//        ) { backStackEntry ->
+//            val epicId = backStackEntry.arguments?.getString("epicId") ?: ""
+//
+//            TaskScreen(
+//                epicId = epicId,
+//                onNavigateBack = { navController.popBackStack() },
+//                onTaskSelected = { task ->
+//                    navController.navigate(Screen.TaskDetail.createRoute(task._id))
+//                }
+//            )
+//        }
+//
+//        // Add Sprint list screen route
+//        composable(
+//            route = Screen.SprintList.route,
+//            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
+//        ) { backStackEntry ->
+//            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
+//
+//            SprintScreen(
+//                workspaceId = workspaceId,
+//                onNavigateBack = { navController.popBackStack() },
+//                onSprintSelected = { sprint ->
+//                    // Navigate to sprint detail
+//                    navController.navigate(Screen.SprintDetail.createRoute(sprint._id))
+//                }
+//            )
+//        }
         
         // Add Sprint detail screen route (placeholder for now)
         composable(

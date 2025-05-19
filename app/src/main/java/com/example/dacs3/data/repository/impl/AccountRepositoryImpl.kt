@@ -17,31 +17,31 @@ class AccountRepositoryImpl @Inject constructor(
     private val TAG = "AccountRepositoryImpl"
     
     override fun getAll(): Flow<List<AccountEntity>> {
-        return accountDao.getAllAccounts()
+        TODO()
     }
     
     override suspend fun getById(id: String): AccountEntity? {
-        return accountDao.getAccountById(id)
+        TODO()
     }
     
     override suspend fun insert(item: AccountEntity) {
-        accountDao.insertAccount(item)
+        TODO()
     }
     
     override suspend fun insertAll(items: List<AccountEntity>) {
-        items.forEach { accountDao.insertAccount(it) }
+        TODO()
     }
     
     override suspend fun update(item: AccountEntity) {
-        accountDao.updateAccount(item)
+        TODO()
     }
     
     override suspend fun delete(item: AccountEntity) {
-        accountDao.deleteAccount(item)
+        TODO()
     }
     
     override suspend fun deleteById(id: String) {
-        accountDao.deleteAccountById(id)
+        TODO()
     }
     
     override suspend fun deleteAll() {
@@ -56,30 +56,30 @@ class AccountRepositoryImpl @Inject constructor(
     }
     
     override suspend fun getAccountByEmail(email: String): AccountEntity? {
-        return accountDao.getAccountByEmail(email)
+        TODO()
     }
     
     override suspend fun getAccountByContactNumber(contactNumber: String): AccountEntity? {
-        return accountDao.getAccountByContactNumber(contactNumber)
+        TODO()
     }
     
     override suspend fun getAccountByUserId(userId: String): AccountEntity? {
-        return accountDao.getAccountByUserId(userId)
+        TODO()
     }
     
     override suspend fun updateOtp(email: String, otp: String, createAtOtp: Date) {
-        accountDao.updateOtp(email, otp, createAtOtp)
+        TODO()
     }
     
     override suspend fun updateEmailVerification(email: String, verified: Boolean) {
-        accountDao.updateEmailVerification(email, verified)
+        TODO()
     }
     
     override suspend fun updateDeviceId(email: String, deviceId: String) {
-        accountDao.updateDeviceId(email, deviceId)
+        TODO()
     }
     
     override suspend fun updatePassword(email: String, newPassword: String) {
-        accountDao.updatePassword(email, newPassword)
+        TODO()
     }
 } 

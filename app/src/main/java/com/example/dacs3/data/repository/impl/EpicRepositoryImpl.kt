@@ -25,66 +25,55 @@ class EpicRepositoryImpl @Inject constructor(
     private val TAG = "EpicRepositoryImpl"
     
     override fun getAll(): Flow<List<EpicEntity>> {
-        return epicDao.getAllEpics()
+        TODO()
     }
     
     override suspend fun getById(id: String): EpicEntity? {
-        return epicDao.getEpicById(id)
+        TODO()
     }
     
     override suspend fun insert(item: EpicEntity) {
-        epicDao.insertEpic(item)
+        TODO()
     }
     
     override suspend fun insertAll(items: List<EpicEntity>) {
-        epicDao.insertEpics(items)
+        TODO()
     }
     
     override suspend fun update(item: EpicEntity) {
-        epicDao.updateEpic(item)
+        TODO()
     }
     
     override suspend fun delete(item: EpicEntity) {
-        epicDao.deleteEpic(item)
+        TODO()
     }
     
     override suspend fun deleteById(id: String) {
-        epicDao.deleteEpicById(id)
+        TODO()
     }
     
     override suspend fun deleteAll() {
-        epicDao.deleteAllEpics()
+        TODO()
     }
     
     override suspend fun sync() {
-        try {
-            val response = epicApi.getAllEpics()
-            if (response.success && response.data != null) {
-                val epics = response.data.map { EpicEntity.fromEpic(it) }
-                epicDao.insertEpics(epics)
-                Log.d(TAG, "Successfully synced ${epics.size} epics")
-            } else {
-                Log.w(TAG, "Failed to sync epics")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error syncing epics", e)
-        }
+        TODO()
     }
     
     override fun getEpicsByWorkspaceId(workspaceId: String): Flow<List<EpicEntity>> {
-        return epicDao.getEpicsByWorkspaceId(workspaceId)
+        TODO()
     }
     
     override fun getEpicsByStatus(status: String): Flow<List<EpicEntity>> {
-        return epicDao.getEpicsByStatus(status)
+        TODO()
     }
     
     override fun getEpicsByAssignedTo(assignedTo: String): Flow<List<EpicEntity>> {
-        return epicDao.getEpicsByAssignedTo(assignedTo)
+        TODO()
     }
     
     override fun getEpicsBySprintId(sprintId: String): Flow<List<EpicEntity>> {
-        return epicDao.getEpicsBySprintId(sprintId)
+        TODO()
     }
     
     override suspend fun getAllEpicsFromApi(
@@ -100,19 +89,6 @@ class EpicRepositoryImpl @Inject constructor(
                 page, limit, workspaceId, status, assignedTo, sprintId
             )
             
-            // If successful, store epics in local database
-            if (response.success && response.data.isNotEmpty()) {
-                withContext(Dispatchers.IO) {
-                    try {
-                        val epicEntities = response.data.map { EpicEntity.fromEpic(it) }
-                        epicDao.insertEpics(epicEntities)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error saving epics to local database", e)
-                        // Continue with the response even if local save fails
-                    }
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching epics from API", e)
@@ -124,19 +100,6 @@ class EpicRepositoryImpl @Inject constructor(
     override suspend fun getEpicByIdFromApi(id: String): EpicResponse {
         return try {
             val response = epicApi.getEpicById(id)
-            
-            // If successful, store epic in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    try {
-                        val epicEntity = EpicEntity.fromEpic(response.data)
-                        epicDao.insertEpic(epicEntity)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error saving epic to local database", e)
-                        // Continue with the response even if local save fails
-                    }
-                }
-            }
             
             response
         } catch (e: Exception) {
@@ -164,19 +127,6 @@ class EpicRepositoryImpl @Inject constructor(
             )
             val response = epicApi.createEpic(request)
             
-            // If successful, store epic in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    try {
-                        val epicEntity = EpicEntity.fromEpic(response.data)
-                        epicDao.insertEpic(epicEntity)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error saving created epic to local database", e)
-                        // Continue with the response even if local save fails
-                    }
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error creating epic", e)
@@ -203,20 +153,7 @@ class EpicRepositoryImpl @Inject constructor(
                 startDate, dueDate, completedDate, sprintId
             )
             val response = epicApi.updateEpic(id, request)
-            
-            // If successful, update epic in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    try {
-                        val epicEntity = EpicEntity.fromEpic(response.data)
-                        epicDao.updateEpic(epicEntity)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error saving updated epic to local database", e)
-                        // Continue with the response even if local save fails
-                    }
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error updating epic", e)
@@ -228,44 +165,15 @@ class EpicRepositoryImpl @Inject constructor(
     override suspend fun deleteEpicFromApi(id: String): Boolean {
         return try {
             val response = epicApi.deleteEpic(id)
-            
-            // If successful, delete epic from local database
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    epicDao.deleteEpicById(id)
-                }
-            }
-            
+
             response.success
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting epic", e)
             false
         }
     }
-    
+
     override suspend fun deleteEpic(id: String): EpicResponse {
-        return try {
-            // First get the epic to return it in the response
-            val epic = epicDao.getEpicById(id)
-            
-            val success = deleteEpicFromApi(id)
-            if (success) {
-                // Create a successful response with the deleted epic data
-                return EpicResponse(
-                    success = true,
-                    data = epic?.let { epic.toEpic() }
-                )
-            } else {
-                // Create a failure response
-                return EpicResponse(
-                    success = false,
-                    data = null
-                )
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in deleteEpic", e)
-            // Return empty response with success=false when operation fails
-            return EpicResponse(false, null)
-        }
+        TODO()
     }
 }

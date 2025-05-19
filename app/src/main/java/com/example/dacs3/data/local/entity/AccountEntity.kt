@@ -6,27 +6,28 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.util.Date
 
-@Entity(
-    tableName = "accounts",
-    foreignKeys = [
-        ForeignKey(
-            entity = UserEntity::class,
-            parentColumns = ["_id"],
-            childColumns = ["user_id"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [Index("user_id"), Index("email", unique = true), Index("contactNumber", unique = true)]
-)
+//@Entity(
+//    tableName = "accounts",
+//    foreignKeys = [
+//        ForeignKey(
+//            entity = UserEntity::class,
+//            parentColumns = ["_id"],
+//            childColumns = ["user_id"],
+//            onDelete = ForeignKey.CASCADE
+//        )
+//    ],
+//    indices = [Index("user_id"), Index("email", unique = true), Index("contactNumber", unique = true)]
+//)
+@Entity(tableName = "accounts")
 data class AccountEntity(
     @PrimaryKey
     val _id: String,
     val email: String,
-    val contactNumber: String,
-    val password: String,
-    val otp: String?,
-    val create_at_otp: Date?,
-    val verifyMail: Boolean,
-    val deviceID: String?,
-    val user_id: String
+//    val contactNumber: String,
+//    val password: String,
+//    val otp: String?,
+//    val create_at_otp: Date?,
+//    val verifyMail: Boolean,
+//    val deviceID: String?,
+//    val user_id: String
 ) 

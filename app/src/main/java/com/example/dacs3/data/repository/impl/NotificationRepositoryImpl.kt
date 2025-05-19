@@ -24,66 +24,55 @@ class NotificationRepositoryImpl @Inject constructor(
     private val TAG = "NotificationRepositoryImpl"
     
     override fun getAll(): Flow<List<NotificationEntity>> {
-        return notificationDao.getAllNotifications()
+        TODO()
     }
     
     override suspend fun getById(id: String): NotificationEntity? {
-        return notificationDao.getNotificationById(id)
+        TODO()
     }
     
     override suspend fun insert(item: NotificationEntity) {
-        notificationDao.insertNotification(item)
+        TODO()
     }
     
     override suspend fun insertAll(items: List<NotificationEntity>) {
-        notificationDao.insertNotifications(items)
+        TODO()
     }
     
     override suspend fun update(item: NotificationEntity) {
-        notificationDao.updateNotification(item)
+        TODO()
     }
     
     override suspend fun delete(item: NotificationEntity) {
-        notificationDao.deleteNotification(item)
+        TODO()
     }
     
     override suspend fun deleteById(id: String) {
-        notificationDao.deleteNotificationById(id)
+        TODO()
     }
     
     override suspend fun deleteAll() {
-        notificationDao.deleteAllNotifications()
+        TODO()
     }
     
     override suspend fun sync() {
-        try {
-            val response = notificationApi.getAllNotifications()
-            if (response.success && response.data != null) {
-                val notifications = response.data.map { NotificationEntity.fromNotification(it) }
-                notificationDao.insertNotifications(notifications)
-                Log.d(TAG, "Successfully synced ${notifications.size} notifications")
-            } else {
-                Log.w(TAG, "Failed to sync notifications")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error syncing notifications", e)
-        }
+        TODO()
     }
     
     override fun getNotificationsByWorkspaceId(workspaceId: String): Flow<List<NotificationEntity>> {
-        return notificationDao.getNotificationsByWorkspaceId(workspaceId)
+        TODO()
     }
     
     override fun getNotificationsByUserId(userId: String): Flow<List<NotificationEntity>> {
-        return notificationDao.getNotificationsByUserId(userId)
+        TODO()
     }
     
     override fun getNotificationsByType(type: String): Flow<List<NotificationEntity>> {
-        return notificationDao.getNotificationsByType(type)
+        TODO()
     }
     
     override fun getUnreadNotifications(): Flow<List<NotificationEntity>> {
-        return notificationDao.getUnreadNotifications()
+        TODO()
     }
     
     override suspend fun getAllNotificationsFromApi(
@@ -94,15 +83,6 @@ class NotificationRepositoryImpl @Inject constructor(
     ): NotificationListResponse {
         return try {
             val response = notificationApi.getAllNotifications(page, limit, workspaceId, type)
-            
-            // If successful, store notifications in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val notificationEntities = response.data.map { NotificationEntity.fromNotification(it) }
-                    notificationDao.insertNotifications(notificationEntities)
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching notifications from API", e)
@@ -115,14 +95,6 @@ class NotificationRepositoryImpl @Inject constructor(
         return try {
             val response = notificationApi.getUnreadNotifications()
             
-            // If successful, store notifications in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val notificationEntities = response.data.map { NotificationEntity.fromNotification(it) }
-                    notificationDao.insertNotifications(notificationEntities)
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching unread notifications from API", e)
@@ -134,15 +106,7 @@ class NotificationRepositoryImpl @Inject constructor(
     override suspend fun getNotificationByIdFromApi(id: String): NotificationResponse {
         return try {
             val response = notificationApi.getNotificationById(id)
-            
-            // If successful, store notification in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val notificationEntity = NotificationEntity.fromNotification(response.data)
-                    notificationDao.insertNotification(notificationEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching notification from API", e)
@@ -162,15 +126,7 @@ class NotificationRepositoryImpl @Inject constructor(
         return try {
             val request = CreateNotificationRequest(userId, type, typeId, workspaceId, content, relatedId)
             val response = notificationApi.createNotification(request)
-            
-            // If successful, store notification in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val notificationEntity = NotificationEntity.fromNotification(response.data)
-                    notificationDao.insertNotification(notificationEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error creating notification", e)
@@ -227,14 +183,7 @@ class NotificationRepositoryImpl @Inject constructor(
     override suspend fun deleteNotificationFromApi(id: String): Boolean {
         return try {
             val response = notificationApi.deleteNotification(id)
-            
-            // If successful, delete notification from local database
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    notificationDao.deleteNotificationById(id)
-                }
-            }
-            
+
             response.success
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting notification", e)
@@ -243,15 +192,15 @@ class NotificationRepositoryImpl @Inject constructor(
     }
     
     override suspend fun markAsReadLocally(id: String) {
-        notificationDao.markAsRead(id)
+        TODO()
     }
     
     override suspend fun markAllAsReadLocally(userId: String) {
-        notificationDao.markAllAsRead(userId)
+        TODO()
     }
     
     override suspend fun markAllAsReadByWorkspaceLocally(userId: String, workspaceId: String) {
-        notificationDao.markAllAsReadByWorkspace(userId, workspaceId)
+        TODO()
     }
     
     // Helper function to get the current user ID

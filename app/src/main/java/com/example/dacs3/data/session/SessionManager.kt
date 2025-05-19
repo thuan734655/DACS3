@@ -24,15 +24,20 @@ class SessionManager @Inject constructor(context: Context) {
         private const val KEY_TOKEN = "user_token"
         private const val KEY_TOKEN_EXPIRY = "token_expiry_time"
         private const val KEY_FIRST_TIME = "is_first_time"
+        private const val KEY_CONTACT_NUMBER = "contact_number"
+        private const val KEY_USERNAME = "username"
     }
     
     /**
      * Save user session when they log in successfully
      */
-    fun saveUserSession(userId: String, email: String, token: String) {
+    fun saveUserSession(userId: String, email: String,contactumber: String,username : String, token: String) {
         editor.putString(KEY_USER_ID, userId)
         editor.putString(KEY_EMAIL, email)
         editor.putString(KEY_TOKEN, token)
+        editor.putString(KEY_CONTACT_NUMBER, contactumber)
+        editor.putString(KEY_USERNAME, username)
+
         
         // Calculate expiration time (168 hours from now)
         val expiryTime = System.currentTimeMillis() + (168 * 60 * 60 * 1000)

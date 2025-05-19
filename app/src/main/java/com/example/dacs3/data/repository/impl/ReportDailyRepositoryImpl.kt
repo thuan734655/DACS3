@@ -29,74 +29,63 @@ class ReportDailyRepositoryImpl @Inject constructor(
     private val TAG = "ReportDailyRepositoryImpl"
     
     override fun getAll(): Flow<List<ReportDailyEntity>> {
-        return reportDailyDao.getAllReports()
+        TODO()
     }
     
     override suspend fun getById(id: String): ReportDailyEntity? {
-        return reportDailyDao.getReportById(id)
+        TODO()
     }
     
     override suspend fun insert(item: ReportDailyEntity) {
-        reportDailyDao.insertReport(item)
+        TODO()
     }
     
     override suspend fun insertAll(items: List<ReportDailyEntity>) {
-        reportDailyDao.insertReports(items)
+        TODO()
     }
     
     override suspend fun update(item: ReportDailyEntity) {
-        reportDailyDao.updateReport(item)
+        TODO()
     }
     
     override suspend fun delete(item: ReportDailyEntity) {
-        reportDailyDao.deleteReport(item)
+        TODO()
     }
     
     override suspend fun deleteById(id: String) {
-        reportDailyDao.deleteReportById(id)
+        TODO()
     }
     
     override suspend fun deleteAll() {
-        reportDailyDao.deleteAllReports()
+        TODO()
     }
     
     override suspend fun sync() {
-        try {
-            val response = reportDailyApi.getAllReports()
-            if (response.success && response.data != null) {
-                val reports = response.data.map { ReportDailyEntity.fromReportDaily(it) }
-                reportDailyDao.insertReports(reports)
-                Log.d(TAG, "Successfully synced ${reports.size} reports")
-            } else {
-                Log.w(TAG, "Failed to sync reports")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error syncing reports", e)
-        }
+        TODO()
     }
     
     override fun getReportsByWorkspaceId(workspaceId: String): Flow<List<ReportDailyEntity>> {
-        return reportDailyDao.getReportsByWorkspaceId(workspaceId)
+        TODO()
     }
     
     override fun getReportsByUserId(userId: String): Flow<List<ReportDailyEntity>> {
-        return reportDailyDao.getReportsByUserId(userId)
+        TODO()
     }
     
     override fun getReportsBetweenDates(startDate: Date, endDate: Date): Flow<List<ReportDailyEntity>> {
-        return reportDailyDao.getReportsBetweenDates(startDate, endDate)
+        TODO()
     }
     
     override fun getReportsByDate(date: Date): Flow<List<ReportDailyEntity>> {
-        return reportDailyDao.getReportsByDate(date)
+        TODO()
     }
     
     override fun getReportsByWorkspaceAndDate(workspaceId: String, date: Date): Flow<List<ReportDailyEntity>> {
-        return reportDailyDao.getReportsByWorkspaceAndDate(workspaceId, date)
+        TODO()
     }
     
     override fun getReportsByUserAndWorkspace(userId: String, workspaceId: String): Flow<List<ReportDailyEntity>> {
-        return reportDailyDao.getReportsByUserAndWorkspace(userId, workspaceId)
+        TODO()
     }
     
     override suspend fun getAllReportsFromApi(
@@ -111,15 +100,6 @@ class ReportDailyRepositoryImpl @Inject constructor(
             val response = reportDailyApi.getAllReports(
                 page, limit, workspaceId, userId, startDate, endDate
             )
-            
-            // If successful, store reports in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val reportEntities = response.data.map { ReportDailyEntity.fromReportDaily(it) }
-                    reportDailyDao.insertReports(reportEntities)
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching reports from API", e)
@@ -139,15 +119,7 @@ class ReportDailyRepositoryImpl @Inject constructor(
             val response = reportDailyApi.getMyReports(
                 page, limit, workspaceId, startDate, endDate
             )
-            
-            // If successful, store reports in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val reportEntities = response.data.map { ReportDailyEntity.fromReportDaily(it) }
-                    reportDailyDao.insertReports(reportEntities)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching my reports from API", e)
@@ -163,14 +135,6 @@ class ReportDailyRepositoryImpl @Inject constructor(
         return try {
             val response = reportDailyApi.getReportsByDate(date, workspaceId)
             
-            // If successful, store reports in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val reportEntities = response.data.map { ReportDailyEntity.fromReportDaily(it) }
-                    reportDailyDao.insertReports(reportEntities)
-                }
-            }
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching reports by date from API", e)
@@ -182,15 +146,7 @@ class ReportDailyRepositoryImpl @Inject constructor(
     override suspend fun getReportByIdFromApi(id: String): ReportDailyResponse {
         return try {
             val response = reportDailyApi.getReportById(id)
-            
-            // If successful, store report in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val reportEntity = ReportDailyEntity.fromReportDaily(response.data)
-                    reportDailyDao.insertReport(reportEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching report from API", e)
@@ -214,15 +170,7 @@ class ReportDailyRepositoryImpl @Inject constructor(
                 plannedTasks, issues, generalNotes
             )
             val response = reportDailyApi.createOrUpdateReport(request)
-            
-            // If successful, store report in local database
-            if (response.success && response.data != null) {
-                withContext(Dispatchers.IO) {
-                    val reportEntity = ReportDailyEntity.fromReportDaily(response.data)
-                    reportDailyDao.insertReport(reportEntity)
-                }
-            }
-            
+
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error creating or updating report", e)
@@ -234,14 +182,7 @@ class ReportDailyRepositoryImpl @Inject constructor(
     override suspend fun deleteReportFromApi(id: String): Boolean {
         return try {
             val response = reportDailyApi.deleteReport(id)
-            
-            // If successful, delete report from local database
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    reportDailyDao.deleteReportById(id)
-                }
-            }
-            
+
             response.success
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting report", e)

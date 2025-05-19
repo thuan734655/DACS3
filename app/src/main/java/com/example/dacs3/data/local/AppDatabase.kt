@@ -2,8 +2,6 @@ package com.example.dacs3.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
-import com.example.dacs3.data.local.converters.Converters
 import com.example.dacs3.data.local.dao.*
 import com.example.dacs3.data.local.entity.*
 
@@ -23,7 +21,7 @@ import com.example.dacs3.data.local.entity.*
     version = 1,
     exportSchema = false
 )
-@TypeConverters(Converters::class)  // Add this line
+
 abstract class AppDatabase : RoomDatabase() {
     // DAOs
     abstract fun userDao(): UserDao

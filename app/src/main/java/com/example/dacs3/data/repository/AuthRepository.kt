@@ -18,8 +18,6 @@ import javax.inject.Singleton
 @Singleton
 class AuthRepository @Inject constructor(
     private val api: AuthApi,
-    private val accountDao: AccountDao,
-    private val userDao: UserDao,
     private val sessionManager: SessionManager
 ) {
     suspend fun login(request: LoginRequest): LoginResponse {
@@ -30,42 +28,10 @@ class AuthRepository @Inject constructor(
             if (response.success) {
                 withContext(Dispatchers.IO) {
                     response.account?.let { account ->
-                        // Save user info
-                        // Extract username from email if username is null
-                        val username = account.username ?: account.email?.substringBefore("@") ?: "user_${System.currentTimeMillis()}"
-                        
-                        val user = userDao.getUserById(username)
-                        
-                        if (user == null && account.email != null) {
-                            // If user doesn't exist locally, create it
-                            val userEntity = UserEntity(
-                                _id = UUID.randomUUID().toString(),
-                                name = username,
-                                avatar = null,
-                                created_at = Date()
-                            )
-                            userDao.insertUser(userEntity)
-                            
-                            // Save account info
-                            val accountEntity = AccountEntity(
-                                _id = UUID.randomUUID().toString(),
-                                email = account.email,
-                                contactNumber = account.contactNumber,
-                                password = "",  // We don't store actual password
-                                otp = null,
-                                create_at_otp = null,
-                                verifyMail = true,
-                                deviceID = request.deviceID,
-                                user_id = userEntity._id
-                            )
-                            accountDao.insertAccount(accountEntity)
-                        }
-                        
-                        // Save session info
                         response.token?.let { token ->
                             // Save token and user info in session manager
                             val userId = UUID.randomUUID().toString() // Generate a temporary ID if needed
-                            sessionManager.saveUserSession(userId, account.email, token)
+                            sessionManager.saveUserSession(userId, account.email,account.contactNumber, account.username, token)
                             sessionManager.saveToken(token)
                         }
                     }
@@ -86,37 +52,7 @@ class AuthRepository @Inject constructor(
             if (response.success) {
                 withContext(Dispatchers.IO) {
                     response.account?.let { account ->
-                        try {
-                            // Extract username from email if username is null
-                            val username = account.username ?: account.email?.substringBefore("@") ?: "user_${System.currentTimeMillis()}"
-                            
-                            // Save user info
-                            val userEntity = UserEntity(
-                                _id = UUID.randomUUID().toString(),
-                                name = username,
-                                avatar = null,
-                                created_at = Date()
-                            )
-                            userDao.insertUser(userEntity)
-                            
-                            // Save account info but mark as not verified
-                            val accountEntity = AccountEntity(
-                                _id = UUID.randomUUID().toString(),
-                                email = account.email,
-                                contactNumber = account.contactNumber,
-                                password = "",  // We don't store actual password
-                                otp = null,
-                                create_at_otp = null,
-                                verifyMail = false,
-                                deviceID = null,
-                                user_id = userEntity._id
-                            )
-                            accountDao.insertAccount(accountEntity)
-                            
                             Log.d("AuthRepository", "Successfully saved user data locally")
-                        } catch (e: Exception) {
-                            Log.e("AuthRepository", "Error saving user data locally", e)
-                        }
                     }
                 }
             }
@@ -142,17 +78,6 @@ class AuthRepository @Inject constructor(
             val request = ResetPasswordRequest(email, password, otp)
             val response = api.resetPassword(request)
             
-            // If reset is successful, update local password
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    try {
-                        accountDao.updatePassword(email, "")
-                    } catch (e: Exception) {
-                        Log.e("AuthRepository", "Error updating local password", e)
-                    }
-                }
-            }
-            
             return response
         } catch (e: Exception) {
             Log.e("AuthRepository", "Reset password error", e)
@@ -164,16 +89,6 @@ class AuthRepository @Inject constructor(
         try {
             val request = VerifyEmailRequest(email, otp)
             val response = api.verifyEmail(request)
-            
-            if (response.success) {
-                withContext(Dispatchers.IO) {
-                    try {
-                        accountDao.updateEmailVerification(email, true)
-                    } catch (e: Exception) {
-                        Log.e("AuthRepository", "Error updating email verification", e)
-                    }
-                }
-            }
             
             return response
         } catch (e: Exception) {

@@ -150,7 +150,7 @@ class ChannelRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getChannelsByWorkspaceId(workspaceId: String): Flow<List<ChannelEntity>> {
-        return channelDao.getChannelsByWorkspaceId(workspaceId)
+        TODO()
     }
 
 }

@@ -108,12 +108,6 @@ class HomeViewModel @Inject constructor(
 
                 loadChannels()
             }
-            else {
-                val workspacesResponseRoom = workspaceRepository.getAll().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-                workspacesResponseRoom.collect { workspaceEntities ->
-                    _uiState.update { it.copy(allWorkspaces = workspaceEntities.map { entity -> entity.toWorkspace() }) }
-                }
-            }
         }
     }
 
