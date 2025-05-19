@@ -30,8 +30,9 @@ data class AuthUiState(
     val errorMessage: String = "",
     val action: String? = null,
     val email: String? = null,
-    val token: String? = null,
+    val password: String? = null,  // Add password to store during registration
     val username: String? = null,
+    val token: String? = null,
     val isOfflineMode: Boolean = false
 )
 
@@ -78,7 +79,8 @@ class AuthViewModel @Inject constructor(
                             isLoading = false,
                             isSuccess = true,
                             action = "verify_email",
-                            email = response.account?.email
+                            email = response.account?.email,
+                            password = password
                         )
                     }
                 } else {

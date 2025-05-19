@@ -40,11 +40,13 @@ data class OtpState(
     val isError: Boolean = false,
     val errorMessage: String = "",
     val email: String = "",
+    val password: String = "",  // Added to store password for auto-login
     val action: String? = null,
     val remainingSeconds: Int = 60,
     val canResend: Boolean = false,
     val requires2FA: Boolean = false,
-    val additionalData: Map<String, Any>? = null
+    val additionalData: Map<String, Any>? = null,
+    val isAutoLoginSuccessful: Boolean = false  // Flag to indicate auto-login status
 )
 
-// VerifyEmailRequest is imported from CommonModels.kt 
+// VerifyEmailRequest is imported from CommonModels.kt
