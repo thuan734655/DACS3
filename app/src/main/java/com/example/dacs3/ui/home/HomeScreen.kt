@@ -399,10 +399,15 @@ fun WorkspaceSidebar(
             Spacer(modifier = Modifier.height(16.dp))
 
             // List of workspaces
+            // Lọc bỏ các workspace null và sắp xếp theo created_at mới nhất để hiển thị lên đầu
+            val sortedWorkspaces = allWorkspaces
+                .filterNotNull()
+                .sortedByDescending { it.created_at }
+                
             LazyColumn(
                 modifier = Modifier.weight(1f)
             ) {
-                items(allWorkspaces) { workspace ->
+                items(sortedWorkspaces) { workspace ->
                     WorkspaceItem(
                         workspace = workspace,
                         isSelected = workspace._id == currentWorkspace?._id,
