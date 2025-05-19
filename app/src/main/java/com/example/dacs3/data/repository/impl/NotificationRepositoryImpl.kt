@@ -87,7 +87,23 @@ class NotificationRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching notifications from API", e)
             // Return empty response with success=false when API fails
-            NotificationListResponse(false, 0, 0, emptyList())
+            NotificationListResponse(false, 0, 0, 0, 0, emptyList())
+        }
+    }
+    
+    override suspend fun getNotificationsByUserIdFromApi(
+        userId: String, 
+        page: Int?, 
+        limit: Int?, 
+        type: String?
+    ): NotificationListResponse {
+        return try {
+            val response = notificationApi.getNotificationsByUserId(userId, page, limit, type)
+            response
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching user notifications from API", e)
+            // Return empty response with success=false when API fails
+            NotificationListResponse(false, 0, 0, 0, 0, emptyList())
         }
     }
     
@@ -99,7 +115,7 @@ class NotificationRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching unread notifications from API", e)
             // Return empty response with success=false when API fails
-            NotificationListResponse(false, 0, 0, emptyList())
+            NotificationListResponse(false, 0, 0, 1, 0, emptyList())
         }
     }
     

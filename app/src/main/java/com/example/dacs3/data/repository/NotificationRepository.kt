@@ -38,6 +38,16 @@ interface NotificationRepository : BaseRepository<NotificationEntity, String> {
     ): NotificationListResponse
     
     /**
+     * Get notifications by user ID from remote API
+     */
+    suspend fun getNotificationsByUserIdFromApi(
+        userId: String,
+        page: Int? = null,
+        limit: Int? = null,
+        type: String? = null
+    ): NotificationListResponse
+    
+    /**
      * Get unread notifications from remote API
      */
     suspend fun getUnreadNotificationsFromApi(): NotificationListResponse

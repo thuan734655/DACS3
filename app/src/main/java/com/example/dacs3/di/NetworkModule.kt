@@ -11,13 +11,16 @@ import com.example.dacs3.data.api.UserApi
 import com.example.dacs3.data.api.WorkspaceApi
 import com.example.dacs3.data.api.deserializer.ChannelDeserializer
 import com.example.dacs3.data.api.deserializer.EpicDeserializer
+import com.example.dacs3.data.api.deserializer.NotificationDeserializer
 import com.example.dacs3.data.api.deserializer.WorkspaceDeserializer
 import com.example.dacs3.data.model.Channel
 import com.example.dacs3.data.model.Epic
+import com.example.dacs3.data.model.Notification
 import com.example.dacs3.data.model.Workspace
 import com.example.dacs3.data.session.SessionManager
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializer
 import com.google.gson.reflect.TypeToken
 import dagger.Module
 import dagger.Provides
@@ -74,6 +77,15 @@ object NetworkModule {
             .registerTypeAdapter(object : TypeToken<List<Channel>>() {}.type, ChannelDeserializer())
             .registerTypeAdapter(Workspace::class.java, WorkspaceDeserializer())
             .registerTypeAdapter(Epic::class.java, EpicDeserializer())
+            .registerTypeAdapter(Notification::class.java, NotificationDeserializer())
+            .registerTypeAdapter(object : TypeToken<List<Notification>>() {}.type, JsonDeserializer { json, typeOfT, context ->
+                val notifications = mutableListOf<Notification>()
+                val jsonArray = json.asJsonArray
+                for (element in jsonArray) {
+                    notifications.add(NotificationDeserializer().deserialize(element, Notification::class.java, context))
+                }
+                notifications
+            })
             .setLenient()
             .create()
     }
