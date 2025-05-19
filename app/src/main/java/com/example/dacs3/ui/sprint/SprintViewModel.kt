@@ -129,7 +129,7 @@ class SprintViewModel @Inject constructor(
                     startDate = startDate,
                     endDate = endDate,
                     goal = goal,
-                    status = "To Do"
+                    status = "TO_DO"
                 )
                 
                 if (response.success && response.data != null) {

@@ -33,7 +33,7 @@ fun SprintDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     
-    // Tìm sprint hiện tại từ danh sách
+    // Find current sprint from the list
     val currentSprint = uiState.sprints.find { it._id == sprintId }
     val tasks = uiState.sprintTasks[sprintId] ?: emptyList()
     
@@ -41,25 +41,25 @@ fun SprintDetailScreen(
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     
     LaunchedEffect(sprintId) {
-        // Tải thông tin sprint và các task của sprint
+        // Load sprint information and its tasks
         viewModel.loadSprintDetail(sprintId)
     }
     
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(currentSprint?.name ?: "Chi tiết Sprint") },
+                title = { Text(currentSprint?.name ?: "Sprint Details") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Quay lại")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
                     IconButton(onClick = { showEditDialog = true }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Chỉnh sửa")
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
                     IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Xóa")
+                        Icon(Icons.Default.Delete, contentDescription = "Delete")
                     }
                 }
             )
@@ -77,7 +77,7 @@ fun SprintDetailScreen(
                 )
             } else if (currentSprint == null) {
                 Text(
-                    text = "Không tìm thấy thông tin Sprint",
+                    text = "Sprint information not found",
                     modifier = Modifier.align(Alignment.Center)
                 )
             } else {
@@ -86,7 +86,7 @@ fun SprintDetailScreen(
                         .fillMaxSize()
                         .padding(16.dp)
                 ) {
-                    // Thông tin Sprint
+                    // Sprint Information
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -106,12 +106,12 @@ fun SprintDetailScreen(
                                 
                                 Spacer(modifier = Modifier.height(8.dp))
                                 
-                                // Trạng thái
+                                // Status
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Trạng thái: ",
+                                        text = "Status:",
                                         fontWeight = FontWeight.Medium
                                     )
                                     
@@ -128,7 +128,12 @@ fun SprintDetailScreen(
                                         modifier = Modifier.padding(start = 4.dp)
                                     ) {
                                         Text(
-                                            text = currentSprint.status,
+                                            text = when(currentSprint.status) {
+                                                "To Do" -> "Not Started"
+                                                "In Progress" -> "In Progress"
+                                                "Done" -> "Completed"
+                                                else -> currentSprint.status
+                                            },
                                             color = statusColor,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                             fontSize = 14.sp
@@ -138,45 +143,45 @@ fun SprintDetailScreen(
                                 
                                 Spacer(modifier = Modifier.height(8.dp))
                                 
-                                // Mô tả
+                                // Description
                                 if (!currentSprint.description.isNullOrEmpty()) {
                                     Text(
-                                        text = "Mô tả:",
+                                        text = "Created by:",
                                         fontWeight = FontWeight.Medium
                                     )
                                     Text(
-                                        text = currentSprint.description,
+                                        text = currentSprint.description ?: "No description",
                                         modifier = Modifier.padding(top = 4.dp)
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
                                 
-                                // Mục tiêu
+                                // Goal
                                 if (!currentSprint.goal.isNullOrEmpty()) {
                                     Text(
-                                        text = "Mục tiêu:",
+                                        text = "Goal:",
                                         fontWeight = FontWeight.Medium
                                     )
                                     Text(
-                                        text = currentSprint.goal,
+                                        text = currentSprint.goal ?: "No goal specified",
                                         modifier = Modifier.padding(top = 4.dp)
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
                                 
-                                // Thời gian
+                                // Timeline
                                 Text(
-                                    text = "Thời gian:",
+                                    text = "Timeline:",
                                     fontWeight = FontWeight.Medium
                                 )
                                 Text(
-                                    text = "Từ ${dateFormat.format(currentSprint.start_date)} đến ${dateFormat.format(currentSprint.end_date)}",
+                                    text = "${dateFormat.format(currentSprint.start_date)} - ${dateFormat.format(currentSprint.end_date)}",
                                     modifier = Modifier.padding(top = 4.dp)
                                 )
                                 
                                 Spacer(modifier = Modifier.height(16.dp))
                                 
-                                // Nút thay đổi trạng thái
+                                // Change status button
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
@@ -189,7 +194,7 @@ fun SprintDetailScreen(
                                             ),
                                             modifier = Modifier.weight(1f)
                                         ) {
-                                            Text("Bắt đầu Sprint")
+                                            Text("Start Sprint")
                                         }
                                         
                                         Spacer(modifier = Modifier.width(8.dp))
@@ -203,7 +208,7 @@ fun SprintDetailScreen(
                                             ),
                                             modifier = Modifier.weight(1f)
                                         ) {
-                                            Text("Hoàn thành Sprint")
+                                            Text("Complete Sprint")
                                         }
                                     }
                                 }
@@ -211,7 +216,7 @@ fun SprintDetailScreen(
                         }
                     }
                     
-                    // Tiêu đề danh sách task
+                    // Task list title
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
                         
@@ -221,28 +226,28 @@ fun SprintDetailScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Danh sách công việc (${tasks.size})",
+                                text = "Tasks in Sprint (${tasks.size})",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
                             
                             Button(
-                                onClick = { /* Điều hướng đến trang tạo task */ },
+                                onClick = { /* Navigate to create task page */ },
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Add,
-                                    contentDescription = "Thêm task"
+                                    contentDescription = "Add new task"
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Thêm task")
+                                Text("Add new task")
                             }
                         }
                         
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                     
-                    // Danh sách task
+                    // Task list
                     if (tasks.isEmpty()) {
                         item {
                             Card(
@@ -257,7 +262,7 @@ fun SprintDetailScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = "Chưa có công việc nào trong Sprint này",
+                                        text = "No tasks in this Sprint",
                                         textAlign = TextAlign.Center,
                                         color = Color.Gray
                                     )
@@ -272,7 +277,7 @@ fun SprintDetailScreen(
                 }
             }
             
-            // Hiển thị lỗi nếu có
+            // Display error if any
             uiState.error?.let { error ->
                 Snackbar(
                     modifier = Modifier

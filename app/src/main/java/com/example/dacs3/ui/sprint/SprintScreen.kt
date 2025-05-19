@@ -16,13 +16,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dacs3.data.model.Sprint
 import com.example.dacs3.data.model.Task
+import com.example.dacs3.data.model.UserInfo
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -47,12 +51,12 @@ fun SprintScreen(
                 title = { Text("Sprint") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Quay lại")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Xử lý thông báo */ }) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Thông báo")
+                    IconButton(onClick = { /* Handle notifications */ }) {
+                        Icon(Icons.Default.Notifications, contentDescription = "Notifications")
                     }
                 }
             )
@@ -100,7 +104,7 @@ fun SprintScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
-                            contentDescription = "Tạo Sprint",
+                            contentDescription = "Create New Sprint",
                             tint = Color.White
                         )
                     }
@@ -136,7 +140,7 @@ fun SprintScreen(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Không có sprint nào")
+                    Text("No sprints available")
                 }
             } else {
                 LazyColumn(
@@ -156,12 +160,18 @@ fun SprintScreen(
                         val isExpanded = uiState.expandedSprintIds.contains(sprint._id)
                         val tasks = uiState.sprintTasks[sprint._id] ?: emptyList()
                         
-                        SprintItemDetail(
+                        SprintItem(
                             sprint = sprint,
                             tasks = tasks,
                             isExpanded = isExpanded,
-                            onSprintClick = { viewModel.toggleSprintExpansion(sprint._id) },
-                            onSprintSelected = { onSprintSelected(sprint) },
+                            onSprintClick = { 
+                                // Chỉ toggle khi nhấp vào nút mở rộng, các tương tác khác dẫn đến xem chi tiết
+                                viewModel.toggleSprintExpansion(sprint._id) 
+                            },
+                            onSprintSelected = { 
+                                // Điều hướng đến trang chi tiết Sprint khi nhấp vào Sprint
+                                onSprintSelected(sprint) 
+                            },
                             onCompleteClick = { 
                                 viewModel.updateSprintStatus(sprint._id, "Done") 
                             },
@@ -198,11 +208,15 @@ fun SprintItem(
     onStartClick: () -> Unit,
     onSeeMoreClick: () -> Unit
 ) {
-    val dateFormat = SimpleDateFormat("dd MMM - dd MMM", Locale.getDefault())
-    val dateRange = "${dateFormat.format(sprint.start_date)} (${tasks.size} work items)"
+    // Format dates for display
+    val startDate = SimpleDateFormat("dd MMM", Locale.getDefault()).format(sprint.start_date)
+    val endDate = SimpleDateFormat("dd MMM", Locale.getDefault()).format(sprint.end_date)
+    val dateRange = "$startDate - $endDate (${tasks.size} work items)"
     
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onSprintSelected() }, // Toàn bộ card có thể nhấn để xem chi tiết
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -219,6 +233,7 @@ fun SprintItem(
                 text = sprint.name,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
                 modifier = Modifier.constrainAs(title) {
                     top.linkTo(parent.top)
                     start.linkTo(parent.start)
@@ -228,7 +243,7 @@ fun SprintItem(
             // Ngày và số lượng công việc
             Text(
                 text = dateRange,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 modifier = Modifier.constrainAs(date) {
                     top.linkTo(title.bottom, margin = 4.dp)
@@ -236,9 +251,9 @@ fun SprintItem(
                 }
             )
             
-            // Nút menu
+            // Menu điểm ba
             IconButton(
-                onClick = { /* Hiển thị menu */ },
+                onClick = { onSprintSelected() }, // Thêm hành động xem chi tiết Sprint khi nhấn vào menu
                 modifier = Modifier.constrainAs(menu) {
                     top.linkTo(parent.top)
                     end.linkTo(parent.end)
@@ -246,11 +261,12 @@ fun SprintItem(
             ) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
-                    contentDescription = "Menu"
+                    contentDescription = "Menu",
+                    tint = Color.Gray
                 )
             }
             
-            // Nút mở rộng/thu gọn
+            // Icon mở rộng/thu gọn
             IconButton(
                 onClick = onSprintClick,
                 modifier = Modifier.constrainAs(expandIcon) {
@@ -260,7 +276,8 @@ fun SprintItem(
             ) {
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
-                    contentDescription = if (isExpanded) "Thu gọn" else "Mở rộng"
+                    contentDescription = if (isExpanded) "Thu gọn" else "Mở rộng",
+                    tint = Color.Gray
                 )
             }
             
@@ -302,43 +319,62 @@ fun SprintItem(
                 }
             }
 
-            // Nút hành động (Complete Sprint hoặc Start Sprint)
-            Button(
-                onClick = { 
-                    if (sprint.status == "Done") {
-                        // Đã hoàn thành, không cần làm gì
-                    } else if (sprint.status == "In Progress") {
-                        onCompleteClick()
-                    } else {
-                        onStartClick()
-                    }
-                },
+            // Action buttons (Start/Complete Sprint and Details)
+            Row(
                 modifier = Modifier.constrainAs(actionButton) {
                     top.linkTo(if (isExpanded && tasks.isNotEmpty()) {
                         if (tasks.size > 3) seeMore.bottom else taskList.bottom
                     } else date.bottom, margin = 16.dp)
                     start.linkTo(parent.start)
+                    width = Dimension.fillToConstraints
                 },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = when (sprint.status) {
-                        "Done" -> Color.Gray
-                        "In Progress" -> Color(0xFF4CAF50)
-                        else -> Color(0xFF2196F3)
-                    }
-                )
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = when (sprint.status) {
-                        "Done" -> "Completed"
-                        "In Progress" -> "Complete Sprint"
-                        else -> "Start Sprint"
-                    }
-                )
+                // Sprint action button (Start/Complete)
+                Button(
+                    onClick = { 
+                        if (sprint.status == "Done") {
+                            // Already completed, nothing to do
+                        } else if (sprint.status == "In Progress") {
+                            onCompleteClick()
+                        } else {
+                            onStartClick()
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = when (sprint.status) {
+                            "Done" -> Color.Gray
+                            "In Progress" -> Color(0xFF4CAF50)
+                            else -> Color(0xFF2196F3)
+                        }
+                    )
+                ) {
+                    Text(
+                        text = when (sprint.status) {
+                            "Done" -> "Completed"
+                            "In Progress" -> "Complete Sprint"
+                            else -> "Start Sprint"
+                        }
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                // Details button
+                Button(
+                    onClick = { onSprintSelected() },
+                    modifier = Modifier.weight(0.5f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Text("Details")
+                }
             }
         }
     }
 }
-
 @Composable
 fun TaskItem(task: Task) {
     Row(
@@ -351,13 +387,13 @@ fun TaskItem(task: Task) {
             modifier = Modifier.weight(1f)
         ) {
             Text(
-                text = "Brainstorming",
+                text = task.title,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium
             )
             
             Text(
-                text = "Brainstorming brings team members' diverse ...",
+                text = task.description ?: "Brainstorming brings team members' diverse ...",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
                 maxLines = 1,
@@ -368,15 +404,27 @@ fun TaskItem(task: Task) {
         Spacer(modifier = Modifier.width(8.dp))
         
         // Priority tag
+        val priorityColor = when(task.priority.lowercase()) {
+            "high" -> Color(0xFFF44336)
+            "medium" -> Color(0xFFFF9800)
+            else -> Color(0xFF4CAF50)
+        }
+        
+        val priorityBgColor = when(task.priority.lowercase()) {
+            "high" -> Color(0xFFFFEBEE)
+            "medium" -> Color(0xFFFFF3E0)
+            else -> Color(0xFFE8F5E9)
+        }
+        
         Box(
             modifier = Modifier
-                .background(Color(0xFFFFF3E0), RoundedCornerShape(4.dp))
+                .background(priorityBgColor, RoundedCornerShape(4.dp))
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             Text(
-                text = "Low",
+                text = task.priority,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFFFF9800)
+                color = priorityColor
             )
         }
         
@@ -398,6 +446,7 @@ fun TaskItem(task: Task) {
         Row(
             modifier = Modifier.padding(start = 8.dp)
         ) {
+            // Hiển thị avatar người dùng thực tế nếu có
             // Giả lập 3 avatar người dùng
             for (i in 0 until 3) {
                 Box(

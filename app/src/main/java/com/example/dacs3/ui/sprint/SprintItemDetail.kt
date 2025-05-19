@@ -28,7 +28,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun SprintItemDetail(  // Đổi tên từ SprintItem thành SprintItemDetail
+fun SprintItemDetail(  // Renamed from SprintItem to SprintItemDetail
     sprint: Sprint,
     tasks: List<Task>,
     isExpanded: Boolean,
@@ -71,7 +71,7 @@ fun SprintItemDetail(  // Đổi tên từ SprintItem thành SprintItemDetail
                     Spacer(modifier = Modifier.height(4.dp))
                     
                     Text(
-                        text = "Từ ${dateFormat.format(sprint.start_date)} đến ${dateFormat.format(sprint.end_date)}",
+                        text = "From ${dateFormat.format(sprint.start_date)} to ${dateFormat.format(sprint.end_date)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
@@ -112,7 +112,7 @@ fun SprintItemDetail(  // Đổi tên từ SprintItem thành SprintItemDetail
                 ) {
                     Icon(
                         imageVector = Icons.Default.ExpandMore,
-                        contentDescription = if (isExpanded) "Thu gọn" else "Mở rộng",
+                        contentDescription = if (isExpanded) "Collapse" else "Expand",
                         modifier = Modifier.rotate(rotationState)
                     )
                 }
@@ -149,7 +149,7 @@ fun SprintItemDetail(  // Đổi tên từ SprintItem thành SprintItemDetail
                     // Sprint goal
                     if (!sprint.goal.isNullOrEmpty()) {
                         Text(
-                            text = "Mục tiêu: ${sprint.goal}",
+                            text = "Goal: ${sprint.goal}",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
@@ -159,7 +159,7 @@ fun SprintItemDetail(  // Đổi tên từ SprintItem thành SprintItemDetail
                     
                     // Tasks
                     Text(
-                        text = "Công việc (${tasks.size})",
+                        text = "Tasks (${tasks.size})",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -168,7 +168,7 @@ fun SprintItemDetail(  // Đổi tên từ SprintItem thành SprintItemDetail
                     
                     if (tasks.isEmpty()) {
                         Text(
-                            text = "Chưa có công việc nào",
+                            text = "No tasks available",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.Gray
                         )
@@ -192,14 +192,14 @@ fun SprintItemDetail(  // Đổi tên từ SprintItem thành SprintItemDetail
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Xem thêm",
+                                        text = "See more",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                     
                                     Icon(
                                         imageVector = Icons.Default.ArrowForward,
-                                        contentDescription = "Xem thêm",
+                                        contentDescription = "See more",
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(16.dp)
                                     )
@@ -221,7 +221,7 @@ fun SprintItemDetail(  // Đổi tên từ SprintItem thành SprintItemDetail
                                 containerColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            Text("Chi tiết")
+                            Text("Details")
                         }
                         
                         when (sprint.status) {
@@ -232,7 +232,7 @@ fun SprintItemDetail(  // Đổi tên từ SprintItem thành SprintItemDetail
                                         containerColor = Color(0xFF2196F3)
                                     )
                                 ) {
-                                    Text("Bắt đầu Sprint")
+                                    Text("Start Sprint")
                                 }
                             }
                             "In Progress" -> {
@@ -242,7 +242,7 @@ fun SprintItemDetail(  // Đổi tên từ SprintItem thành SprintItemDetail
                                         containerColor = Color(0xFF4CAF50)
                                     )
                                 ) {
-                                    Text("Hoàn thành Sprint")
+                                    Text("Complete Sprint")
                                 }
                             }
                             "Done" -> {
@@ -253,7 +253,7 @@ fun SprintItemDetail(  // Đổi tên từ SprintItem thành SprintItemDetail
                                         containerColor = Color.Gray
                                     )
                                 ) {
-                                    Text("Đã hoàn thành")
+                                    Text("Completed")
                                 }
                             }
                         }

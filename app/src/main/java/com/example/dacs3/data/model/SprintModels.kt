@@ -4,12 +4,24 @@ import java.util.Date
 import com.example.dacs3.data.model.MessageResponse
 
 // Models
+data class WorkspaceInfo(
+    val _id: String,
+    val name: String,
+    val description: String?
+)
+
+data class UserInfo(
+    val _id: String,
+    val name: String,
+    val avatar: String?
+)
+
 data class Sprint(
     val _id: String,
     val name: String,
     val description: String?,
-    val workspace_id: String,
-    val created_by: String,
+    val workspace_id: WorkspaceInfo,
+    val created_by: UserInfo,
     val status: String,
     val start_date: Date,
     val end_date: Date,

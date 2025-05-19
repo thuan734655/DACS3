@@ -50,10 +50,10 @@ fun CreateSprintScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tạo Sprint mới") },
+                title = { Text("Create New Sprint") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Quay lại")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -81,65 +81,65 @@ fun CreateSprintScreen(
                             .padding(16.dp)
                     ) {
                         Text(
-                            text = "Thông tin Sprint",
+                            text = "Sprint Information",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Tên Sprint
+                        // Sprint Name
                         OutlinedTextField(
                             value = sprintName,
                             onValueChange = { 
                                 sprintName = it
                                 showNameError = false
                             },
-                            label = { Text("Tên Sprint") },
-                            placeholder = { Text("Nhập tên sprint") },
+                            label = { Text("Sprint Name") },
+                            placeholder = { Text("Enter sprint name") },
                             isError = showNameError,
                             supportingText = if (showNameError) {
-                                { Text("Tên sprint không được để trống") }
+                                { Text("Please enter sprint name") }
                             } else null,
                             modifier = Modifier.fillMaxWidth()
                         )
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Mô tả Sprint
+                        // Sprint Description
                         OutlinedTextField(
                             value = sprintDescription,
                             onValueChange = { sprintDescription = it },
-                            label = { Text("Mô tả (tùy chọn)") },
-                            placeholder = { Text("Nhập mô tả cho sprint") },
+                            label = { Text("Description") },
+                            placeholder = { Text("Enter sprint description (optional)") },
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 3
                         )
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Mục tiêu Sprint
+                        // Sprint Goal
                         OutlinedTextField(
                             value = sprintGoal,
                             onValueChange = { sprintGoal = it },
-                            label = { Text("Mục tiêu (tùy chọn)") },
-                            placeholder = { Text("Nhập mục tiêu của sprint") },
+                            label = { Text("Goal") },
+                            placeholder = { Text("Enter sprint goal (optional)") },
                             modifier = Modifier.fillMaxWidth()
                         )
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Ngày bắt đầu
+                        // Start Date
                         OutlinedTextField(
                             value = dateFormat.format(startDate),
                             onValueChange = { },
-                            label = { Text("Ngày bắt đầu") },
+                            label = { Text("Start Date") },
                             readOnly = true,
                             trailingIcon = {
                                 IconButton(onClick = { showStartDatePicker = true }) {
                                     Icon(
                                         Icons.Default.CalendarToday,
-                                        contentDescription = "Chọn ngày bắt đầu"
+                                        contentDescription = "Select start date"
                                     )
                                 }
                             },
@@ -148,17 +148,17 @@ fun CreateSprintScreen(
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // Ngày kết thúc
+                        // End Date
                         OutlinedTextField(
                             value = dateFormat.format(endDate),
                             onValueChange = { },
-                            label = { Text("Ngày kết thúc") },
+                            label = { Text("End Date") },
                             readOnly = true,
                             trailingIcon = {
                                 IconButton(onClick = { showEndDatePicker = true }) {
                                     Icon(
                                         Icons.Default.CalendarToday,
-                                        contentDescription = "Chọn ngày kết thúc"
+                                        contentDescription = "Select end date"
                                     )
                                 }
                             },
@@ -169,7 +169,7 @@ fun CreateSprintScreen(
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Nút tạo Sprint
+                // Create Sprint Button
                 Button(
                     onClick = {
                         if (sprintName.isBlank()) {
@@ -186,7 +186,11 @@ fun CreateSprintScreen(
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isLoading
+                    enabled = !uiState.isLoading,
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2196F3)
+                    )
                 ) {
                     if (uiState.isLoading) {
                         CircularProgressIndicator(
@@ -194,12 +198,12 @@ fun CreateSprintScreen(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("Tạo Sprint")
+                        Text("Create Sprint")
                     }
                 }
             }
             
-            // Hiển thị lỗi nếu có
+            // Display error if any
             uiState.error?.let { error ->
                 Snackbar(
                     modifier = Modifier
@@ -210,7 +214,7 @@ fun CreateSprintScreen(
                 }
             }
             
-            // Date Picker cho ngày bắt đầu
+            // Date Picker for start date
             if (showStartDatePicker) {
                 DatePickerDialog(
                     initialDate = startDate,
@@ -222,7 +226,7 @@ fun CreateSprintScreen(
                 )
             }
             
-            // Date Picker cho ngày kết thúc
+            // Date Picker for end date
             if (showEndDatePicker) {
                 DatePickerDialog(
                     initialDate = endDate,
@@ -271,7 +275,7 @@ fun DatePickerDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Hủy")
+                Text("Cancel")
             }
         }
     ) {
