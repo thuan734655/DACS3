@@ -15,9 +15,11 @@ import com.example.dacs3.data.user.UserManager
 import com.example.dacs3.util.WorkspacePreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -62,7 +64,6 @@ class HomeViewModel @Inject constructor(
     val workspace = uiState.map { it.workspace }
     val channels = uiState.map { it.channels }
     val notification = uiState.map { it.notification }
-    val allWorkspaces = uiState.map { it.allWorkspaces }
 
     init {
         loadUser()
@@ -104,9 +105,14 @@ class HomeViewModel @Inject constructor(
                 } else {
                     _uiState.update { it.copy(workspace = workspacesResponse.data.first()) }
                 }
-                
-                // Tải channels cho workspace được chọn
+
                 loadChannels()
+            }
+            else {
+                val workspacesResponseRoom = workspaceRepository.getAll().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+                workspacesResponseRoom.collect { workspaceEntities ->
+                    _uiState.update { it.copy(allWorkspaces = workspaceEntities.map { entity -> entity.toWorkspace() }) }
+                }
             }
         }
     }
@@ -149,6 +155,21 @@ class HomeViewModel @Inject constructor(
                 _uiState.update { it.copy(workspace = workspace) }
                 workspacePreferences.saveSelectedWorkspaceId(workspaceId)
                 loadChannels() // Tải lại channels cho workspace mới
+            }
+        }
+    }
+    fun createChannel(name: String, description: String, isPrivate: Boolean) {
+        viewModelScope.launch {
+            val workspaceId = workspacePreferences.getSelectedWorkspaceId()
+            val createdBy = userManager.getCurrentUserId() ?: ""
+            val response = channelRepository.createChannel(name, description,workspaceId, createdBy,isPrivate)
+            if (response.success && response.data != null) {
+                _uiState.update {
+                    it.copy(
+                        channels = it.channels + response.data,
+                        unreadChannels = it.unreadChannels + response.data
+                    )
+                }
             }
         }
     }

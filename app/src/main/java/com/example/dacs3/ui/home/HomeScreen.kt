@@ -25,6 +25,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.dacs3.data.model.Channel
 import com.example.dacs3.data.model.Workspace
 import com.example.dacs3.data.model.User
+import com.example.dacs3.ui.channels.CreateChannelDialog
 import com.example.dacs3.ui.components.BottomNavigationBar
 // Add this import
 import com.example.dacs3.ui.workspace.CreateWorkspaceDialog
@@ -40,6 +41,7 @@ fun HomeScreen(
     notification: String,
     onChannelClick: (String) -> Unit,
     onAddChannel: () -> Unit,
+    onclickCreateChannel: (name:String, description:String, isPrivate:Boolean) -> Unit,
     onWorkspaceSelected: (String) -> Unit,
     onNotificationClick: () -> Unit,
     onHomeClick: () -> Unit,
@@ -246,14 +248,27 @@ fun HomeScreen(
                     }
 
                     // Add channel button
+                    var showCreateChannelDialog by remember { mutableStateOf(false) }
+
+                    // In the unread section where the "Add channel" button is:
                     Text(
                         "+ Add channel",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray,
                         modifier = Modifier
-                            .clickable { onAddChannel() }
+                            .clickable { showCreateChannelDialog = true }
                             .padding(vertical = 6.dp)
                     )
+
+                    // Add at the end of the content:
+                    if (showCreateChannelDialog) {
+                        CreateChannelDialog (
+                            onDismiss = { showCreateChannelDialog = false },
+                            onCreateChannel = { name, description, isPrivate ->
+                                onclickCreateChannel(name, description, isPrivate)
+                            }
+                        )
+                    }
                 }
 
                 // Divider 2

@@ -4,6 +4,10 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.dacs3.data.model.Channel
 import com.example.dacs3.data.model.ChannelMember
+import com.example.dacs3.data.model.User
+import com.example.dacs3.data.model.Workspace
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import java.util.Date
 
 @Entity(tableName = "channels")
@@ -15,46 +19,48 @@ data class ChannelEntity(
     val workspace_id: String,
     val created_by: String,
     val is_private: Boolean,
-    val members: List<ChannelMember>,
+    val members: String,
     val last_message_id: String?,
     val last_message_preview: String?,
-    val last_message_at: Date?,
-    val created_at: Date,
-    val updated_at: Date
+    val last_message_at: Long?,
+    val created_at: Long,
+    val updated_at: Long
 ) {
     fun toChannel(): Channel {
+        val gson = Gson()
         return Channel(
             _id = _id,
             name = name,
             description = description,
-            workspace_id = workspace_id,
-            created_by = created_by,
+            workspace_id = gson.fromJson(workspace_id, Workspace::class.java),
+            created_by = gson.fromJson(created_by, User::class.java),
             is_private = is_private,
-            members = members,
+            members = gson.fromJson(members, object : TypeToken<List<ChannelMember>>() {}.type),
             last_message_id = last_message_id,
             last_message_preview = last_message_preview,
-            last_message_at = last_message_at,
-            created_at = created_at,
-            updated_at = updated_at
+            last_message_at = last_message_at?.let { Date(it) },
+            created_at = Date(created_at),
+            updated_at = Date(updated_at)
         )
     }
 
     companion object {
         fun fromChannel(channel: Channel): ChannelEntity {
+            val gson = Gson()
             return ChannelEntity(
                 _id = channel._id,
                 name = channel.name,
                 description = channel.description,
-                workspace_id = channel.workspace_id,
-                created_by = channel.created_by,
+                workspace_id = gson.toJson(channel.workspace_id),
+                created_by = gson.toJson(channel.created_by),
                 is_private = channel.is_private,
-                members = channel.members,
+                members = gson.toJson(channel.members),
                 last_message_id = channel.last_message_id,
                 last_message_preview = channel.last_message_preview,
-                last_message_at = channel.last_message_at,
-                created_at = channel.created_at,
-                updated_at = channel.updated_at
+                last_message_at = channel.last_message_at?.time,
+                created_at = channel.created_at.time,
+                updated_at = channel.updated_at.time
             )
         }
     }
-} 
+}

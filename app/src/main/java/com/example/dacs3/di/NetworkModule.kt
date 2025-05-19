@@ -9,11 +9,14 @@ import com.example.dacs3.data.api.SprintApi
 import com.example.dacs3.data.api.TaskApi
 import com.example.dacs3.data.api.UserApi
 import com.example.dacs3.data.api.WorkspaceApi
+import com.example.dacs3.data.api.deserializer.ChannelDeserializer
 import com.example.dacs3.data.api.deserializer.WorkspaceDeserializer
+import com.example.dacs3.data.model.Channel
 import com.example.dacs3.data.model.Workspace
 import com.example.dacs3.data.session.SessionManager
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -67,6 +70,7 @@ object NetworkModule {
     @Singleton
     fun provideGson(): Gson {
         return GsonBuilder()
+            .registerTypeAdapter(object : TypeToken<List<Channel>>() {}.type, ChannelDeserializer())
             .setLenient()
             .registerTypeAdapter(Workspace::class.java, WorkspaceDeserializer())
             .create()

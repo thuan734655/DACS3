@@ -23,7 +23,7 @@ import com.example.dacs3.data.local.entity.*
     version = 1,
     exportSchema = false
 )
-@TypeConverters(Converters::class)
+@TypeConverters(Converters::class)  // Add this line
 abstract class AppDatabase : RoomDatabase() {
     // DAOs
     abstract fun userDao(): UserDao
@@ -40,4 +40,4 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         const val DATABASE_NAME = "dacs3_database"
     }
-} 
+}

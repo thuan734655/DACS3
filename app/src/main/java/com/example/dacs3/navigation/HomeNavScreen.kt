@@ -28,7 +28,6 @@ fun HomeNavScreen(
             navController.navigate("channel_detail/$channelId")
         },
         onAddChannel = {
-            // Điều hướng đến màn hình tạo kênh mới
             navController.navigate("create_channel/${uiState.workspace._id}")
         },
         onWorkspaceSelected = { workspaceId ->
@@ -57,6 +56,9 @@ fun HomeNavScreen(
         ,
         oncreateWorkspaceClick = { name, description ->
             viewModel.createWorkspace(name, description)
+        },
+        onclickCreateChannel = { name, description, isPrivate ->
+            viewModel.createChannel(name, description, isPrivate)
         }
     )
 }

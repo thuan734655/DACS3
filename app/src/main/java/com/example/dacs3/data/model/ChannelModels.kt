@@ -9,8 +9,8 @@ data class Channel(
     val _id: String,
     val name: String,
     val description: String?,
-    val workspace_id: String,
-    val created_by: String,
+    val workspace_id: Workspace,
+    val created_by: User,
     val is_private: Boolean,
     val members: List<ChannelMember>,
     val last_message_id: String?,
@@ -21,9 +21,10 @@ data class Channel(
 )
 
 data class ChannelMember(
-    val user: String,
+    val user: User,
     val last_read: Date?,
-    val joined_at: Date
+    val joined_at: Date,
+    val _id: String? = null
 )
 
 // Requests

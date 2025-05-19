@@ -17,7 +17,11 @@ class ChannelRepositoryImpl @Inject constructor(
     private val channelApi: ChannelApi
 ) : ChannelRepository {
 
-    override suspend fun getAllChannelsFromApi(page: Int?, limit: Int?, workspaceId: String): ApiResponse<ChannelList> {
+    override suspend fun getAllChannelsFromApi(
+        page: Int?,
+        limit: Int?,
+        workspaceId: String
+    ): ApiResponse<ChannelList> {
         return try {
             val response = channelApi.getAllChannels(page, limit, workspaceId)
             ApiResponse(
@@ -43,19 +47,20 @@ class ChannelRepositoryImpl @Inject constructor(
             val resp = channelApi.getAllChannels(page, limit, workspaceId)
             ApiResponse(
                 success = resp.success,
-                data    = resp.data,
+                data = resp.data,
                 message = "Lấy danh sách kênh theo workspace thành công"
             )
         } catch (e: Exception) {
             ApiResponse(false, emptyList(), e.message ?: "Lỗi khi lấy kênh theo workspace")
         }
     }
+
     override suspend fun getChannelsByCreatedBy(userId: String): ApiResponse<List<Channel>> {
         return try {
             val response = channelApi.getAllChannels() // Thay thế apiService bằng channelApi
             // Xử lý response để lấy các channel được tạo bởi userId
-            val filteredChannels = response.data.filter { it.created_by == userId }
-            
+            val filteredChannels = response.data.filter { it.created_by._id == userId }
+
             ApiResponse(
                 success = true,
                 data = filteredChannels,
@@ -78,8 +83,8 @@ class ChannelRepositoryImpl @Inject constructor(
         isPrivate: Boolean
     ): ApiResponse<Channel> {
         val request = CreateChannelRequest(
-            name       = name,
-            description= description,
+            name = name,
+            description = description,
             workspace_id = workspaceId,
             created_by = createdBy,
             is_private = isPrivate
@@ -145,9 +150,7 @@ class ChannelRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getChannelsByWorkspaceId(workspaceId: String): Flow<List<ChannelEntity>> {
-        // Triển khai logic để lấy danh sách ChannelEntity theo workspaceId
-        // Ví dụ: return channelDao.getChannelsByWorkspaceId(workspaceId)
-        TODO("Implement this method")
+        return channelDao.getChannelsByWorkspaceId(workspaceId)
     }
 
 }
