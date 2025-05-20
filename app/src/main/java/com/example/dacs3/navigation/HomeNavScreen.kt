@@ -14,7 +14,6 @@ fun HomeNavScreen(
     navController: NavHostController,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    // Lắng nghe uiState
     val uiState by viewModel.uiState.collectAsState()
 
     HomeScreen(
@@ -25,7 +24,6 @@ fun HomeNavScreen(
         unreadChannels = uiState.unreadChannels,
         notification = uiState.notification,
         onChannelClick = { channelId ->
-            // Điều hướng đến màn hình chi tiết kênh
             navController.navigate("channel_detail/$channelId")
         },
         onAddChannel = {
@@ -38,22 +36,17 @@ fun HomeNavScreen(
             navController.navigateToWorkspaceDetail(workspaceId)
         },
         onNotificationClick = {
-            // Điều hướng đến màn hình thông báo
             navController.navigate(Screen.Notifications.route)
         },
         onHomeClick = {
-            // Đã ở màn hình Home nên không cần điều hướng
         },
         onMessageClick = {
-            // Điều hướng đến màn hình tin nhắn
             navController.navigate(Screen.ConversationList.route)
         },
         onDashboardClick = {
-            // Điều hướng đến màn hình dashboard
             navController.navigate(Screen.Dashboard.route)
         },
         onProfileClick = {
-            // Điều hướng đến màn hình hồ sơ
             navController.navigate(Screen.Profile.route)
         },
         oncreateWorkspaceClick = { name, description ->

@@ -16,6 +16,8 @@ import javax.inject.Inject
 data class NotificationUiState(
     val isLoading: Boolean = false,
     val notifications: List<Notification> = emptyList(),
+    val page: Int = 1,
+    val totalPages: Int = 1,
     val error: String? = null
 )
 
@@ -28,16 +30,22 @@ class NotificationViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(NotificationUiState())
     val uiState: StateFlow<NotificationUiState> = _uiState.asStateFlow()
 
-    fun loadNotifications() {
+    fun loadNotifications(page: Int = 1, limit: Int = 10) {
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             try {
                 val userId = userManager.getCurrentUserId()
                 if (userId != null) {
-                    val response = notificationRepository.getUnreadNotificationsFromApi()
+                    val response = notificationRepository.getNotificationsByUserIdFromApi(
+                        userId = userId,
+                        page = page,
+                        limit = limit
+                    )
                     if (response.success) {
                         _uiState.update { it.copy(
-                            notifications = response.data.sortedByDescending { notification -> notification.created_at },
+                            notifications = response.data,
+                            page = response.page,
+                            totalPages = response.pages,
                             isLoading = false
                         ) }
                     } else {
@@ -53,7 +61,24 @@ class NotificationViewModel @Inject constructor(
     }
 
     fun refreshNotifications() {
-        loadNotifications()
+        loadNotifications(page = 1)
+    }
+    
+    fun loadNextPage() {
+        val currentPage = _uiState.value.page
+        val totalPages = _uiState.value.totalPages
+        
+        if (currentPage < totalPages) {
+            loadNotifications(page = currentPage + 1)
+        }
+    }
+    
+    fun loadPreviousPage() {
+        val currentPage = _uiState.value.page
+        
+        if (currentPage > 1) {
+            loadNotifications(page = currentPage - 1)
+        }
     }
 
     fun markAsRead(notificationId: String) {
@@ -99,6 +124,23 @@ class NotificationViewModel @Inject constructor(
         }
     }
 
+    fun deleteNotification(notificationId: String) {
+        viewModelScope.launch {
+            try {
+                val result = notificationRepository.deleteNotificationFromApi(notificationId)
+                if (result) {
+                    // Remove the notification from the UI state
+                    val updatedNotifications = _uiState.value.notifications.filter { it._id != notificationId }
+                    _uiState.update { it.copy(notifications = updatedNotifications) }
+                } else {
+                    _uiState.update { it.copy(error = "Failed to delete notification") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message ?: "An error occurred") }
+            }
+        }
+    }
+    
     fun clearError() {
         _uiState.update { it.copy(error = null) }
     }
