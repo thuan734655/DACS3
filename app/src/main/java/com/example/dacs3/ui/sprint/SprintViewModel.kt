@@ -215,9 +215,11 @@ class SprintViewModel @Inject constructor(
     }
     
     fun updateSprintStatus(sprintId: String, status: String) {
+        android.util.Log.d("SprintViewModel", "updateSprintStatus CALLED with sprintId=$sprintId, status=$status")
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isLoading = true, error = null) }
+                android.util.Log.d("SprintViewModel", "Calling repository.updateSprint with status=$status")
                 
                 val response = sprintRepository.updateSprint(
                     id = sprintId,
@@ -229,12 +231,15 @@ class SprintViewModel @Inject constructor(
                     goal = null
                 )
                 
+                android.util.Log.d("SprintViewModel", "API response: success=${response.success}, data=${response.data?._id}:${response.data?.name}")
+                
                 if (response.success && response.data != null) {
                     // Cập nhật sprint trong danh sách
                     val updatedSprints = _uiState.value.sprints.map { 
                         if (it._id == sprintId) response.data else it 
                     }
                     
+                    android.util.Log.d("SprintViewModel", "Updating UI state with new sprint status")
                     _uiState.update { 
                         it.copy(
                             sprints = updatedSprints,
@@ -242,7 +247,9 @@ class SprintViewModel @Inject constructor(
                             isUpdateSuccessful = true
                         )
                     }
+                    android.util.Log.d("SprintViewModel", "isUpdateSuccessful set to true")
                 } else {
+                    android.util.Log.d("SprintViewModel", "API update failed")
                     _uiState.update { 
                         it.copy(
                             error = "Không thể cập nhật trạng thái sprint",
@@ -251,6 +258,7 @@ class SprintViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("SprintViewModel", "Exception updating sprint status", e)
                 _uiState.update { 
                     it.copy(
                         error = "Lỗi cập nhật trạng thái sprint: ${e.message}",

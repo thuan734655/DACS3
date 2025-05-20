@@ -2,6 +2,7 @@ package com.example.dacs3.ui.sprint
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -59,6 +60,14 @@ fun SprintDetailScreen(
             Toast.makeText(context, "Sprint deleted successfully", Toast.LENGTH_SHORT).show()
             viewModel.resetDeletionState()
             onNavigateBack()
+        }
+    }
+    
+    // Theo dõi trạng thái cập nhật sprint
+    LaunchedEffect(uiState.isUpdateSuccessful) {
+        if (uiState.isUpdateSuccessful) {
+            Toast.makeText(context, "Sprint updated successfully", Toast.LENGTH_SHORT).show()
+            viewModel.resetUpdateState()
         }
     }
     
@@ -149,28 +158,77 @@ fun SprintDetailScreen(
                                     )
                                     
                                     val statusColor = when(currentSprint.status) {
-                                        "To Do" -> Color(0xFF9E9E9E)
-                                        "In Progress" -> Color(0xFF2196F3)
-                                        "Done" -> Color(0xFF4CAF50)
+                                        "TO_DO" -> Color(0xFF9E9E9E)
+                                        "IN_PROGRESS" -> Color(0xFF2196F3)
+                                        "DONE" -> Color(0xFF4CAF50)
                                         else -> Color(0xFF9E9E9E)
                                     }
+                                    
+                                    // Status menu dropdown
+                                    var expanded by remember { mutableStateOf(false) }
+                                    val statusOptions = listOf("TO_DO", "IN_PROGRESS", "DONE")
                                     
                                     Surface(
                                         shape = RoundedCornerShape(4.dp),
                                         color = statusColor.copy(alpha = 0.1f),
-                                        modifier = Modifier.padding(start = 4.dp)
+                                        modifier = Modifier
+                                            .padding(start = 4.dp)
+                                            .clickable { expanded = true }
                                     ) {
-                                        Text(
-                                            text = when(currentSprint.status) {
-                                                "To Do" -> "Not Started"
-                                                "In Progress" -> "In Progress"
-                                                "Done" -> "Completed"
-                                                else -> currentSprint.status
-                                            },
-                                            color = statusColor,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                            fontSize = 14.sp
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        ) {
+                                            Text(
+                                                text = when(currentSprint.status) {
+                                                    "TO_DO" -> "To DO"
+                                                    "IN_PROGRESS" -> "In Progress"
+                                                    "DONE" -> "Completed"
+                                                    else -> currentSprint.status
+                                                },
+                                                color = statusColor,
+                                                fontSize = 14.sp
+                                            )
+                                            
+                                            Icon(
+                                                imageVector = Icons.Default.ArrowDropDown,
+                                                contentDescription = "Change status",
+                                                tint = statusColor,
+                                                modifier = Modifier.padding(start = 4.dp)
+                                            )
+                                        }
+                                        
+                                        DropdownMenu(
+                                            expanded = expanded,
+                                            onDismissRequest = { expanded = false }
+                                        ) {
+                                            statusOptions.forEach { status ->
+                                                DropdownMenuItem(
+                                                    text = { 
+                                                        Text(
+                                                            text = when(status) {
+                                                                "TO_DO" -> "To Do"
+                                                                "IN_PROGRESS" -> "In Progress"
+                                                                "DONE" -> "Completed"
+                                                                else -> status
+                                                            }
+                                                        ) 
+                                                    },
+                                                    onClick = {
+                                                        // Chỉ cập nhật nếu trạng thái thay đổi
+                                                        if (status != currentSprint.status) {
+                                                            android.util.Log.d("SprintDetailScreen", "Updating sprint status: ${currentSprint._id} from ${currentSprint.status} to $status")
+                                                            // Thêm log chi tiết để debug
+                                                            android.util.Log.d("SprintDetailScreen", "Status value ENUM being sent to API: $status")
+                                                            viewModel.updateSprintStatus(currentSprint._id, status)
+                                                        } else {
+                                                            android.util.Log.d("SprintDetailScreen", "Status unchanged, not updating")
+                                                        }
+                                                        expanded = false
+                                                    }
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                                 
@@ -213,38 +271,7 @@ fun SprintDetailScreen(
                                 )
                                 
                                 Spacer(modifier = Modifier.height(16.dp))
-                                
-                                // Change status button
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    if (currentSprint.status != "In Progress") {
-                                        Button(
-                                            onClick = { viewModel.updateSprintStatus(sprintId, "In Progress") },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF2196F3)
-                                            ),
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Text("Start Sprint")
-                                        }
-                                        
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                    }
-                                    
-                                    if (currentSprint.status != "Done") {
-                                        Button(
-                                            onClick = { viewModel.updateSprintStatus(sprintId, "Done") },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = Color(0xFF4CAF50)
-                                            ),
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Text("Complete Sprint")
-                                        }
-                                    }
-                                }
+
                             }
                         }
                     }

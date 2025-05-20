@@ -188,10 +188,10 @@ fun SprintScreen(
                                 onSprintSelected(sprint) 
                             },
                             onCompleteClick = { 
-                                viewModel.updateSprintStatus(sprint._id, "Done") 
+                                viewModel.updateSprintStatus(sprint._id, "DONE")
                             },
                             onStartClick = { 
-                                viewModel.updateSprintStatus(sprint._id, "In Progress") 
+                                viewModel.updateSprintStatus(sprint._id, "IN_PROGRESS")
                             },
                             onSeeMoreClick = { onSprintSelected(sprint) }
                         )
@@ -348,9 +348,9 @@ fun SprintItem(
                 // Sprint action button (Start/Complete)
                 Button(
                     onClick = { 
-                        if (sprint.status == "Done") {
+                        if (sprint.status == "DONE") {
                             // Already completed, nothing to do
-                        } else if (sprint.status == "In Progress") {
+                        } else if (sprint.status == "IN_PROGRESS") {
                             onCompleteClick()
                         } else {
                             onStartClick()
@@ -359,16 +359,16 @@ fun SprintItem(
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = when (sprint.status) {
-                            "Done" -> Color.Gray
-                            "In Progress" -> Color(0xFF4CAF50)
+                            "DONE" -> Color.Gray
+                            "IN_PROGRESS" -> Color(0xFF4CAF50)
                             else -> Color(0xFF2196F3)
                         }
                     )
                 ) {
                     Text(
                         text = when (sprint.status) {
-                            "Done" -> "Completed"
-                            "In Progress" -> "Complete Sprint"
+                            "DONE" -> "Completed"
+                            "IN_PROGRESS" -> "Complete Sprint"
                             else -> "Start Sprint"
                         }
                     )
