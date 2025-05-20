@@ -101,7 +101,9 @@ class SessionManager @Inject constructor(context: Context) {
     fun getUserEmail(): String? {
         return prefs.getString(KEY_EMAIL, null)
     }
-    
+    fun getContactNumber(): String? {
+        return prefs.getString(KEY_CONTACT_NUMBER, null)
+    }
     /**
      * Clear session details
      */

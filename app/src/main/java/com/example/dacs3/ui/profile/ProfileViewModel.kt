@@ -18,14 +18,15 @@ data class ProfileUiState(
     val isLoading: Boolean = false,
     val user: User? = null,
     val error: String? = null,
-    val isUpdateSuccessful: Boolean = false
+    val isUpdateSuccessful: Boolean = false,
+    val email : String? = null,
+    val sdt : String? = null
 )
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val sessionManager: SessionManager,
-    private val userManager: UserManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -42,6 +43,7 @@ class ProfileViewModel @Inject constructor(
                         it.copy(
                             isLoading = false, 
                             error = "User not logged in"
+
                         )
                     }
                     return@launch
@@ -53,7 +55,9 @@ class ProfileViewModel @Inject constructor(
                     _uiState.update { 
                         it.copy(
                             isLoading = false,
-                            user = response.data
+                            user = response.data,
+                            email = sessionManager.getUserEmail() ?:"",
+                            sdt = sessionManager.getContactNumber() ?:""
                         )
                     }
                 } else {

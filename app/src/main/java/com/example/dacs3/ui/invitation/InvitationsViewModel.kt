@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.model.Invitation
 import com.example.dacs3.data.repository.InvitationRepository
+import com.example.dacs3.data.repository.impl.InvitationRepositoryImpl
 import com.example.dacs3.data.websocket.WebSocketManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,19 +21,19 @@ import javax.inject.Inject
 
 @HiltViewModel
 class InvitationsViewModel @Inject constructor(
-    private val invitationRepository: InvitationRepository,
+    private val invitationRepository: InvitationRepositoryImpl,
     private val webSocketManager: WebSocketManager
 ) : ViewModel() {
 
-    // State for invitations screen
     private val _state = MutableStateFlow(InvitationsUiState())
     val state: StateFlow<InvitationsUiState> = _state.asStateFlow()
 
     private var notificationJob: Job? = null
     
     init {
-        // Subscribe to WebSocket notifications using Flow collection
         subscribeToNotifications()
+
+        loadInvitations("pending")
     }
     
     private fun subscribeToNotifications() {

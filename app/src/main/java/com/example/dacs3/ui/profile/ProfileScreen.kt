@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.dacs3.data.model.User
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import com.example.dacs3.data.session.SessionManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,7 +96,9 @@ fun ProfileScreen(
                         onNavigateToLogin()
                     },
                     onError = uiState.error,
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    emailSession = uiState.email ?: "",
+                    sdt = uiState.sdt ?: ""
                 )
             }
             
@@ -119,7 +122,10 @@ fun ProfileContent(
     onUpdateProfile: (username: String, email: String) -> Unit,
     onLogout: () -> Unit,
     onError: String?,
-    viewModel: ProfileViewModel
+    viewModel: ProfileViewModel,
+    emailSession: String = "",
+    sdt: String = ""
+
 ) {
     var username by remember { mutableStateOf(user?.name ?: "") }
     var email by remember { mutableStateOf("") }
@@ -189,25 +195,12 @@ fun ProfileContent(
         )
         
         Spacer(modifier = Modifier.height(4.dp))
-        
-        // User email (empty because not present in model)
+
         Text(
-            text = "No email available",
+            text = email,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        // Stats cards
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatCard(title = "Workspaces", value = "5")
-            StatCard(title = "Tasks", value = "12")
-            StatCard(title = "Completed", value = "8")
-        }
         
         Spacer(modifier = Modifier.height(32.dp))
         
@@ -237,7 +230,7 @@ fun ProfileContent(
                 ProfileInfoItem(
                     icon = Icons.Default.Email,
                     label = "Email",
-                    value = "No email available"
+                    value = emailSession
                 )
                 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
@@ -245,7 +238,7 @@ fun ProfileContent(
                 ProfileInfoItem(
                     icon = Icons.Default.Phone,
                     label = "Số điện thoại",
-                    value = "No phone number available"
+                    value = sdt
                 )
                 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
@@ -268,50 +261,6 @@ fun ProfileContent(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Cập nhật thông tin")
                 }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Settings Section
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Cài đặt",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Settings options
-                SettingItem(
-                    icon = Icons.Default.Notifications,
-                    label = "Thông báo",
-                    onClick = { /* Handle notification settings */ }
-                )
-                
-                Divider(modifier = Modifier.padding(vertical = 12.dp))
-                
-                SettingItem(
-                    icon = Icons.Default.Lock,
-                    label = "Bảo mật",
-                    onClick = { /* Handle security settings */ }
-                )
-                
-                Divider(modifier = Modifier.padding(vertical = 12.dp))
-                
-                SettingItem(
-                    icon = Icons.Default.Info,
-                    label = "Về ứng dụng",
-                    onClick = { /* Handle about app */ }
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
                 Button(
                     onClick = onLogout,
                     colors = ButtonDefaults.buttonColors(
@@ -326,80 +275,10 @@ fun ProfileContent(
             }
         }
         
-        // Error message
-        onError?.let {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
+        Spacer(modifier = Modifier.height(16.dp))
 
-    // Handle profile update dialog
-    if (showUpdateDialog) {
-        UpdateProfileDialog(
-            initialUsername = username,
-            initialEmail = email,
-            onDismiss = { showUpdateDialog = false },
-            onConfirm = { newUsername, newEmail ->
-                onUpdateProfile(newUsername, newEmail)
-                username = newUsername
-                email = newEmail
-                showUpdateDialog = false
-            }
-        )
-    }
-    
-    // Handle avatar update dialog
-    if (showAvatarUpdateDialog) {
-        UpdateAvatarDialog(
-            initialAvatarUrl = avatarUrl,
-            onDismiss = { showAvatarUpdateDialog = false },
-            onConfirm = { newAvatarUrl ->
-                // In a real implementation, this would call a ViewModel method
-                // to update the avatar with the provided URL
-                viewModel.updateAvatar(newAvatarUrl)
-                avatarUrl = newAvatarUrl
-                showAvatarUpdateDialog = false
-            }
-        )
-    }
-}
-}
-
-@Composable
-fun StatCard(title: String, value: String) {
-    Card(
-        modifier = Modifier
-            .size(100.dp)
-            .padding(4.dp),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-            )
         }
     }
-}
 
 @Composable
 fun ProfileInfoItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {

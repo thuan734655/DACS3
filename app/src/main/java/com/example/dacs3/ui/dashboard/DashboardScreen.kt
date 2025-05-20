@@ -84,7 +84,7 @@ fun DashboardScreen(
             onProfileClick = onProfileClick,
             modifier = Modifier
                 .constrainAs(bottomNav) {
-                    bottom.linkTo(parent.bottom)
+                    bottom.linkTo(parent.bottom, margin = -50.dp)
                     start.linkTo(parent.start)
                     end.linkTo(parent.end)
                     width = androidx.constraintlayout.compose.Dimension.fillToConstraints

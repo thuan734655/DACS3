@@ -34,7 +34,6 @@ class InvitationRepositoryImpl @Inject constructor(
     override suspend fun getInvitations(status: String?, page: Int?, limit: Int?): InvitationListResponse {
         return try {
             val response = invitationApi.getInvitations(status, page, limit)
-            
             response
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching invitations", e)

@@ -27,10 +27,10 @@ class InvitationDeserializer : JsonDeserializer<Invitation> {
         val jsonObject = json.asJsonObject
 
         // Xử lý ID
-        val id = jsonObject.get("_id").asString
+        val id = jsonObject.get("_id")?.asString ?: ""
 
         // Xử lý type_invitation
-        val typeInvitation = jsonObject.get("type_invitation").asString
+        val typeInvitation = jsonObject.get("type_invitation")?.asString ?: "workspace"
 
         // Xử lý workspace_id - có thể là string hoặc object
         val workspaceId = deserializeWorkspace(jsonObject.get("workspace_id"), context)
@@ -39,13 +39,13 @@ class InvitationDeserializer : JsonDeserializer<Invitation> {
         val userId = deserializeUser(jsonObject.get("user_id"), context)
 
         // Xử lý email
-        val email = jsonObject.get("email").asString
+        val email = jsonObject.get("email")?.asString ?: ""
 
         // Xử lý invited_by - có thể là string hoặc object
         val invitedBy = deserializeUser(jsonObject.get("invited_by"), context)
 
         // Xử lý status
-        val status = jsonObject.get("status").asString
+        val status = jsonObject.get("status")?.asString ?: "pending"
 
         // Xử lý created_at và updated_at
         val createdAt = deserializeDate(jsonObject.get("created_at"))
@@ -72,11 +72,31 @@ class InvitationDeserializer : JsonDeserializer<Invitation> {
             return ""
         }
 
-        return if (element.isJsonPrimitive) {
-            element.asString // Trả về ID dạng string
-        } else {
-            // Đây là một đối tượng Workspace đầy đủ
-            context.deserialize<Workspace>(element, Workspace::class.java)
+        return try {
+            if (element.isJsonPrimitive) {
+                element.asString // Trả về ID dạng string
+            } else {
+                // Đây là một đối tượng Workspace đầy đủ
+                try {
+                    context.deserialize<Workspace>(element, Workspace::class.java)
+                } catch (e: Exception) {
+                    // Fallback if workspace deserializer fails
+                    val jsonObject = element.asJsonObject
+                    val id = jsonObject.get("_id")?.asString ?: ""
+                    val name = jsonObject.get("name")?.asString ?: "Unknown Workspace"
+                    Workspace(
+                        _id = id,
+                        name = name,
+                        description = null,
+                        created_by = User("", "Unknown", null, Date()),
+                        created_at = Date(),
+                        members = emptyList(),
+                        channels = emptyList()
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            ""
         }
     }
 
@@ -88,11 +108,27 @@ class InvitationDeserializer : JsonDeserializer<Invitation> {
             return ""
         }
 
-        return if (element.isJsonPrimitive) {
-            element.asString // Trả về ID dạng string
-        } else {
-            // Đây là một đối tượng User đầy đủ
-            context.deserialize<User>(element, User::class.java)
+        return try {
+            if (element.isJsonPrimitive) {
+                element.asString // Trả về ID dạng string
+            } else {
+                try {
+                    // Đây là một đối tượng User đầy đủ
+                    context.deserialize<User>(element, User::class.java)
+                } catch (e: Exception) {
+                    // Fallback if user deserializer fails
+                    val jsonObject = element.asJsonObject
+                    val id = jsonObject.get("_id")?.asString ?: ""
+                    User(
+                        _id = id,
+                        name = "Unknown",
+                        avatar = null,
+                        created_at = Date()
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            ""
         }
     }
 

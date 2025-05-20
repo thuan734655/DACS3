@@ -12,30 +12,46 @@ class WorkspaceDeserializer : JsonDeserializer<Workspace> {
         typeOfT: Type,
         context: JsonDeserializationContext
     ): Workspace {
-        val jsonObject = if (json.asJsonObject.has("data")) {
-            json.asJsonObject.get("data").asJsonObject
-        } else {
-            json.asJsonObject
+        // Handle null or invalid JSON
+        if (json.isJsonNull) {
+            return createEmptyWorkspace()
         }
+        
+        try {
+            val jsonObject = if (json.asJsonObject.has("data") && !json.asJsonObject.get("data").isJsonNull) {
+                json.asJsonObject.get("data").asJsonObject
+            } else {
+                json.asJsonObject
+            }
         
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
         dateFormat.timeZone = TimeZone.getTimeZone("UTC")
 
-        // Parse created_by field as User
-        val createdByElement = jsonObject.get("created_by")
-        val createdBy = if (createdByElement.isJsonObject) {
-            val userObj = createdByElement.asJsonObject
-            User(
-                _id = userObj.get("_id").asString,
-                name = userObj.get("name").asString,
-                avatar = if (userObj.has("avatar") && !userObj.get("avatar").isJsonNull)
-                    userObj.get("avatar").asString else null,
-                created_at = parseDate(userObj.get("created_at"), dateFormat) ?: Date()
-            )
+        // Parse created_by field as User (if exists)
+        val createdBy = if (jsonObject.has("created_by") && !jsonObject.get("created_by").isJsonNull) {
+            val createdByElement = jsonObject.get("created_by")
+            if (createdByElement.isJsonObject) {
+                val userObj = createdByElement.asJsonObject
+                User(
+                    _id = userObj.get("_id").asString,
+                    name = if (userObj.has("name") && !userObj.get("name").isJsonNull) userObj.get("name").asString else "Unknown",
+                    avatar = if (userObj.has("avatar") && !userObj.get("avatar").isJsonNull)
+                        userObj.get("avatar").asString else null,
+                    created_at = parseDate(userObj.get("created_at"), dateFormat) ?: Date()
+                )
+            } else {
+                // Fallback for string ID
+                User(
+                    _id = createdByElement.asString,
+                    name = "Unknown",
+                    avatar = null,
+                    created_at = Date()
+                )
+            }
         } else {
-            // Fallback for string ID
+            // Fallback when created_by is missing
             User(
-                _id = createdByElement.asString,
+                _id = "",
                 name = "Unknown",
                 avatar = null,
                 created_at = Date()
@@ -94,8 +110,8 @@ class WorkspaceDeserializer : JsonDeserializer<Workspace> {
         }
 
         return Workspace(
-            _id = jsonObject.get("_id").asString,
-            name = jsonObject.get("name").asString,
+            _id = if (jsonObject.has("_id") && !jsonObject.get("_id").isJsonNull) jsonObject.get("_id").asString else "",
+            name = if (jsonObject.has("name") && !jsonObject.get("name").isJsonNull) jsonObject.get("name").asString else "Unknown Workspace",
             description = if (jsonObject.has("description") && !jsonObject.get("description").isJsonNull)
                 jsonObject.get("description").asString else null,
             created_by = createdBy,
@@ -103,6 +119,10 @@ class WorkspaceDeserializer : JsonDeserializer<Workspace> {
             members = members,
             channels = channels
         )
+        } catch (e: Exception) {
+            // If any exception occurs during deserialization, return an empty workspace
+            return createEmptyWorkspace()
+        }
     }
 
     private fun parseDate(element: JsonElement?, dateFormat: SimpleDateFormat): Date? {
@@ -120,5 +140,17 @@ class WorkspaceDeserializer : JsonDeserializer<Workspace> {
                 null
             }
         }
+    }
+    
+    private fun createEmptyWorkspace(): Workspace {
+        return Workspace(
+            _id = "",
+            name = "Unknown Workspace",
+            description = null,
+            created_by = User("", "Unknown", null, Date()),
+            created_at = Date(),
+            members = emptyList(),
+            channels = emptyList()
+        )
     }
 }
