@@ -151,18 +151,40 @@ class SprintRepositoryImpl @Inject constructor(
         goal: String?,
         status: String?
     ): SprintResponse {
+        Log.d(TAG, "updateSprint called with id=$id, status=$status")
         return try {
-            val request = UpdateSprintRequest(
-                name, description, startDate, endDate, goal, status
-            )
+            // Tạo một request cụ thể chỉ với status nếu đang cập nhật trạng thái
+            val request = if (status != null && name == null && description == null && startDate == null && endDate == null && goal == null) {
+                // Tạo request đơn giản chỉ với status
+                Log.d(TAG, "Creating simple status update request")
+                UpdateSprintRequest(null, null, null, null, null, status)
+            } else {
+                // Tạo request đầy đủ
+                UpdateSprintRequest(name, description, startDate, endDate, goal, status)
+            }
+            
+            // Sử dụng Gson để in JSON request để debug
+            try {
+                val gson = com.google.gson.GsonBuilder()
+                    .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                    .create()
+                val jsonRequest = gson.toJson(request)
+                Log.d(TAG, "JSON Request: $jsonRequest")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error serializing request: ${e.message}")
+            }
+            
+            Log.d(TAG, "Request payload: name=$name, description=$description, startDate=$startDate, endDate=$endDate, goal=$goal, status=$status")
             val response = sprintApi.updateSprint(id, request)
+            Log.d(TAG, "API response: success=${response.success}, data=${response.data}")
 
             response
         } catch (e: Exception) {
-            Log.e(TAG, "Error updating sprint", e)
+            Log.e(TAG, "Error updating sprint: ${e.message}", e)
             // Return empty response with success=false when API fails
             SprintResponse(false, null)
         }
+
     }
     
     override suspend fun deleteSprintFromApi(id: String): Boolean {
