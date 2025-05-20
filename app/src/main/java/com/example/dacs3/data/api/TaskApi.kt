@@ -19,7 +19,10 @@ interface TaskApi {
 
     // GET task by ID
     @GET("tasks/{id}")
-    suspend fun getTaskById(@Path("id") id: String): TaskResponse
+    suspend fun getTaskById(
+        @Path("id") id: String,
+        @Query("strictPopulate") strictPopulate: Boolean = false
+    ): TaskResponse
 
     // POST create new task
     @POST("tasks")

@@ -2,19 +2,10 @@ package com.example.dacs3.data.model
 
 import java.util.Date
 import com.example.dacs3.data.model.MessageResponse
+import com.example.dacs3.data.model.WorkspaceInfo
+import com.example.dacs3.data.model.UserInfo
 
 // Models
-data class WorkspaceInfo(
-    val _id: String,
-    val name: String,
-    val description: String?
-)
-
-data class UserInfo(
-    val _id: String,
-    val name: String,
-    val avatar: String?
-)
 
 data class Sprint(
     val _id: String,

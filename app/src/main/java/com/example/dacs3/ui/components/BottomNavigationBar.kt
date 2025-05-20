@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Color
 fun BottomNavigationBar(
     currentRoute: String,
     onHomeClick: () -> Unit,
-    onMessageClick: () -> Unit,
+    onMessageClick: () -> Unit = {},
     onDashboardClick: () -> Unit = {},
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier

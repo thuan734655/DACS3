@@ -96,21 +96,33 @@ class TaskRepositoryImpl @Inject constructor(
         sprintId: String?,
         priority: String?
     ): TaskListResponse {
+        Log.d(TAG, "getAllTasksFromApi called with workspaceId: $workspaceId, epicId: $epicId, sprintId: $sprintId")
         return try {
+            Log.d(TAG, "Making API call to get tasks with params: page=$page, limit=$limit, workspaceId=$workspaceId, epicId=$epicId, status=$status, assignedTo=$assignedTo, sprintId=$sprintId, priority=$priority")
             val response = taskApi.getAllTasks(
                 page, limit, workspaceId, epicId, status, assignedTo, sprintId, priority
             )
+            Log.d(TAG, "API call successful, received ${response.data.size} tasks, success=${response.success}, total=${response.total}")
 
             response
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching tasks from API", e)
+            Log.e(TAG, "Error fetching tasks from API: ${e.message}", e)
             // Return empty response with success=false when API fails
             TaskListResponse(false, 0, 0, emptyList())
         }
     }
 
     override suspend fun getTaskById(id: String): TaskResponse {
-        TODO("Not yet implemented")
+        Log.d(TAG, "getTaskById called with id: $id")
+        return try {
+            val response = taskApi.getTaskById(id)
+            Log.d(TAG, "Task with id $id loaded successfully: ${response.success}")
+            response
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching task by ID: ${e.message}", e)
+            // Return empty response with success=false when API fails
+            TaskResponse(false, null)
+        }
     }
 
     suspend fun getTaskByIdFromApi(id: String): TaskResponse {

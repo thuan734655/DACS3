@@ -55,4 +55,17 @@ object DateTimeUtils {
             else -> formatDate(date)
         }
     }
+
+    /**
+     * Convert a string to Date object
+     */
+    fun String.toDate(): Date? {
+        return try {
+            val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+            dateFormat.parse(this)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
 }

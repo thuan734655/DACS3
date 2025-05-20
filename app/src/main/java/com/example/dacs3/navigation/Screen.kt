@@ -36,14 +36,15 @@ sealed class Screen(val route: String) {
     object CreateEpic : Screen("create_epic/{workspaceId}") {
         fun createRoute(workspaceId: String) = "create_epic/$workspaceId"
     }
-    object TaskList : Screen("task_list/{epicId}") {
-        fun createRoute(epicId: String) = "task_list/$epicId"
+    object TaskList : Screen("tasks/{workspaceId}") {
+        fun createRoute(workspaceId: String) = "tasks/$workspaceId"
     }
     object TaskDetail : Screen("task_detail/{taskId}") {
         fun createRoute(taskId: String) = "task_detail/$taskId"
     }
-    object CreateTask : Screen("create_task/{epicId}") {
-        fun createRoute(epicId: String) = "create_task/$epicId"
+    object CreateTask : Screen("create_task/{workspaceId}/{epicId}") {
+        fun createRoute(workspaceId: String, epicId: String? = null) = 
+            "create_task/$workspaceId/${epicId ?: "null"}"
     }
     object SprintList : Screen("sprints/{workspaceId}") {
         fun createRoute(workspaceId: String) = "sprints/$workspaceId"
@@ -79,5 +80,8 @@ sealed class Screen(val route: String) {
     object SprintView : Screen("sprint_view")
     object EpicView : Screen("epic_view")
     object TaskView : Screen("task_view")
-    // Add other screens as needed
+
+    object EditTask : Screen("edit_task/{taskId}") {
+        fun createRoute(taskId: String) = "edit_task/$taskId"
+    }
 }

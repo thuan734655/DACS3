@@ -5,16 +5,19 @@ import com.example.dacs3.data.model.Comment
 import com.example.dacs3.data.model.CommentResponse
 import com.example.dacs3.data.model.AddCommentRequest
 import com.example.dacs3.data.model.MessageResponse
+import com.example.dacs3.data.model.WorkspaceInfo
+import com.example.dacs3.data.model.UserInfo
 
 // Models
+
 data class Task(
     val _id: String,
     val title: String,
     val description: String?,
-    val workspace_id: String,
+    val workspace_id: WorkspaceInfo, 
     val epic_id: String?,
-    val created_by: String,
-    val assigned_to: String?,
+    val created_by: UserInfo, 
+    val assigned_to: UserInfo?,  
     val status: String,
     val priority: String,
     val estimated_hours: Number,

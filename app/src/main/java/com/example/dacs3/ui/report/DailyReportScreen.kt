@@ -143,7 +143,7 @@ fun DailyReportScreen(
                         items(uiState.allTasks) { task ->
                             TaskCard(
                                 task = task,
-                                workspaceName = uiState.workspaceNames[task.workspace_id] ?: "Unknown",
+                                workspaceName = uiState.workspaceNames.getOrDefault(task.workspace_id._id, "Unknown"),
                                 onClick = { onTaskSelected(task._id) }
                             )
                         }
@@ -444,7 +444,7 @@ fun WorkspaceDistributionCard(
                 val totalTasks = tasksByWorkspace.values.sum()
                 
                 tasksByWorkspace.forEach { (workspaceId, count) ->
-                    val workspaceName = workspaceNames[workspaceId] ?: "Unknown"
+                    val workspaceName = workspaceNames.getOrDefault(workspaceId, "Unknown")
                     val percentage = (count.toFloat() / totalTasks.toFloat()) * 100f
                     
                     DistributionBar(

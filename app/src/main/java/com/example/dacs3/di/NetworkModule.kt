@@ -12,10 +12,12 @@ import com.example.dacs3.data.api.WorkspaceApi
 import com.example.dacs3.data.api.deserializer.ChannelDeserializer
 import com.example.dacs3.data.api.deserializer.EpicDeserializer
 import com.example.dacs3.data.api.deserializer.NotificationDeserializer
+import com.example.dacs3.data.api.deserializer.TaskDeserializer
 import com.example.dacs3.data.api.deserializer.WorkspaceDeserializer
 import com.example.dacs3.data.model.Channel
 import com.example.dacs3.data.model.Epic
 import com.example.dacs3.data.model.Notification
+import com.example.dacs3.data.model.Task
 import com.example.dacs3.data.model.Workspace
 import com.example.dacs3.data.session.SessionManager
 import com.google.gson.Gson
@@ -26,7 +28,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import okhttp3.Interceptor                                  // ← Thêm import này
+import okhttp3.Interceptor                                 
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -78,6 +80,15 @@ object NetworkModule {
             .registerTypeAdapter(Workspace::class.java, WorkspaceDeserializer())
             .registerTypeAdapter(Epic::class.java, EpicDeserializer())
             .registerTypeAdapter(Notification::class.java, NotificationDeserializer())
+            .registerTypeAdapter(Task::class.java, TaskDeserializer())
+            .registerTypeAdapter(object : TypeToken<List<Task>>() {}.type, JsonDeserializer { json, typeOfT, context ->
+                val tasks = mutableListOf<Task>()
+                val jsonArray = json.asJsonArray
+                for (element in jsonArray) {
+                    tasks.add(TaskDeserializer().deserialize(element, Task::class.java, context))
+                }
+                tasks
+            })
             .registerTypeAdapter(object : TypeToken<List<Notification>>() {}.type, JsonDeserializer { json, typeOfT, context ->
                 val notifications = mutableListOf<Notification>()
                 val jsonArray = json.asJsonArray
