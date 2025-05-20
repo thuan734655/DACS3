@@ -46,6 +46,9 @@ fun HomeNavScreen(
         onDashboardClick = {
             navController.navigate(Screen.Dashboard.route)
         },
+        onInvitationsClick = {
+            navController.navigate(Screen.Invitations.route)
+        },
         onProfileClick = {
             navController.navigate(Screen.Profile.route)
         },

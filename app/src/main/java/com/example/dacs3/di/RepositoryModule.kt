@@ -2,6 +2,7 @@ package com.example.dacs3.di
 
 import com.example.dacs3.data.repository.ChannelRepository
 import com.example.dacs3.data.repository.EpicRepository
+import com.example.dacs3.data.repository.InvitationRepository
 import com.example.dacs3.data.repository.NotificationRepository
 import com.example.dacs3.data.repository.SprintRepository
 import com.example.dacs3.data.repository.TaskRepository
@@ -9,6 +10,7 @@ import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.data.repository.WorkspaceRepository
 import com.example.dacs3.data.repository.impl.ChannelRepositoryImpl
 import com.example.dacs3.data.repository.impl.EpicRepositoryImpl
+import com.example.dacs3.data.repository.impl.InvitationRepositoryImpl
 import com.example.dacs3.data.repository.impl.NotificationRepositoryImpl
 import com.example.dacs3.data.repository.impl.SprintRepositoryImpl
 import com.example.dacs3.data.repository.impl.TaskRepositoryImpl
@@ -66,5 +68,11 @@ abstract class RepositoryModule {
     abstract fun bindUserRepository(
         userRepositoryImpl: UserRepositoryImpl
     ): UserRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindInvitationRepository(
+        invitationRepositoryImpl: InvitationRepositoryImpl
+    ): InvitationRepository
 
 }

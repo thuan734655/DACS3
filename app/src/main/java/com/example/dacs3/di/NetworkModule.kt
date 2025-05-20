@@ -3,6 +3,7 @@ package com.example.dacs3.di
 import com.example.dacs3.data.api.AuthApi
 import com.example.dacs3.data.api.ChannelApi
 import com.example.dacs3.data.api.EpicApi
+import com.example.dacs3.data.api.InvitationApi
 import com.example.dacs3.data.api.NotificationApi
 import com.example.dacs3.data.api.OtpApi
 import com.example.dacs3.data.api.SprintApi
@@ -11,10 +12,12 @@ import com.example.dacs3.data.api.UserApi
 import com.example.dacs3.data.api.WorkspaceApi
 import com.example.dacs3.data.api.deserializer.ChannelDeserializer
 import com.example.dacs3.data.api.deserializer.EpicDeserializer
+import com.example.dacs3.data.api.deserializer.InvitationDeserializer
 import com.example.dacs3.data.api.deserializer.NotificationDeserializer
 import com.example.dacs3.data.api.deserializer.WorkspaceDeserializer
 import com.example.dacs3.data.model.Channel
 import com.example.dacs3.data.model.Epic
+import com.example.dacs3.data.model.Invitation
 import com.example.dacs3.data.model.Notification
 import com.example.dacs3.data.model.Workspace
 import com.example.dacs3.data.session.SessionManager
@@ -78,6 +81,7 @@ object NetworkModule {
             .registerTypeAdapter(Workspace::class.java, WorkspaceDeserializer())
             .registerTypeAdapter(Epic::class.java, EpicDeserializer())
             .registerTypeAdapter(Notification::class.java, NotificationDeserializer())
+            .registerTypeAdapter(Invitation::class.java, InvitationDeserializer())
             .registerTypeAdapter(object : TypeToken<List<Notification>>() {}.type, JsonDeserializer { json, typeOfT, context ->
                 val notifications = mutableListOf<Notification>()
                 val jsonArray = json.asJsonArray
@@ -85,6 +89,14 @@ object NetworkModule {
                     notifications.add(NotificationDeserializer().deserialize(element, Notification::class.java, context))
                 }
                 notifications
+            })
+            .registerTypeAdapter(object : TypeToken<List<Invitation>>() {}.type, JsonDeserializer { json, typeOfT, context ->
+                val invitations = mutableListOf<Invitation>()
+                val jsonArray = json.asJsonArray
+                for (element in jsonArray) {
+                    invitations.add(InvitationDeserializer().deserialize(element, Invitation::class.java, context))
+                }
+                invitations
             })
             .setLenient()
             .create()
@@ -95,7 +107,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://192.168.2.6:3000/api/")
+            .baseUrl("http://10.0.2.2:3000/api/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
@@ -145,5 +157,16 @@ object NetworkModule {
     @Singleton
     fun provideSprintApi(retrofit: Retrofit): SprintApi =
         retrofit.create(SprintApi::class.java)
+        
+    @Provides
+    @Singleton
+    fun provideInvitationApi(retrofit: Retrofit): InvitationApi =
+        retrofit.create(InvitationApi::class.java)
+        
+    @Provides
+    @Singleton
+    fun provideWebSocketManager(gson: Gson): com.example.dacs3.data.websocket.WebSocketManager {
+        return com.example.dacs3.data.websocket.WebSocketManager(gson)
+    }
 
 }

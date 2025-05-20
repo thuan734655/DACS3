@@ -5,6 +5,7 @@ import com.example.dacs3.data.model.Comment
 import com.example.dacs3.data.model.CommentResponse
 import com.example.dacs3.data.model.AddCommentRequest
 import com.example.dacs3.data.model.MessageResponse
+import com.example.dacs3.data.model.Attachment
 
 // Models
 data class Task(
@@ -31,12 +32,7 @@ data class Task(
 
 // Comment is imported from CommonModels.kt
 
-data class Attachment(
-    val file_name: String,
-    val file_url: String,
-    val uploaded_by: String,
-    val uploaded_at: Date
-)
+// Using Attachment from MessageModels.kt
 
 // Requests
 data class CreateTaskRequest(

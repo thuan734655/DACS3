@@ -51,6 +51,7 @@ fun HomeScreen(
     onHomeClick: () -> Unit,
     onMessageClick: () -> Unit,
     onDashboardClick: () -> Unit,
+    onInvitationsClick: () -> Unit,
     onProfileClick: () -> Unit,
     oncreateWorkspaceClick: (title :String, description: String) -> Unit,
 ) {
@@ -404,6 +405,7 @@ fun HomeScreen(
                     onHomeClick = onHomeClick,
                     onMessageClick = onMessageClick,
                     onDashboardClick = onDashboardClick,
+                    onInvitationsClick = onInvitationsClick,
                     onProfileClick = onProfileClick,
                     modifier = Modifier
                         .constrainAs(bottomNav) {

@@ -41,6 +41,7 @@ import com.example.dacs3.ui.workspace.WorkspaceScreen
 import com.example.dacs3.ui.workspace.WorkspaceViewModel
 import com.example.dacs3.ui.workspace.WorkspaceDetailScreen
 import com.example.dacs3.ui.workspace.workspaceDetailScreen
+import com.example.dacs3.ui.invitation.InvitationsScreen
 
 @Composable
 fun AppNavigation(
@@ -400,6 +401,16 @@ fun AppNavigation(
         Text("Settings Screen")
         }
         }
+        // Add Invitations screen route
+        composable(Screen.Invitations.route) {
+            InvitationsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToWorkspace = { workspaceId ->
+                    navController.navigate(Screen.WorkspaceDetail.createRoute(workspaceId))
+                }
+            )
+        }
+        
         composable(Screen.Dashboard.route) {
 
             DashboardScreen(

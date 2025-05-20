@@ -79,5 +79,6 @@ sealed class Screen(val route: String) {
     object SprintView : Screen("sprint_view")
     object EpicView : Screen("epic_view")
     object TaskView : Screen("task_view")
+    object Invitations : Screen("invitations")
     // Add other screens as needed
 }

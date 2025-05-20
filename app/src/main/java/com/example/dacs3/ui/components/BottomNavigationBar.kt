@@ -2,6 +2,7 @@ package com.example.dacs3.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Dashboard
@@ -20,6 +21,7 @@ fun BottomNavigationBar(
     onHomeClick: () -> Unit,
     onMessageClick: () -> Unit,
     onDashboardClick: () -> Unit = {},
+    onInvitationsClick: () -> Unit = {},
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -40,6 +42,11 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Outlined.Dashboard, contentDescription = "Dashboard") },
             selected = currentRoute == "dashboard",
             onClick = onDashboardClick
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Mail, contentDescription = "Invitations") },
+            selected = currentRoute == "invitations",
+            onClick = onInvitationsClick
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
