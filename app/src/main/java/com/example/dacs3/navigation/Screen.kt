@@ -14,6 +14,9 @@ sealed class Screen(val route: String) {
     object WorkspaceChat : Screen("workspace_chat/{workspaceId}") {
         fun createRoute(workspaceId: String) = "workspace_chat/$workspaceId"
     }
+    
+    // Direct messaging screens
+    object ChatContactList : Screen("chat_contacts") 
     // OTP verification
     object OtpVerification : Screen("otp_verification/{email}") {
         fun createRoute(email: String) = "otp_verification/$email"

@@ -2,6 +2,7 @@ package com.example.dacs3.di
 
 import com.example.dacs3.data.api.AuthApi
 import com.example.dacs3.data.api.ChannelApi
+import com.example.dacs3.data.api.ChatApi
 import com.example.dacs3.data.api.EpicApi
 import com.example.dacs3.data.api.InvitationApi
 import com.example.dacs3.data.api.NotificationApi
@@ -160,9 +161,15 @@ object NetworkModule {
         
     @Provides
     @Singleton
-    fun provideInvitationApi(retrofit: Retrofit): InvitationApi =
-        retrofit.create(InvitationApi::class.java)
-        
+    fun provideInvitationApi(retrofit: Retrofit): InvitationApi {
+        return retrofit.create(InvitationApi::class.java)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideChatApi(retrofit: Retrofit): ChatApi {
+        return retrofit.create(ChatApi::class.java)
+    }    
     @Provides
     @Singleton
     fun provideWebSocketManager(gson: Gson): com.example.dacs3.data.websocket.WebSocketManager {
