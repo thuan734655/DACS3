@@ -23,7 +23,7 @@ data class DailyReportData(
     val inProgressTasks: Int = 0,
     val newTasks: Int = 0,
     val totalHoursSpent: Double = 0.0,
-    val tasksByWorkspace: Map<String, Int> = emptyMap(),
+    val tasksByWorkspace: Map<String, Int> = emptyMap(), 
     val tasksByPriority: Map<String, Int> = emptyMap()
 )
 
@@ -75,15 +75,13 @@ class ReportViewModel @Inject constructor(
                     // Load workspace names for reference
                     val workspaceNames = mutableMapOf<String, String>()
                     allTasks.forEach { task ->
-                        if (!workspaceNames.containsKey(task.workspace_id)) {
+                        val workspaceId = task.workspace_id._id
+                        if (!workspaceNames.containsKey(workspaceId)) {
                             try {
-                                val workspaceResponse = workspaceRepository.getWorkspaceByIdFromApi(task.workspace_id)
-                                if (workspaceResponse.success && workspaceResponse.data != null) {
-                                    workspaceNames[task.workspace_id] = workspaceResponse.data.workspace.name
-                                }
+                                workspaceNames[workspaceId] = task.workspace_id.name
                             } catch (e: Exception) {
                                 // Ignore workspace loading errors
-                                workspaceNames[task.workspace_id] = "Unknown Workspace"
+                                workspaceNames[workspaceId] = "Unknown Workspace"
                             }
                         }
                     }
@@ -118,7 +116,7 @@ class ReportViewModel @Inject constructor(
                     
                     // Group tasks by workspace
                     val tasksByWorkspace = tasksForDate
-                        .groupBy { it.workspace_id }
+                        .groupBy { it.workspace_id._id } 
                         .mapValues { it.value.size }
                     
                     // Group tasks by priority

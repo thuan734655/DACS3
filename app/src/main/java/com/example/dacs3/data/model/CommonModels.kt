@@ -9,7 +9,7 @@ data class MessageResponse(
 )
 
 data class Comment(
-    val user_id: String,
+    val user_id: UserInfo,
     val content: String,
     val created_at: Date,
     val updated_at: Date

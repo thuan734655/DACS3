@@ -3,15 +3,21 @@ package com.example.dacs3.navigation
 import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -36,11 +42,28 @@ import com.example.dacs3.ui.report.DailyReportScreen
 import com.example.dacs3.ui.sprint.CreateSprintScreen
 import com.example.dacs3.ui.sprint.EditSprintScreen
 import com.example.dacs3.ui.sprint.SprintScreen
+import com.example.dacs3.ui.task.CreateTaskScreen
+import com.example.dacs3.ui.task.EditTaskScreen
+import com.example.dacs3.ui.task.TaskDetailScreen
+import com.example.dacs3.ui.task.TaskScreen
 import com.example.dacs3.ui.welcome.WelcomeScreen
 import com.example.dacs3.ui.workspace.WorkspaceScreen
-import com.example.dacs3.ui.workspace.WorkspaceViewModel
-import com.example.dacs3.ui.workspace.WorkspaceDetailScreen
 import com.example.dacs3.ui.workspace.workspaceDetailScreen
+
+// Navigation helper functions
+private fun navigateToHome(navController: NavController) {
+    navController.navigate(Screen.Home.route) {
+        popUpTo(navController.graph.startDestinationId)
+        launchSingleTop = true
+    }
+}
+
+private fun navigateToDashboard(navController: NavController) {
+    navController.navigate(Screen.Dashboard.route) {
+        popUpTo(navController.graph.startDestinationId)
+        launchSingleTop = true
+    }
+}
 
 @Composable
 fun AppNavigation(
@@ -405,26 +428,106 @@ fun AppNavigation(
             DashboardScreen(
                 onBoardClick = {
                     // Navigate to board screen
-                    workspaceState?._id?.let { workspaceId ->
-                        navController.navigate("board/$workspaceId" as String)
+                    if (workspaceState?._id.isNullOrEmpty()) {
+                        Log.e("NavigationDebug", "Dashboard -> Board: workspaceId is null or empty")
+                        // Show a toast notification to the user
+                        android.widget.Toast.makeText(
+                            navController.context,
+                            "Please select a workspace first",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        val workspaceId = workspaceState!!._id!!
+                        try {
+                            Log.d("NavigationDebug", "Dashboard -> Board: Navigating with workspaceId: $workspaceId")
+                            navController.navigate("board/$workspaceId")
+                        } catch (e: Exception) {
+                            Log.e("NavigationDebug", "Dashboard -> Board: Navigation failed", e)
+                            android.widget.Toast.makeText(
+                                navController.context,
+                                "Error navigating to board: ${e.message}",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 },
                 onSprintClick = {
                     // Navigate to sprint screen
-                    workspaceState?._id?.let { workspaceId ->
-                        navController.navigate(Screen.SprintList.createRoute(workspaceId) as String)
+                    if (workspaceState?._id.isNullOrEmpty()) {
+                        Log.e("NavigationDebug", "Dashboard -> Sprint: workspaceId is null or empty")
+                        // Show a toast notification to the user
+                        android.widget.Toast.makeText(
+                            navController.context,
+                            "Please select a workspace first",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        val workspaceId = workspaceState!!._id!!
+                        try {
+                            Log.d("NavigationDebug", "Dashboard -> Sprint: Navigating with workspaceId: $workspaceId")
+                            navController.navigate(Screen.SprintList.createRoute(workspaceId))
+                        } catch (e: Exception) {
+                            Log.e("NavigationDebug", "Dashboard -> Sprint: Navigation failed", e)
+                            android.widget.Toast.makeText(
+                                navController.context,
+                                "Error navigating to sprint: ${e.message}",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 },
                 onEpicClick = {
                     // Navigate to epic screen
-                    workspaceState?._id?.let { workspaceId ->
-                        navController.navigate(Screen.EpicList.createRoute(workspaceId) as String)
+                    if (workspaceState?._id.isNullOrEmpty()) {
+                        Log.e("NavigationDebug", "Dashboard -> Epic: workspaceId is null or empty")
+                        // Show a toast notification to the user
+                        android.widget.Toast.makeText(
+                            navController.context,
+                            "Please select a workspace first",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        val workspaceId = workspaceState!!._id!!
+                        try {
+                            Log.d("NavigationDebug", "Dashboard -> Epic: Navigating with workspaceId: $workspaceId")
+                            navController.navigate(Screen.EpicList.createRoute(workspaceId))
+                        } catch (e: Exception) {
+                            Log.e("NavigationDebug", "Dashboard -> Epic: Navigation failed", e)
+                            android.widget.Toast.makeText(
+                                navController.context,
+                                "Error navigating to epic: ${e.message}",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 },
                 onTaskClick = {
                     // Navigate to task screen
-                    workspaceState?._id?.let { workspaceId ->
-                        navController.navigate("tasks/$workspaceId" as String)
+                    if (workspaceState?._id.isNullOrEmpty()) {
+                        Log.e("NavigationDebug", "Dashboard -> Tasks: workspaceId is null or empty")
+                        // Show a toast notification to the user
+                        android.widget.Toast.makeText(
+                            navController.context,
+                            "Please select a workspace first",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        val workspaceId = workspaceState!!._id!!
+                        Log.d("NavigationDebug", "Dashboard -> Tasks: Attempting to navigate to tasks with workspaceId: $workspaceId")
+                        try {
+                            val route = Screen.TaskList.createRoute(workspaceId)
+                            Log.d("NavigationDebug", "Dashboard -> Tasks: Generated route: $route")
+                            navController.navigate(route)
+                            Log.d("NavigationDebug", "Dashboard -> Tasks: Navigation completed successfully")
+                        } catch (e: Exception) {
+                            Log.e("NavigationDebug", "Dashboard -> Tasks: Navigation failed", e)
+                            // Show error toast to user
+                            android.widget.Toast.makeText(
+                                navController.context,
+                                "Error navigating to tasks: ${e.message}",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 },
                 onHomeClick = {
@@ -432,15 +535,107 @@ fun AppNavigation(
                         popUpTo(Screen.Home.route) { inclusive = true }
                     }
                 },
-                onMessageClick = {
-                    navController.navigate("conversations")
-                },
                 onDashboardClick = {
                     // Already on dashboard
                 },
                 onProfileClick = {
                     navController.navigate("profile")
                 }
+            )
+        }
+
+        // Add Board route
+        composable(
+            route = "board/{workspaceId}",
+            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
+            
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Board Screen for workspace: $workspaceId")
+                // TODO: Implement proper Board screen
+            }
+        }
+        
+        // Add TaskList screen route
+        composable(
+            route = "tasks/{workspaceId}",
+            arguments = listOf(navArgument("workspaceId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
+
+            TaskScreen(
+                workspaceId = workspaceId,
+                onNavigateBack = { navController.popBackStack() },
+                onTaskSelected = { taskId ->
+                    navController.navigate(Screen.TaskDetail.createRoute(taskId))
+                },
+                onCreateTask = {
+                    navController.navigate(Screen.CreateTask.createRoute(workspaceId, null))
+                },
+                onHomeClick = { navigateToHome(navController) },
+                onDashboardClick = { navigateToDashboard(navController) },
+                onProfileClick = { /* TODO */ }
+            )
+        }
+
+
+        composable(
+            route = Screen.TaskDetail.route,
+            arguments = listOf(navArgument("taskId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
+
+            TaskDetailScreen(
+                taskId = taskId,
+                onNavigateBack = { navController.popBackStack() },
+                onEditTask = { id ->
+                    navController.navigate(Screen.EditTask.createRoute(id))
+                }
+            )
+        }
+
+        // CreateTask screen với xử lý lỗi đúng cách
+        composable(
+            route = Screen.CreateTask.route,
+            arguments = listOf(
+                navArgument("workspaceId") { type = NavType.StringType },
+                navArgument("epicId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = "null"
+                }
+            )
+        ) { backStackEntry ->
+            val workspaceId = backStackEntry.arguments?.getString("workspaceId") ?: ""
+            val epicId = backStackEntry.arguments?.getString("epicId")?.takeIf { it != "null" }
+            
+            Log.d("NavigationDebug", "CreateTask screen được khởi chạy với workspaceId: $workspaceId, epicId: $epicId")
+            
+            // Đảm bảo có workspaceId hợp lệ
+            if (workspaceId.isEmpty()) {
+                Log.e("NavigationDebug", "CreateTask screen nhận được workspaceId trống")
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Lỗi: Không có ID workspace được cung cấp")
+                }
+            } else {
+                CreateTaskScreen(
+                    workspaceId = workspaceId,
+                    epicId = epicId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+        }
+
+        composable(
+            route = Screen.EditTask.route,
+            arguments = listOf(navArgument("taskId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getString("taskId") ?: ""
+
+            EditTaskScreen(
+                taskId = taskId,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
