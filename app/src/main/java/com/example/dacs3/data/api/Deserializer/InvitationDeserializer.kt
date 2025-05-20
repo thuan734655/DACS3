@@ -110,18 +110,41 @@ class InvitationDeserializer : JsonDeserializer<Invitation> {
 
         return try {
             if (element.isJsonPrimitive) {
-                element.asString // Trả về ID dạng string
+                // For invitation API, we'll create a User object with the ID
+                // to maintain consistency in the app
+                val id = element.asString
+                User(
+                    _id = id,
+                    name = getUsernameById(id),  // Try to get username if known
+                    avatar = null,
+                    created_at = Date()
+                )
             } else {
                 try {
                     // Đây là một đối tượng User đầy đủ
-                    context.deserialize<User>(element, User::class.java)
+                    val jsonObject = element.asJsonObject
+                    val id = jsonObject.get("_id")?.asString ?: ""
+                    val username = if (jsonObject.has("username") && !jsonObject.get("username").isJsonNull)
+                        jsonObject.get("username").asString
+                    else if (jsonObject.has("name") && !jsonObject.get("name").isJsonNull)
+                        jsonObject.get("name").asString
+                    else
+                        getUsernameById(id)
+                        
+                    User(
+                        _id = id,
+                        name = username,
+                        avatar = if (jsonObject.has("avatar") && !jsonObject.get("avatar").isJsonNull)
+                            jsonObject.get("avatar").asString else null,
+                        created_at = deserializeDate(jsonObject.get("created_at")) ?: Date()
+                    )
                 } catch (e: Exception) {
                     // Fallback if user deserializer fails
                     val jsonObject = element.asJsonObject
                     val id = jsonObject.get("_id")?.asString ?: ""
                     User(
                         _id = id,
-                        name = "Unknown",
+                        name = getUsernameById(id),
                         avatar = null,
                         created_at = Date()
                     )
@@ -130,6 +153,15 @@ class InvitationDeserializer : JsonDeserializer<Invitation> {
         } catch (e: Exception) {
             ""
         }
+    }
+    
+    /**
+     * Try to determine a username from an ID
+     * In a real app, this might call a repository to get user details
+     */
+    private fun getUsernameById(id: String): String {
+        // For now, just return a nicer label instead of "Unknown"
+        return "User $id"
     }
 
     /**

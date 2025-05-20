@@ -13,10 +13,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
-import java.io.IOException
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.Job
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -54,12 +54,16 @@ class InvitationsViewModel @Inject constructor(
     fun loadInvitations(status: String? = null) {
         viewModelScope.launch {
             try {
+                // Always ensure status is lowercase to match API requirements
+                val normalizedStatus = status?.lowercase()
+                
                 _state.update { it.copy(
                     isLoading = true,
                     error = null
                 )}
                 
-                val response = invitationRepository.getInvitations(status)
+                Log.d("InvitationsViewModel", "Loading invitations with status: $normalizedStatus")
+                val response = invitationRepository.getInvitations(normalizedStatus)
                 
                 if (response.success) {
                     _state.update { it.copy(
@@ -93,33 +97,75 @@ class InvitationsViewModel @Inject constructor(
     
     fun acceptInvitation(invitationId: String) {
         viewModelScope.launch {
+            // Set state to show we're processing
+            _state.update { it.copy(
+                isAccepting = true,
+                processingInvitationId = invitationId,
+                actionError = null
+            )}
+            
             try {
-                _state.update { it.copy(
-                    processingInvitationId = invitationId,
-                    actionSuccess = false,
-                    actionError = null
-                )}
-                
-                val response = invitationRepository.acceptInvitation(invitationId)
-                
-                if (response.success) {
-                    _state.update { it.copy(
-                        processingInvitationId = null,
-                        actionSuccess = true
-                    )}
+                try {
+                    Log.d("InvitationsViewModel", "Accepting invitation: $invitationId")
+                    val response = invitationRepository.acceptInvitation(invitationId)
                     
-                    // Reload invitations after successful action
-                    loadInvitations()
-                } else {
+                    if (response.success) {
+                        Log.d("InvitationsViewModel", "Successfully accepted invitation")
+                        _state.update { it.copy(
+                            isAccepting = false,
+                            processingInvitationId = null,
+                            actionSuccess = true
+                        )}
+                        
+                        // Reload invitations after successful action
+                        loadInvitations(state.value.currentFilter)
+                    } else {
+                        Log.e("InvitationsViewModel", "Failed to accept invitation")
+                        _state.update { it.copy(
+                            isAccepting = false,
+                            processingInvitationId = null,
+                            actionError = "Unable to accept invitation"
+                        )}
+                    }
+                } catch (e: retrofit2.HttpException) {
+                    // Handle HTTP errors specifically
+                    when (e.code()) {
+                        500 -> {
+                            Log.e("InvitationsViewModel", "Server error when accepting invitation", e)
+                            // Show a more specific message for the 500 error
+                            _state.update { it.copy(
+                                isAccepting = false,
+                                processingInvitationId = null,
+                                actionError = "Server error processing invitation. We've been notified."
+                            )}
+                            
+                            // For 500 errors with this specific message, still reload the UI
+                            // This is because the server might have processed the request despite returning an error
+                            try { loadInvitations(state.value.currentFilter) } catch (ex: Exception) { }
+                        }
+                        else -> {
+                            Log.e("InvitationsViewModel", "HTTP error when accepting invitation: ${e.code()}", e)
+                            _state.update { it.copy(
+                                isAccepting = false,
+                                processingInvitationId = null,
+                                actionError = "Error accepting invitation (${e.code()})"
+                            )}
+                        }
+                    }
+                } catch (e: IOException) {
+                    Log.e("InvitationsViewModel", "Network error while accepting invitation", e)
                     _state.update { it.copy(
+                        isAccepting = false,
                         processingInvitationId = null,
-                        actionError = "Không thể chấp nhận lời mời"
+                        actionError = "Network error. Please check your connection."
                     )}
                 }
             } catch (e: Exception) {
+                Log.e("InvitationsViewModel", "Error accepting invitation", e)
                 _state.update { it.copy(
+                    isAccepting = false,
                     processingInvitationId = null,
-                    actionError = "Lỗi: ${e.message}"
+                    actionError = "Error: ${e.message ?: "Unknown error"}"
                 )}
             }
         }
@@ -127,33 +173,64 @@ class InvitationsViewModel @Inject constructor(
     
     fun rejectInvitation(invitationId: String) {
         viewModelScope.launch {
+            // Set state to show we're processing
+            _state.update { it.copy(
+                isRejecting = true,
+                processingInvitationId = invitationId,
+                actionError = null
+            )}
+            
             try {
-                _state.update { it.copy(
-                    processingInvitationId = invitationId,
-                    actionSuccess = false,
-                    actionError = null
-                )}
-                
-                val response = invitationRepository.rejectInvitation(invitationId)
-                
-                if (response.success) {
-                    _state.update { it.copy(
-                        processingInvitationId = null,
-                        actionSuccess = true
-                    )}
-                    
-                    // Reload invitations after successful action
-                    loadInvitations()
-                } else {
-                    _state.update { it.copy(
-                        processingInvitationId = null,
-                        actionError = "Không thể từ chối lời mời"
-                    )}
+                try {
+                    val response = invitationRepository.rejectInvitation(invitationId)
+                    if (response.success) {
+                        _state.update { it.copy(
+                            isRejecting = false,
+                            processingInvitationId = null,
+                            actionSuccess = true
+                        )}
+                        // Reload invitations to reflect changes
+                        loadInvitations(state.value.currentFilter)
+                    } else {
+                        _state.update { it.copy(
+                            isRejecting = false,
+                            processingInvitationId = null,
+                            actionError = "Unable to reject invitation"
+                        )}
+                    }
+                } catch (e: retrofit2.HttpException) {
+                    // Handle HTTP errors specifically
+                    when (e.code()) {
+                        500 -> {
+                            Log.e("InvitationsViewModel", "Server error when rejecting invitation", e)
+                            // Show a more specific message for the 500 error
+                            _state.update { it.copy(
+                                isRejecting = false,
+                                processingInvitationId = null,
+                                actionError = "Server error processing invitation. We've been notified."
+                            )}
+                            
+                            // For 500 errors with this specific message, still reload the UI
+                            // This is because the server might have processed the request despite returning an error
+                            // (The socket.io emit is causing the 500 error but the status change succeeds)
+                            try { loadInvitations(state.value.currentFilter) } catch (ex: Exception) { }
+                        }
+                        else -> {
+                            Log.e("InvitationsViewModel", "HTTP error when rejecting invitation: ${e.code()}", e)
+                            _state.update { it.copy(
+                                isRejecting = false,
+                                processingInvitationId = null,
+                                actionError = "Error rejecting invitation (${e.code()})"
+                            )}
+                        }
+                    }
                 }
             } catch (e: Exception) {
+                Log.e("InvitationsViewModel", "Failed to reject invitation", e)
                 _state.update { it.copy(
+                    isRejecting = false,
                     processingInvitationId = null,
-                    actionError = "Lỗi: ${e.message}"
+                    actionError = "Error: ${e.message ?: "Unknown error"}"
                 )}
             }
         }
@@ -174,9 +251,12 @@ class InvitationsViewModel @Inject constructor(
 
 data class InvitationsUiState(
     val isLoading: Boolean = false,
+    val isAccepting: Boolean = false,
+    val isRejecting: Boolean = false,
     val invitations: List<Invitation> = emptyList(),
     val error: String? = null,
     val processingInvitationId: String? = null,
     val actionSuccess: Boolean = false,
-    val actionError: String? = null
+    val actionError: String? = null,
+    val currentFilter: String = "pending"
 )

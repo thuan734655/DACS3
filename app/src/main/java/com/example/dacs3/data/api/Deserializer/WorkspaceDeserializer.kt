@@ -8,20 +8,37 @@ import java.util.*
 
 class WorkspaceDeserializer : JsonDeserializer<Workspace> {
     override fun deserialize(
-        json: JsonElement,
-        typeOfT: Type,
-        context: JsonDeserializationContext
+        json: JsonElement?,
+        typeOfT: Type?,
+        context: JsonDeserializationContext?
     ): Workspace {
         // Handle null or invalid JSON
-        if (json.isJsonNull) {
+        if (json == null || json.isJsonNull || context == null) {
             return createEmptyWorkspace()
         }
         
         try {
-            val jsonObject = if (json.asJsonObject.has("data") && !json.asJsonObject.get("data").isJsonNull) {
-                json.asJsonObject.get("data").asJsonObject
-            } else {
+            // Safely convert to JSON object
+            val rootObject = try {
                 json.asJsonObject
+            } catch (e: Exception) {
+                return createEmptyWorkspace()
+            }
+
+            // Safely extract data field if available
+            val jsonObject = try {
+                if (rootObject.has("data") && rootObject.get("data") != null && !rootObject.get("data").isJsonNull) {
+                    try {
+                        rootObject.get("data").asJsonObject
+                    } catch (e: Exception) {
+                        rootObject
+                    }
+                } else {
+                    rootObject
+                }
+            } catch (e: Exception) {
+                // If we can't get the JSON object, return an empty workspace
+                return createEmptyWorkspace()
             }
         
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())

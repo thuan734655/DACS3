@@ -103,11 +103,20 @@ fun InvitationsScreen(
             
             // Error message
             if (state.error != null) {
-                Text(
-                    text = state.error ?: "",
-                    color = Color.Red,
-                    modifier = Modifier.padding(16.dp)
-                )
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = "Error loading invitations: ${state.error ?: ""}",
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
             
             // Action error message
